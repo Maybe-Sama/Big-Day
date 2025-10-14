@@ -90,11 +90,14 @@ const RSVP = () => {
             >
               <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
               <h1 className="font-playfair text-3xl font-bold mb-4">
-                Invitación no válida
+                Acceso Restringido
               </h1>
               <p className="text-muted-foreground mb-6">
-                Lo sentimos, pero el enlace de invitación no es válido o ha caducado.
-                Si crees que esto es un error, por favor contacta con nosotros.
+                Esta página solo es accesible mediante una invitación personalizada.
+                Si recibiste una invitación, por favor usa el enlace que te enviamos.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Si crees que esto es un error, contacta con Ana & Roberto.
               </p>
             </motion.div>
           </div>

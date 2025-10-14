@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams, Navigate } from "react-router-dom";
-import { Users, Mail, TrendingUp, Edit, Save, Plus } from "lucide-react";
+import { Users, Mail, TrendingUp, Edit, Save, Plus, Copy, Check } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ const AdminOculto = () => {
   const [invitados, setInvitados] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showStats, setShowStats] = useState(false);
+  const [copiedTokenId, setCopiedTokenId] = useState<number | null>(null);
 
   useEffect(() => {
     if (key === ADMIN_KEY) {
@@ -71,14 +72,23 @@ const AdminOculto = () => {
   };
 
   const handleSendInvitation = (invitado: any) => {
-    // Simular envío
-    console.log("Enviando invitación a:", invitado.email);
     const invitationLink = `${window.location.origin}/rsvp?token=${invitado.token}`;
-    console.log("Link:", invitationLink);
     
-    toast({
-      title: "Invitación enviada",
-      description: `Se ha enviado la invitación a ${invitado.email}`,
+    // Copiar link al portapapeles
+    navigator.clipboard.writeText(invitationLink).then(() => {
+      setCopiedTokenId(invitado.id);
+      setTimeout(() => setCopiedTokenId(null), 3000);
+      
+      toast({
+        title: "Link de invitación copiado",
+        description: `Puedes enviarlo a ${invitado.nombre} por email o WhatsApp`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Link generado",
+        description: invitationLink,
+        variant: "destructive",
+      });
     });
   };
 
@@ -251,38 +261,48 @@ const AdminOculto = () => {
                             {invitado.token}
                           </code>
                         </TableCell>
-                        <TableCell className="text-right space-x-2">
-                          {isEditing ? (
-                            <Button
-                              size="sm"
-                              onClick={() => handleSave(invitado.id)}
-                            >
-                              <Save className="w-4 h-4" />
-                            </Button>
-                          ) : (
-                            <>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isEditing ? (
                               <Button
                                 size="sm"
-                                variant="outline"
-                                onClick={() => handleEdit(invitado.id)}
+                                onClick={() => handleSave(invitado.id)}
                               >
-                                <Edit className="w-4 h-4" />
+                                <Save className="w-4 h-4" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleGenerateToken(invitado.id)}
-                              >
-                                Token
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleSendInvitation(invitado)}
-                              >
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEdit(invitado.id)}
+                                  title="Editar"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleGenerateToken(invitado.id)}
+                                  title="Generar nuevo token"
+                                >
+                                  Token
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSendInvitation(invitado)}
+                                  title="Copiar link de invitación"
+                                  className={copiedTokenId === invitado.id ? "bg-green-600 hover:bg-green-700" : ""}
+                                >
+                                  {copiedTokenId === invitado.id ? (
+                                    <Check className="w-4 h-4" />
+                                  ) : (
+                                    <Copy className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

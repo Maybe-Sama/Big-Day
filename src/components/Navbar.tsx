@@ -1,16 +1,21 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Navbar = () => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const hasValidToken = searchParams.get("token");
   
   const isActive = (path: string) => location.pathname === path;
   
+  // Solo mostrar "Confirmar" en el navbar si estamos en la página RSVP con token válido
   const navItems = [
     { path: "/", label: "Inicio" },
     { path: "/actividades", label: "Actividades" },
-    { path: "/rsvp", label: "Confirmar" },
+    ...(location.pathname === "/rsvp" && hasValidToken 
+      ? [{ path: "/rsvp", label: "Confirmar" }] 
+      : []),
     { path: "/fotos", label: "Fotos" },
   ];
 
