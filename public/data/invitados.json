@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "nombre": "Juan Pérez",
+    "email": "juan@example.com",
+    "pareja": true,
+    "hijos": 2,
+    "token": "abc123",
+    "asistencia": "pendiente",
+    "acompanantes": 0
+  },
+  {
+    "id": 2,
+    "nombre": "María González",
+    "email": "maria@example.com",
+    "pareja": false,
+    "hijos": 0,
+    "token": "xyz789",
+    "asistencia": "confirmado",
+    "acompanantes": 1
+  },
+  {
+    "id": 3,
+    "nombre": "Carlos Rodríguez",
+    "email": "carlos@example.com",
+    "pareja": true,
+    "hijos": 1,
+    "token": "def456",
+    "asistencia": "pendiente",
+    "acompanantes": 0
+  },
+  {
+    "id": 4,
+    "nombre": "Laura Martínez",
+    "email": "laura@example.com",
+    "pareja": false,
+    "hijos": 0,
+    "token": "ghi789",
+    "asistencia": "rechazado",
+    "acompanantes": 0
+  }
+]
