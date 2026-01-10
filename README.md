@@ -1,4 +1,16 @@
-# Welcome to your Lovable project
+# Forever Forms - Sitio de Boda Virginia & Alejandro 💒
+
+Sitio web de invitaciones de boda con sistema RSVP, galería de fotos y gestión de invitados.
+
+## 📚 Documentación
+
+- **[ARCHITECTURE_GUIDE.md](./ARCHITECTURE_GUIDE.md)**: Guía de arquitectura y patrones de desarrollo
+- **[README_DESARROLLO.md](./README_DESARROLLO.md)**: Guía práctica de desarrollo (Quick Reference)
+- **[ADMIN_README.md](./ADMIN_README.md)**: Documentación del panel de administración
+
+**⚠️ IMPORTANTE**: Lee `ARCHITECTURE_GUIDE.md` antes de empezar a desarrollar.
+
+---
 
 ## Project info
 

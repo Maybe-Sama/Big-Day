@@ -34,19 +34,32 @@ const Countdown = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+    <div className="flex justify-between lg:justify-center items-center w-full px-4 sm:px-8 md:px-12 lg:gap-12 xl:gap-16">
       {timeUnits.map((unit, index) => (
         <motion.div
           key={unit.label}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: index * 0.1 }}
-          className="bg-card rounded-lg shadow-soft p-6 text-center"
+          className="relative flex flex-col items-center justify-center flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28"
         >
-          <div className="text-4xl md:text-5xl font-playfair font-bold text-primary mb-2">
+          {/* Corona individual detrás de cada número */}
+          <img 
+            src="/corona.png"
+            alt=""
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none scale-110 sm:scale-110"
+            style={{
+              objectPosition: 'center',
+            }}
+          />
+          
+          {/* Número con fondo transparente */}
+          <div className="relative z-10 text-2xl sm:text-3xl md:text-4xl font-playfair font-bold text-primary mb-1 sm:mb-2">
             {unit.value.toString().padStart(2, "0")}
           </div>
-          <div className="text-sm text-muted-foreground uppercase tracking-wide">
+          
+          {/* Etiqueta */}
+          <div className="relative z-10 text-xs sm:text-xs md:text-sm text-muted-foreground uppercase tracking-wide text-center leading-tight">
             {unit.label}
           </div>
         </motion.div>
