@@ -81,17 +81,6 @@ const RSVP = () => {
     setVideoPlaying(false);
     setVideoReady(false);
     console.log("Componente RSVP montado - mostrando primer frame del video");
-    
-    // Inicializar el video inmediatamente si ya está disponible
-    if (videoRef.current) {
-      const video = videoRef.current;
-      video.currentTime = 0;
-      video.pause();
-      // Si el video ya tiene datos suficientes, marcarlo como listo
-      if (video.readyState >= 2) {
-        setVideoReady(true);
-      }
-    }
   }, []); // Ejecutar solo al montar el componente
 
   // Reproducir música de fondo automáticamente
@@ -117,61 +106,65 @@ const RSVP = () => {
     if (showVideo && videoRef.current) {
       const video = videoRef.current;
       
-      // Asegurar que el video esté pausado inmediatamente
+      // Asegurar que el video esté pausado y en el primer frame
       video.pause();
       video.currentTime = 0;
       
-      // Función para cargar y mostrar el primer frame
-      const loadFirstFrame = () => {
-        if (!videoPlaying && video.readyState >= 2) {
+      const showFirstFrame = () => {
+        if (!videoPlaying) {
           video.currentTime = 0;
           video.pause();
           setVideoReady(true);
-          console.log("Primer frame del video cargado y pausado");
+          console.log("Primer frame del video mostrado");
         }
       };
 
-      // Intentar cargar el primer frame inmediatamente si ya hay metadata
-      if (video.readyState >= 1) {
+      // Si el video ya tiene datos, mostrar el primer frame inmediatamente
+      if (video.readyState >= 2) {
+        showFirstFrame();
+      } else if (video.readyState >= 1) {
+        // Si tiene metadata, establecer el tiempo a 0
         video.currentTime = 0;
         video.pause();
-        if (video.readyState >= 2) {
-          setVideoReady(true);
-        }
       }
 
-      // Escuchar eventos para cargar el primer frame tan pronto como sea posible
-      video.addEventListener('loadedmetadata', () => {
+      // Escuchar eventos para mostrar el primer frame tan pronto como sea posible
+      const handleLoadedMetadata = () => {
         video.currentTime = 0;
         video.pause();
-        if (video.readyState >= 2) {
-          setVideoReady(true);
-        }
-        loadFirstFrame();
-      }, { once: true });
+      };
       
-      video.addEventListener('loadeddata', () => {
-        loadFirstFrame();
-        setVideoReady(true);
-      }, { once: true });
+      const handleLoadedData = () => {
+        showFirstFrame();
+      };
       
-      video.addEventListener('canplay', () => {
-        loadFirstFrame();
-        setVideoReady(true);
-      }, { once: true });
+      const handleCanPlay = () => {
+        showFirstFrame();
+      };
+
+      video.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+      video.addEventListener('loadeddata', handleLoadedData, { once: true });
+      video.addEventListener('canplay', handleCanPlay, { once: true });
 
       return () => {
-        // Los event listeners se limpian automáticamente con { once: true }
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        video.removeEventListener('loadeddata', handleLoadedData);
+        video.removeEventListener('canplay', handleCanPlay);
       };
     }
   }, [showVideo, videoPlaying]);
 
   // Función para iniciar la reproducción del video cuando el usuario hace clic
   const handleVideoClick = async () => {
-    if (!videoPlaying && videoRef.current) {
-      try {
+    if (!videoRef.current) return;
+    
+    const video = videoRef.current;
+    
+    try {
+      if (video.paused) {
+        // Si el video está pausado, reproducirlo
         setVideoPlaying(true);
-        await videoRef.current.play();
+        await video.play();
         console.log("Video iniciado por clic del usuario");
         
         // Intentar reproducir el audio si no se ha iniciado automáticamente
@@ -183,10 +176,15 @@ const RSVP = () => {
             console.warn("No se pudo reproducir el audio:", audioErr);
           }
         }
-      } catch (err) {
-        console.error("Error al iniciar el video:", err);
+      } else {
+        // Si el video está reproduciéndose, pausarlo
+        video.pause();
         setVideoPlaying(false);
+        console.log("Video pausado por clic del usuario");
       }
+    } catch (err) {
+      console.error("Error al controlar el video:", err);
+      setVideoPlaying(false);
     }
   };
 
@@ -561,15 +559,12 @@ const RSVP = () => {
             style={{ 
               width: '100%', 
               height: '100%', 
-              objectFit: 'cover',
-              backgroundColor: videoReady ? 'transparent' : 'black'
+              objectFit: 'cover'
             }}
             onClick={(e) => {
-              // Prevenir que el clic se propague al contenedor si ya está reproduciéndose
+              // Prevenir que el clic se propague al contenedor
               e.stopPropagation();
-              if (!videoPlaying && videoRef.current) {
-                handleVideoClick();
-              }
+              handleVideoClick();
             }}
             onEnded={() => {
               console.log("Video terminado");
@@ -587,16 +582,14 @@ const RSVP = () => {
               // Solo mostrar el error en consola, el usuario puede cerrarlo manualmente
             }}
             onLoadedMetadata={() => {
-              console.log("Metadata del video cargada - estableciendo primer frame");
+              console.log("Metadata del video cargada");
               if (videoRef.current && !videoPlaying) {
                 videoRef.current.currentTime = 0;
                 videoRef.current.pause();
-                setVideoReady(true);
               }
             }}
             onLoadedData={() => {
-              console.log("Video cargado correctamente - mostrando primer frame");
-              // Asegurar que el video muestre el primer frame y esté pausado
+              console.log("Video cargado - mostrando primer frame");
               if (videoRef.current && !videoPlaying) {
                 videoRef.current.currentTime = 0;
                 videoRef.current.pause();
@@ -604,8 +597,7 @@ const RSVP = () => {
               }
             }}
             onCanPlay={() => {
-              console.log("Video listo para reproducir - primer frame visible");
-              // Asegurar que el video muestre el primer frame y esté pausado
+              console.log("Video listo - primer frame visible");
               if (videoRef.current && !videoPlaying) {
                 videoRef.current.currentTime = 0;
                 videoRef.current.pause();
@@ -613,24 +605,10 @@ const RSVP = () => {
               }
             }}
             onPlay={() => {
-              // Si el video se reproduce sin que el usuario haya hecho clic, pausarlo
-              if (!videoPlaying && videoRef.current) {
-                console.warn("Video intentó reproducirse automáticamente, pausando...");
-                videoRef.current.pause();
-              }
+              setVideoPlaying(true);
             }}
-            onLoadStart={() => {
-              console.log("Iniciando carga del video desde:", "/invi.mov");
-              // Establecer el primer frame inmediatamente
-              if (videoRef.current && !videoPlaying) {
-                const video = videoRef.current;
-                video.currentTime = 0;
-                video.pause();
-                // Intentar cargar el primer frame inmediatamente
-                if (video.readyState >= 1) {
-                  setVideoReady(true);
-                }
-              }
+            onPause={() => {
+              setVideoPlaying(false);
             }}
             onStalled={() => {
               console.warn("Video se ha detenido (stalled)");
