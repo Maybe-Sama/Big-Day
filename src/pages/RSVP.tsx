@@ -72,14 +72,26 @@ const RSVP = () => {
   const [showVideo, setShowVideo] = useState(true);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Detectar iOS
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent) || 
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    setIsIOS(isIOSDevice);
+    console.log("Es dispositivo iOS:", isIOSDevice);
+  }, []);
 
   // Resetear el estado del video cada vez que se monta el componente (incluye refrescos)
   useEffect(() => {
     setShowVideo(true);
     setVideoPlaying(false);
     setVideoReady(false);
+    setUserInteracted(false);
     console.log("Componente RSVP montado - mostrando primer frame del video");
   }, []); // Ejecutar solo al montar el componente
 
@@ -101,6 +113,43 @@ const RSVP = () => {
     playAudio();
   }, []);
 
+  // Función para forzar la carga del video (necesaria en iOS)
+  const forceVideoLoad = async () => {
+    if (videoRef.current && !userInteracted) {
+      setUserInteracted(true);
+      const video = videoRef.current;
+      
+      try {
+        // Forzar la carga del video llamando a load()
+        video.load();
+        
+        // Intentar establecer el primer frame después de que se cargue
+        const checkReady = setInterval(() => {
+          if (video.readyState >= 2) {
+            clearInterval(checkReady);
+            video.currentTime = 0;
+            video.pause();
+            setVideoReady(true);
+            console.log("Video forzado a cargar en iOS - primer frame listo");
+          }
+        }, 100);
+
+        // Timeout de seguridad
+        setTimeout(() => {
+          clearInterval(checkReady);
+          if (video.readyState >= 1) {
+            video.currentTime = 0;
+            video.pause();
+            setVideoReady(true);
+            console.log("Video cargado con timeout de seguridad");
+          }
+        }, 3000);
+      } catch (error) {
+        console.error("Error al forzar carga del video:", error);
+      }
+    }
+  };
+
   // Cargar el primer frame del video sin reproducirlo
   useEffect(() => {
     if (showVideo && videoRef.current && !videoPlaying) {
@@ -109,6 +158,11 @@ const RSVP = () => {
       // Asegurar que el video esté pausado
       if (!video.paused) {
         video.pause();
+      }
+      
+      // En iOS, si el usuario no ha interactuado, no intentar cargar automáticamente
+      if (isIOS && !userInteracted) {
+        return;
       }
       
       // Cargar el primer frame del video
@@ -128,6 +182,15 @@ const RSVP = () => {
       } else {
         video.addEventListener('loadeddata', loadFirstFrame, { once: true });
         video.addEventListener('canplay', loadFirstFrame, { once: true });
+        video.addEventListener('loadedmetadata', () => {
+          if (video.readyState >= 1 && !videoReady) {
+            video.currentTime = 0;
+            video.pause();
+            if (video.readyState >= 2) {
+              setVideoReady(true);
+            }
+          }
+        }, { once: true });
       }
 
       return () => {
@@ -135,11 +198,25 @@ const RSVP = () => {
         video.removeEventListener('canplay', loadFirstFrame);
       };
     }
-  }, [showVideo, videoPlaying]);
+  }, [showVideo, videoPlaying, isIOS, userInteracted, videoReady]);
+
+  // Función para manejar el clic en el loader (iOS necesita esto)
+  const handleLoaderClick = () => {
+    if (!videoReady && isIOS) {
+      forceVideoLoad();
+    }
+  };
 
   // Función para iniciar la reproducción del video cuando el usuario hace clic
   const handleVideoClick = async () => {
     if (!videoPlaying && videoRef.current) {
+      // Si el video no está listo en iOS, forzar la carga primero
+      if (isIOS && !videoReady && !userInteracted) {
+        await forceVideoLoad();
+        // Esperar un momento para que el video se cargue
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
       try {
         setVideoPlaying(true);
         await videoRef.current.play();
@@ -526,7 +603,7 @@ const RSVP = () => {
             ref={videoRef}
             muted
             playsInline
-            preload="auto"
+            preload={isIOS ? "metadata" : "auto"}
             loop={false}
             className={`w-full h-full object-cover min-w-full min-h-full transition-opacity duration-300 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -587,6 +664,14 @@ const RSVP = () => {
               if (videoRef.current && !videoPlaying) {
                 videoRef.current.currentTime = 0;
                 videoRef.current.pause();
+                // En iOS, si tenemos metadata después de interacción, intentar mostrar
+                if (isIOS && userInteracted && videoRef.current.readyState >= 1) {
+                  setTimeout(() => {
+                    if (videoRef.current && videoRef.current.readyState >= 2) {
+                      setVideoReady(true);
+                    }
+                  }, 200);
+                }
               }
             }}
             onStalled={() => {
@@ -603,22 +688,75 @@ const RSVP = () => {
           </video>
           {/* Loader con corona.png rotando mientras carga el video */}
           {!videoReady && (
-            <div className="absolute inset-0 bg-black flex items-center justify-center z-20">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40"
-              >
-                <img
-                  src="/corona.png"
-                  alt="Cargando..."
-                  className="w-full h-full object-contain"
-                />
-              </motion.div>
+            <div 
+              className={`absolute inset-0 bg-black flex items-center justify-center z-20 ${isIOS ? 'cursor-pointer' : ''}`}
+              onClick={(e) => {
+                if (isIOS) {
+                  e.stopPropagation();
+                  handleLoaderClick();
+                }
+              }}
+            >
+              <div className="relative flex items-center justify-center">
+                {/* Corona rotando */}
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                  className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40"
+                >
+                  <img
+                    src="/corona.png"
+                    alt="Cargando..."
+                    className="w-full h-full object-contain"
+                  />
+                </motion.div>
+                {/* Icono de play en el centro (solo en iOS) */}
+                {isIOS && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ 
+                      opacity: [0.7, 1, 0.7],
+                      scale: [1, 1.1, 1]
+                    }}
+                    transition={{
+                      opacity: {
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      },
+                      scale: {
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }
+                    }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  >
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 sm:p-4 md:p-5">
+                      <Play className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" fill="white" />
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+              {/* Texto indicativo solo en iOS */}
+              {isIOS && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  className="absolute bottom-8 sm:bottom-12 text-white text-sm sm:text-base opacity-75 text-center px-4"
+                >
+                  Toca para cargar el video
+                </motion.p>
+              )}
             </div>
           )}
           {/* Animación de puntero/dedo haciendo clic */}
