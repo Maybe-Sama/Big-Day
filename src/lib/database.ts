@@ -17,7 +17,14 @@ class DatabaseService {
   
   constructor() {
     // En producción, usar API. En desarrollo, usar IndexedDB como fallback
+    // Pero si VITE_USE_API está configurado, forzar el uso de API
     this.useApi = import.meta.env.PROD || import.meta.env.VITE_USE_API === 'true';
+    
+    if (this.useApi) {
+      console.log('[DatabaseService] Usando API (Redis) para almacenamiento');
+    } else {
+      console.log('[DatabaseService] Usando IndexedDB local para almacenamiento');
+    }
   }
 
   async init(): Promise<void> {

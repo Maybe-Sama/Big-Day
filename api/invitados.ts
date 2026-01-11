@@ -23,9 +23,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Verificar que Redis esté configurado
+    if (!process.env.KV_REST_API_URL && !process.env.UPSTASH_REDIS_REST_URL) {
+      console.error('Error: Variables de entorno de Redis no configuradas');
+      return res.status(500).json({ error: 'Configuración de base de datos no encontrada' });
+    }
+
     // GET - Obtener todos los grupos
     if (req.method === 'GET') {
       const grupos = await redis.get<unknown[]>(DB_KEY) || [];
+      console.log(`[API] GET /invitados: ${grupos.length} grupos encontrados`);
       return res.status(200).json(grupos);
     }
 
@@ -37,16 +44,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Grupo inválido: falta el ID' });
       }
 
+      console.log(`[API] POST /invitados: Guardando grupo ${grupo.id} con token ${grupo.token}`);
+      
       const grupos = await redis.get<unknown[]>(DB_KEY) || [];
       const index = grupos.findIndex((g: any) => g.id === grupo.id);
       
       if (index >= 0) {
         grupos[index] = grupo;
+        console.log(`[API] Grupo actualizado: ${grupo.id}`);
       } else {
         grupos.push(grupo);
+        console.log(`[API] Grupo nuevo añadido: ${grupo.id}`);
       }
 
       await redis.set(DB_KEY, grupos);
+      console.log(`[API] Total grupos guardados: ${grupos.length}`);
       return res.status(200).json({ success: true, grupo });
     }
 
