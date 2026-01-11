@@ -22,39 +22,39 @@ import heroImage from "@/assets/hero-wedding.jpg";
 
 const activities = [
   {
-    time: "16:30",
+    time: "19:00",
     title: "Llegada de Invitados",
     description: "Recepción y bienvenida en los jardines de la hacienda",
   },
   {
-    time: "17:00",
+    time: "19:30",
     title: "Ceremonia",
-    description: "Ceremonia de boda al aire libre bajo el arco de flores",
+    description: "Ceremonia de boda al aire en el patio balinés",
   },
   {
-    time: "18:00",
+    time: "20:00",
     title: "Cóctel",
     description: "Cóctel de bienvenida con canapés y bebidas",
   },
   {
-    time: "19:30",
+    time: "21:30",
     title: "Cena",
     description: "Cena de gala con menú de tres tiempos",
   },
   {
-    time: "21:00",
+    time: "23:30",
     title: "Primer Baile",
     description: "Primer baile de los novios y apertura de pista",
   },
   {
-    time: "21:30",
+    time: "00:00",
     title: "Fiesta",
     description: "Baile y celebración hasta la madrugada",
   },
   {
-    time: "00:00",
-    title: "Brindis de Medianoche",
-    description: "Brindis especial y corte de pastel",
+    time: "03:00",
+    title: "Recena",
+    description: "Surtido de comida y bebidas",
   },
 ];
 
@@ -880,7 +880,7 @@ const RSVP = () => {
         <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl">
             <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
-            <span className="text-center">13 de Junio, 2026 • 16:00h</span>
+            <span className="text-center">13 de Junio, 2026 • 19:00h</span>
           </div>
           
           <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl px-4">
@@ -911,7 +911,7 @@ const RSVP = () => {
             viewport={{ once: true }}
             className="text-center mb-8 sm:mb-10 md:mb-12"
           >
-            <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+            <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-primary">
               Faltan...
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg px-4">
@@ -934,23 +934,26 @@ const RSVP = () => {
             className="grid md:grid-cols-2 gap-6 sm:gap-8"
           >
             <div className="bg-card rounded-2xl shadow-soft p-6 sm:p-8">
-              <h3 className="font-playfair text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
+              <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
                 Nuestra Historia
-              </h3>
+              </h2>
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
-                Después de 5 años juntos, hemos decidido dar el paso más importante 
-                de nuestras vidas. Queremos compartir este momento tan especial con 
+                Después de seis años juntos, conociéndonos de verdad, descendiendo montañas, descubriendo lugares y también a nosotros mismos,
+                probando cada pista de pádel, bailando en la cocina y acumulando innumerables noches dormidos en el sofá...
+                ¡Lo tenemos claro! <br />
+                Vamos a dar el paso más importante de nuestras vidas.
+                Queremos compartir este momento tan especial con 
                 las personas que más queremos. Vuestra presencia es el mejor regalo 
                 que podemos recibir.
               </p>
             </div>
             
             <div className="bg-card rounded-2xl shadow-soft p-6 sm:p-8">
-              <h3 className="font-playfair text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
+              <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
                 El Lugar
-              </h3>
+              </h2>
               <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4">
-                La celebración tendrá lugar en la hermosa Hacienda Las Yeguas, 
+                La celebración tendrá lugar en la encantadora Hacienda Las Yeguas, 
                 un espacio único rodeado de naturaleza y elegancia, perfecto 
                 para crear recuerdos inolvidables.
               </p>
@@ -977,7 +980,7 @@ const RSVP = () => {
             viewport={{ once: true }}
             className="text-center mb-8 sm:mb-10 md:mb-12"
           >
-            <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+            <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-primary">
               Cronograma del Día
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg px-4">
@@ -1036,7 +1039,7 @@ const RSVP = () => {
             viewport={{ once: true }}
             className="text-center mb-6 sm:mb-8"
           >
-            <h2 className="font-playfair text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Ubicación</h2>
+            <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-primary">Ubicación</h2>
             <p className="text-muted-foreground text-base sm:text-lg">Hacienda Las Yeguas</p>
             <p className="text-muted-foreground text-sm sm:text-base">Fuentes de Andalucía, Sevilla</p>
           </motion.div>
@@ -1083,11 +1086,28 @@ const RSVP = () => {
       {/* RSVP Section */}
       <section className="py-12 sm:py-16 md:py-20 px-4">
         <div className="container mx-auto max-w-4xl">
-          <PageHeader
-            title="Confirma tu Asistencia"
-            description={`Hola ${grupo.invitadoPrincipal.nombre}, completa tu información para confirmar tu asistencia`}
-            variant="simple"
-          />
+          {/* Marco decorativo con título y subtítulo */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative w-full mb-8 sm:mb-10 md:mb-12"
+          >
+            <div 
+              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[16/10] bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: 'url(/confirmar.png)' }}
+            >
+              {/* Contenedor para el texto centrado en el área negra */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-8 sm:px-12 md:px-16">
+                <h2 className="font-playfair text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white text-center mb-3 sm:mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                  Confirma tu Asistencia
+                </h2>
+                <p className="text-white text-sm sm:text-base md:text-lg lg:text-xl text-center max-w-2xl drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
+                  Hola {grupo.invitadoPrincipal.nombre}, completa tu información para confirmar tu asistencia
+                </p>
+              </div>
+            </div>
+          </motion.div>
 
           <motion.form
             initial={{ opacity: 0, y: 20 }}

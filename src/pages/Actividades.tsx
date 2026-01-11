@@ -7,39 +7,39 @@ import PageHeader from "@/components/common/PageHeader";
 
 const activities = [
   {
-    time: "16:30",
+    time: "19:00",
     title: "Llegada de Invitados",
     description: "Recepción y bienvenida en los jardines de la hacienda",
   },
   {
-    time: "17:00",
+    time: "19:30",
     title: "Ceremonia",
-    description: "Ceremonia de boda al aire libre bajo el arco de flores",
+    description: "Acto I: la casasión",
   },
   {
-    time: "18:00",
+    time: "20:00",
     title: "Cóctel",
     description: "Cóctel de bienvenida con canapés y bebidas",
   },
   {
-    time: "19:30",
+    time: "21:30",
     title: "Cena",
     description: "Cena de gala con menú de tres tiempos",
   },
   {
-    time: "21:00",
+    time: "23:30",
     title: "Primer Baile",
     description: "Primer baile de los novios y apertura de pista",
   },
   {
-    time: "21:30",
+    time: "00:00",
     title: "Fiesta",
     description: "Baile y celebración hasta la madrugada",
   },
   {
-    time: "00:00",
-    title: "Brindis de Medianoche",
-    description: "Brindis especial y corte de pastel",
+    time: "03:00",
+    title: "Recena",
+    description: "Surtido de comida y bebidas",
   },
 ];
 

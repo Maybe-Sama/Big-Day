@@ -103,7 +103,7 @@ const PageHeader = ({
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="font-playfair text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 leading-tight"
+          className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 leading-tight text-primary"
         >
           {title}
         </motion.h1>
