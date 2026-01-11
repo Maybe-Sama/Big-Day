@@ -1085,24 +1085,24 @@ const RSVP = () => {
 
       {/* RSVP Section */}
       <section className="py-12 sm:py-16 md:py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-4xl">
           {/* Marco decorativo con título y subtítulo */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative w-full mb-8 sm:mb-10 md:mb-12"
+            className="relative w-full mb-6 sm:mb-8"
           >
             <div 
-              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[16/9] lg:aspect-[21/9] bg-cover bg-center bg-no-repeat"
+              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[16/10] bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: 'url(/confirmar.png)' }}
             >
               {/* Contenedor para el texto centrado en el área negra */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-8 sm:px-16 md:px-20 lg:px-24">
-                <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-black text-center mb-3 sm:mb-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10 md:px-12 lg:px-16">
+                <h2 className="font-playfair text-xl sm:text-2xl md:text-3xl font-bold text-black text-center mb-2 sm:mb-3 leading-tight">
                   Confirma tu Asistencia
                 </h2>
-                <p className="text-black text-base sm:text-lg md:text-xl lg:text-2xl text-center max-w-3xl">
+                <p className="text-black text-xs sm:text-sm md:text-base text-center max-w-xl leading-relaxed">
                   Hola {grupo.invitadoPrincipal.nombre}, completa tu información para confirmar tu asistencia
                 </p>
               </div>
