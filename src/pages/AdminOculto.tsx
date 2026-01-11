@@ -224,7 +224,9 @@ const AdminOculto = () => {
   };
 
   const handleSendInvitation = (grupo: GrupoInvitados) => {
-    const invitationLink = `${window.location.origin}/rsvp?token=${grupo.token}`;
+    // Usar variable de entorno si está disponible, sino usar window.location.origin
+    const baseUrl = import.meta.env.VITE_PUBLIC_URL || window.location.origin;
+    const invitationLink = `${baseUrl}/rsvp?token=${grupo.token}`;
     
     navigator.clipboard.writeText(invitationLink).then(() => {
       setCopiedTokenId(grupo.id);

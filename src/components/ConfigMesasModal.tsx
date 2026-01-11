@@ -187,7 +187,9 @@ const ConfigMesasModal = ({ isOpen, onClose }: ConfigMesasModalProps) => {
       return;
     }
 
-    const mesaLink = `${window.location.origin}/mesa?token=${mesa.token}`;
+    // Usar variable de entorno si está disponible, sino usar window.location.origin
+    const baseUrl = import.meta.env.VITE_PUBLIC_URL || window.location.origin;
+    const mesaLink = `${baseUrl}/mesa?token=${mesa.token}`;
     
     navigator.clipboard.writeText(mesaLink).then(() => {
       setCopiedTokenId(mesa.id);

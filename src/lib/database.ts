@@ -2,6 +2,7 @@ import { GrupoInvitados, InvitadoStats } from '@/types/invitados';
 import { ConfiguracionBuses } from '@/types/bus';
 import { ConfiguracionMesas } from '@/types/mesas';
 import { CarreraFotos } from '@/types/carrera-fotos';
+import { apiService } from './api-service';
 
 const DB_NAME = 'forever-forms-db';
 const DB_VERSION = 5; // Incrementado para añadir carreras de fotos
@@ -12,6 +13,12 @@ const CARRERAS_STORE_NAME = 'carreras-fotos';
 
 class DatabaseService {
   private db: IDBDatabase | null = null;
+  private useApi: boolean = false;
+  
+  constructor() {
+    // En producción, usar API. En desarrollo, usar IndexedDB como fallback
+    this.useApi = import.meta.env.PROD || import.meta.env.VITE_USE_API === 'true';
+  }
 
   async init(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -90,6 +97,15 @@ class DatabaseService {
   }
 
   async getAllGrupos(): Promise<GrupoInvitados[]> {
+    if (this.useApi) {
+      try {
+        return await apiService.getAllGrupos();
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
+    
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -122,6 +138,15 @@ class DatabaseService {
   }
 
   async getGrupoByToken(token: string): Promise<GrupoInvitados | null> {
+    if (this.useApi) {
+      try {
+        return await apiService.getGrupoByToken(token);
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
+    
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -139,49 +164,28 @@ class DatabaseService {
   }
 
   async saveGrupo(grupo: GrupoInvitados): Promise<void> {
-    if (!this.db) await this.init();
+    if (this.useApi) {
+      try {
+        await apiService.saveGrupo(grupo);
+        return;
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
     
-    console.log("=== DEBUG: saveGrupo en DatabaseService ===");
-    console.log("Grupo a guardar:", grupo);
-    console.log("DB inicializada:", !!this.db);
-    console.log("Store name:", STORE_NAME);
+    if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
       try {
         const transaction = this.db!.transaction([STORE_NAME], 'readwrite');
         const store = transaction.objectStore(STORE_NAME);
-        
-        console.log("Transaction creada:", !!transaction);
-        console.log("Store obtenido:", !!store);
-        
         const request = store.put(grupo);
-        
-        console.log("Request creado:", !!request);
-        console.log("Grupo ID:", grupo.id);
 
-        request.onsuccess = () => {
-          console.log("✅ Request exitoso - Grupo guardado con ID:", grupo.id);
-          resolve();
-        };
-        
-        request.onerror = () => {
-          console.error("❌ Error en request:", request.error);
-          console.error("Error code:", request.error?.code);
-          console.error("Error name:", request.error?.name);
-          console.error("Error message:", request.error?.message);
-          reject(request.error);
-        };
-        
-        transaction.onerror = () => {
-          console.error("❌ Error en transaction:", transaction.error);
-          reject(transaction.error);
-        };
-        
-        transaction.oncomplete = () => {
-          console.log("✅ Transaction completada");
-        };
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+        transaction.onerror = () => reject(transaction.error);
       } catch (error) {
-        console.error("❌ Error al crear transaction:", error);
         reject(error);
       }
     });
@@ -285,6 +289,15 @@ class DatabaseService {
   // ========== CONFIGURACIÓN DE BUSES ==========
 
   async getConfiguracionBuses(): Promise<ConfiguracionBuses | null> {
+    if (this.useApi) {
+      try {
+        return await apiService.getConfiguracionBuses();
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
+    
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -298,6 +311,16 @@ class DatabaseService {
   }
 
   async saveConfiguracionBuses(config: ConfiguracionBuses): Promise<void> {
+    if (this.useApi) {
+      try {
+        await apiService.saveConfiguracionBuses(config);
+        return;
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
+    
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -316,6 +339,15 @@ class DatabaseService {
   // ========== CONFIGURACIÓN DE MESAS ==========
 
   async getConfiguracionMesas(): Promise<ConfiguracionMesas | null> {
+    if (this.useApi) {
+      try {
+        return await apiService.getConfiguracionMesas();
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
+    
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -329,6 +361,16 @@ class DatabaseService {
   }
 
   async saveConfiguracionMesas(config: ConfiguracionMesas): Promise<void> {
+    if (this.useApi) {
+      try {
+        await apiService.saveConfiguracionMesas(config);
+        return;
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
+    
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -360,6 +402,15 @@ class DatabaseService {
   }
 
   async getAllCarreras(): Promise<CarreraFotos[]> {
+    if (this.useApi) {
+      try {
+        return await apiService.getAllCarreras();
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
+    
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -373,6 +424,16 @@ class DatabaseService {
   }
 
   async saveCarrera(carrera: CarreraFotos): Promise<void> {
+    if (this.useApi) {
+      try {
+        await apiService.saveCarrera(carrera);
+        return;
+      } catch (error) {
+        console.warn('Error usando API, fallback a IndexedDB:', error);
+        this.useApi = false;
+      }
+    }
+    
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {

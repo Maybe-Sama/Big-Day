@@ -614,8 +614,12 @@ const RSVP = () => {
     return (
       <PageLayout>
         <ErrorState
-          title="Acceso Restringido"
-          description="Esta página solo es accesible mediante una invitación personalizada. Si recibiste una invitación, por favor usa el enlace que te enviamos."
+          title="Token no encontrado"
+          description={
+            !token 
+              ? "No se proporcionó un token de invitación. Por favor, usa el enlace completo que te enviaron."
+              : "El token de invitación no se encontró en la base de datos. Esto puede ocurrir si el enlace fue creado en otro dispositivo. Los datos están almacenados localmente en cada navegador."
+          }
         />
       </PageLayout>
     );
