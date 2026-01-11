@@ -71,6 +71,7 @@ const RSVP = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showVideo, setShowVideo] = useState(true);
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -78,7 +79,19 @@ const RSVP = () => {
   useEffect(() => {
     setShowVideo(true);
     setVideoPlaying(false);
+    setVideoReady(false);
     console.log("Componente RSVP montado - mostrando primer frame del video");
+    
+    // Inicializar el video inmediatamente si ya está disponible
+    if (videoRef.current) {
+      const video = videoRef.current;
+      video.currentTime = 0;
+      video.pause();
+      // Si el video ya tiene datos suficientes, marcarlo como listo
+      if (video.readyState >= 2) {
+        setVideoReady(true);
+      }
+    }
   }, []); // Ejecutar solo al montar el componente
 
   // Reproducir música de fondo automáticamente
@@ -101,35 +114,54 @@ const RSVP = () => {
 
   // Cargar el primer frame del video sin reproducirlo
   useEffect(() => {
-    if (showVideo && videoRef.current && !videoPlaying) {
+    if (showVideo && videoRef.current) {
       const video = videoRef.current;
       
-      // Asegurar que el video esté pausado
-      if (!video.paused) {
-        video.pause();
-      }
+      // Asegurar que el video esté pausado inmediatamente
+      video.pause();
+      video.currentTime = 0;
       
-      // Cargar el primer frame del video
+      // Función para cargar y mostrar el primer frame
       const loadFirstFrame = () => {
-        if (video.readyState >= 2 && !videoPlaying) {
-          // Si ya tiene datos suficientes, mostrar el primer frame
+        if (!videoPlaying && video.readyState >= 2) {
           video.currentTime = 0;
-          video.pause(); // Asegurar que esté pausado
+          video.pause();
+          setVideoReady(true);
           console.log("Primer frame del video cargado y pausado");
         }
       };
 
-      // Cargar el primer frame cuando el video esté listo
-      if (video.readyState >= 2) {
-        loadFirstFrame();
-      } else {
-        video.addEventListener('loadeddata', loadFirstFrame, { once: true });
-        video.addEventListener('canplay', loadFirstFrame, { once: true });
+      // Intentar cargar el primer frame inmediatamente si ya hay metadata
+      if (video.readyState >= 1) {
+        video.currentTime = 0;
+        video.pause();
+        if (video.readyState >= 2) {
+          setVideoReady(true);
+        }
       }
 
+      // Escuchar eventos para cargar el primer frame tan pronto como sea posible
+      video.addEventListener('loadedmetadata', () => {
+        video.currentTime = 0;
+        video.pause();
+        if (video.readyState >= 2) {
+          setVideoReady(true);
+        }
+        loadFirstFrame();
+      }, { once: true });
+      
+      video.addEventListener('loadeddata', () => {
+        loadFirstFrame();
+        setVideoReady(true);
+      }, { once: true });
+      
+      video.addEventListener('canplay', () => {
+        loadFirstFrame();
+        setVideoReady(true);
+      }, { once: true });
+
       return () => {
-        video.removeEventListener('loadeddata', loadFirstFrame);
-        video.removeEventListener('canplay', loadFirstFrame);
+        // Los event listeners se limpian automáticamente con { once: true }
       };
     }
   }, [showVideo, videoPlaying]);
@@ -526,7 +558,12 @@ const RSVP = () => {
             preload="auto"
             loop={false}
             className="w-full h-full object-cover min-w-full min-h-full"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover',
+              backgroundColor: videoReady ? 'transparent' : 'black'
+            }}
             onClick={(e) => {
               // Prevenir que el clic se propague al contenedor si ya está reproduciéndose
               e.stopPropagation();
@@ -549,12 +586,21 @@ const RSVP = () => {
               // No ocultar automáticamente el video si hay error
               // Solo mostrar el error en consola, el usuario puede cerrarlo manualmente
             }}
+            onLoadedMetadata={() => {
+              console.log("Metadata del video cargada - estableciendo primer frame");
+              if (videoRef.current && !videoPlaying) {
+                videoRef.current.currentTime = 0;
+                videoRef.current.pause();
+                setVideoReady(true);
+              }
+            }}
             onLoadedData={() => {
               console.log("Video cargado correctamente - mostrando primer frame");
               // Asegurar que el video muestre el primer frame y esté pausado
               if (videoRef.current && !videoPlaying) {
                 videoRef.current.currentTime = 0;
-                videoRef.current.pause(); // Asegurar que esté pausado
+                videoRef.current.pause();
+                setVideoReady(true);
               }
             }}
             onCanPlay={() => {
@@ -562,7 +608,8 @@ const RSVP = () => {
               // Asegurar que el video muestre el primer frame y esté pausado
               if (videoRef.current && !videoPlaying) {
                 videoRef.current.currentTime = 0;
-                videoRef.current.pause(); // Asegurar que esté pausado
+                videoRef.current.pause();
+                setVideoReady(true);
               }
             }}
             onPlay={() => {
@@ -574,6 +621,16 @@ const RSVP = () => {
             }}
             onLoadStart={() => {
               console.log("Iniciando carga del video desde:", "/invi.mov");
+              // Establecer el primer frame inmediatamente
+              if (videoRef.current && !videoPlaying) {
+                const video = videoRef.current;
+                video.currentTime = 0;
+                video.pause();
+                // Intentar cargar el primer frame inmediatamente
+                if (video.readyState >= 1) {
+                  setVideoReady(true);
+                }
+              }
             }}
             onStalled={() => {
               console.warn("Video se ha detenido (stalled)");
