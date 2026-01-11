@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, Play, Hand, Calendar, MapPin, ArrowRight, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, Hand, Calendar, MapPin, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -714,33 +714,6 @@ const RSVP = () => {
                     className="w-full h-full object-contain"
                   />
                 </motion.div>
-                {/* Icono de play en el centro (solo en iOS) */}
-                {isIOS && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ 
-                      opacity: [0.7, 1, 0.7],
-                      scale: [1, 1.1, 1]
-                    }}
-                    transition={{
-                      opacity: {
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      },
-                      scale: {
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }
-                    }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                  >
-                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 sm:p-4 md:p-5">
-                      <Play className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" fill="white" />
-                    </div>
-                  </motion.div>
-                )}
               </div>
               {/* Texto indicativo solo en iOS */}
               {isIOS && (
