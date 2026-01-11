@@ -103,68 +103,46 @@ const RSVP = () => {
 
   // Cargar el primer frame del video sin reproducirlo
   useEffect(() => {
-    if (showVideo && videoRef.current) {
+    if (showVideo && videoRef.current && !videoPlaying) {
       const video = videoRef.current;
       
-      // Asegurar que el video esté pausado y en el primer frame
-      video.pause();
-      video.currentTime = 0;
+      // Asegurar que el video esté pausado
+      if (!video.paused) {
+        video.pause();
+      }
       
-      const showFirstFrame = () => {
-        if (!videoPlaying) {
+      // Cargar el primer frame del video
+      const loadFirstFrame = () => {
+        if (video.readyState >= 2 && !videoPlaying) {
+          // Si ya tiene datos suficientes, mostrar el primer frame
           video.currentTime = 0;
-          video.pause();
+          video.pause(); // Asegurar que esté pausado
           setVideoReady(true);
-          console.log("Primer frame del video mostrado");
+          console.log("Primer frame del video cargado y pausado");
         }
       };
 
-      // Si el video ya tiene datos, mostrar el primer frame inmediatamente
+      // Cargar el primer frame cuando el video esté listo
       if (video.readyState >= 2) {
-        showFirstFrame();
-      } else if (video.readyState >= 1) {
-        // Si tiene metadata, establecer el tiempo a 0
-        video.currentTime = 0;
-        video.pause();
+        loadFirstFrame();
+      } else {
+        video.addEventListener('loadeddata', loadFirstFrame, { once: true });
+        video.addEventListener('canplay', loadFirstFrame, { once: true });
       }
 
-      // Escuchar eventos para mostrar el primer frame tan pronto como sea posible
-      const handleLoadedMetadata = () => {
-        video.currentTime = 0;
-        video.pause();
-      };
-      
-      const handleLoadedData = () => {
-        showFirstFrame();
-      };
-      
-      const handleCanPlay = () => {
-        showFirstFrame();
-      };
-
-      video.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-      video.addEventListener('loadeddata', handleLoadedData, { once: true });
-      video.addEventListener('canplay', handleCanPlay, { once: true });
-
       return () => {
-        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        video.removeEventListener('loadeddata', handleLoadedData);
-        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('loadeddata', loadFirstFrame);
+        video.removeEventListener('canplay', loadFirstFrame);
       };
     }
   }, [showVideo, videoPlaying]);
 
   // Función para iniciar la reproducción del video cuando el usuario hace clic
   const handleVideoClick = async () => {
-    if (!videoRef.current) return;
-    
-    const video = videoRef.current;
-    
-    try {
-      if (video.paused) {
-        // Si el video está pausado, reproducirlo
+    if (!videoPlaying && videoRef.current) {
+      try {
         setVideoPlaying(true);
-        await video.play();
+        await videoRef.current.play();
         console.log("Video iniciado por clic del usuario");
         
         // Intentar reproducir el audio si no se ha iniciado automáticamente
@@ -176,15 +154,10 @@ const RSVP = () => {
             console.warn("No se pudo reproducir el audio:", audioErr);
           }
         }
-      } else {
-        // Si el video está reproduciéndose, pausarlo
-        video.pause();
+      } catch (err) {
+        console.error("Error al iniciar el video:", err);
         setVideoPlaying(false);
-        console.log("Video pausado por clic del usuario");
       }
-    } catch (err) {
-      console.error("Error al controlar el video:", err);
-      setVideoPlaying(false);
     }
   };
 
@@ -555,16 +528,14 @@ const RSVP = () => {
             playsInline
             preload="auto"
             loop={false}
-            className="w-full h-full object-cover min-w-full min-h-full"
-            style={{ 
-              width: '100%', 
-              height: '100%', 
-              objectFit: 'cover'
-            }}
+            className={`w-full h-full object-cover min-w-full min-h-full transition-opacity duration-300 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onClick={(e) => {
-              // Prevenir que el clic se propague al contenedor
+              // Prevenir que el clic se propague al contenedor si ya está reproduciéndose
               e.stopPropagation();
-              handleVideoClick();
+              if (!videoPlaying && videoRef.current) {
+                handleVideoClick();
+              }
             }}
             onEnded={() => {
               console.log("Video terminado");
@@ -581,34 +552,42 @@ const RSVP = () => {
               // No ocultar automáticamente el video si hay error
               // Solo mostrar el error en consola, el usuario puede cerrarlo manualmente
             }}
-            onLoadedMetadata={() => {
-              console.log("Metadata del video cargada");
-              if (videoRef.current && !videoPlaying) {
-                videoRef.current.currentTime = 0;
-                videoRef.current.pause();
-              }
-            }}
             onLoadedData={() => {
-              console.log("Video cargado - mostrando primer frame");
+              console.log("Video cargado correctamente - mostrando primer frame");
+              // Asegurar que el video muestre el primer frame y esté pausado
               if (videoRef.current && !videoPlaying) {
                 videoRef.current.currentTime = 0;
-                videoRef.current.pause();
+                videoRef.current.pause(); // Asegurar que esté pausado
                 setVideoReady(true);
               }
             }}
             onCanPlay={() => {
-              console.log("Video listo - primer frame visible");
+              console.log("Video listo para reproducir - primer frame visible");
+              // Asegurar que el video muestre el primer frame y esté pausado
               if (videoRef.current && !videoPlaying) {
                 videoRef.current.currentTime = 0;
-                videoRef.current.pause();
+                videoRef.current.pause(); // Asegurar que esté pausado
                 setVideoReady(true);
               }
             }}
             onPlay={() => {
-              setVideoPlaying(true);
+              // Si el video se reproduce sin que el usuario haya hecho clic, pausarlo
+              if (!videoPlaying && videoRef.current) {
+                console.warn("Video intentó reproducirse automáticamente, pausando...");
+                videoRef.current.pause();
+              }
             }}
-            onPause={() => {
-              setVideoPlaying(false);
+            onLoadStart={() => {
+              console.log("Iniciando carga del video desde:", "/invi.mov");
+              setVideoReady(false);
+            }}
+            onLoadedMetadata={() => {
+              console.log("Metadata del video cargada");
+              // Establecer el tiempo a 0 tan pronto como tengamos metadata
+              if (videoRef.current && !videoPlaying) {
+                videoRef.current.currentTime = 0;
+                videoRef.current.pause();
+              }
             }}
             onStalled={() => {
               console.warn("Video se ha detenido (stalled)");
@@ -622,8 +601,28 @@ const RSVP = () => {
             <source src="/invi.mov" type="video/x-m4v" />
             Tu navegador no soporta la reproducción de video.
           </video>
+          {/* Loader con corona.png rotando mientras carga el video */}
+          {!videoReady && (
+            <div className="absolute inset-0 bg-black flex items-center justify-center z-20">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+                className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40"
+              >
+                <img
+                  src="/corona.png"
+                  alt="Cargando..."
+                  className="w-full h-full object-contain"
+                />
+              </motion.div>
+            </div>
+          )}
           {/* Animación de puntero/dedo haciendo clic */}
-          {!videoPlaying && (
+          {!videoPlaying && videoReady && (
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 pointer-events-none z-10">
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
