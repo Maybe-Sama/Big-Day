@@ -34,32 +34,41 @@ const Countdown = () => {
   ];
 
   return (
-    <div className="flex justify-between lg:justify-center items-center w-full px-4 sm:px-8 md:px-12 lg:gap-12 xl:gap-16">
+    <div className="flex justify-between lg:justify-center items-start w-full px-4 sm:px-8 md:px-12 lg:gap-12 xl:gap-16">
       {timeUnits.map((unit, index) => (
         <motion.div
           key={unit.label}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: index * 0.1 }}
-          className="relative flex flex-col items-center justify-center flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28"
+          className="flex flex-col items-center justify-start flex-shrink-0"
         >
-          {/* Corona individual detrás de cada número */}
-          <img 
-            src="/corona.png"
-            alt=""
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none scale-110 sm:scale-110"
-            style={{
-              objectPosition: 'center',
-            }}
-          />
-          
-          {/* Número con fondo transparente */}
-          <div className="relative z-10 text-2xl sm:text-3xl md:text-4xl font-playfair font-bold text-primary mb-1 sm:mb-2">
-            {unit.value.toString().padStart(2, "0")}
+          {/* Contenedor de la corona con el número */}
+          <div className="relative flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 mb-2 sm:mb-3">
+            {/* Corona individual detrás de cada número */}
+            <img 
+              src="/corona.png"
+              alt=""
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none scale-110 sm:scale-110"
+              style={{
+                objectPosition: 'center',
+              }}
+            />
+            
+            {/* Número centrado (punto intermedio) */}
+            <div 
+              className="relative z-10 text-2xl sm:text-3xl md:text-4xl font-playfair font-bold" 
+              style={{ 
+                color: 'rgb(98, 133, 169)',
+                transform: 'translateY(-8px)'
+              }}
+            >
+              {unit.value.toString().padStart(2, "0")}
+            </div>
           </div>
           
-          {/* Etiqueta */}
-          <div className="relative z-10 text-xs sm:text-xs md:text-sm text-muted-foreground uppercase tracking-wide text-center leading-tight">
+          {/* Etiqueta fuera de la imagen, debajo */}
+          <div className="text-xs sm:text-xs md:text-sm text-muted-foreground uppercase tracking-wide text-center leading-tight">
             {unit.label}
           </div>
         </motion.div>

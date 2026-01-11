@@ -4,51 +4,14 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
-
-const activities = [
-  {
-    time: "19:00",
-    title: "Llegada de Invitados",
-    description: "Recepción y bienvenida en los jardines de la hacienda",
-  },
-  {
-    time: "19:30",
-    title: "Ceremonia",
-    description: "Acto I: la casasión",
-  },
-  {
-    time: "20:00",
-    title: "Cóctel",
-    description: "Cóctel de bienvenida con canapés y bebidas",
-  },
-  {
-    time: "21:30",
-    title: "Cena",
-    description: "Cena de gala con menú de tres tiempos",
-  },
-  {
-    time: "23:30",
-    title: "Primer Baile",
-    description: "Primer baile de los novios y apertura de pista",
-  },
-  {
-    time: "00:00",
-    title: "Fiesta",
-    description: "Baile y celebración hasta la madrugada",
-  },
-  {
-    time: "03:00",
-    title: "Recena",
-    description: "Surtido de comida y bebidas",
-  },
-];
+import { activities } from "@/data/activities";
 
 const Actividades = () => {
   return (
     <PageLayout>
       <PageHeader
         title="Cronograma del Día"
-        description="Aquí encontrarás todos los detalles de las actividades del día más especial"
+        description="Aquí encontrarás los detalles de los momentos y actividades más especiales de la boda"
         variant="default"
       />
 

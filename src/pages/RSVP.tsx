@@ -19,44 +19,7 @@ import ErrorState from "@/components/common/ErrorState";
 import LoadingState from "@/components/common/LoadingState";
 import Countdown from "@/components/Countdown";
 import heroImage from "@/assets/hero-wedding.jpg";
-
-const activities = [
-  {
-    time: "19:00",
-    title: "Llegada de Invitados",
-    description: "Recepción y bienvenida en los jardines de la hacienda",
-  },
-  {
-    time: "19:30",
-    title: "Ceremonia",
-    description: "Ceremonia de boda al aire en el patio balinés",
-  },
-  {
-    time: "20:00",
-    title: "Cóctel",
-    description: "Cóctel de bienvenida con canapés y bebidas",
-  },
-  {
-    time: "21:30",
-    title: "Cena",
-    description: "Cena de gala con menú de tres tiempos",
-  },
-  {
-    time: "23:30",
-    title: "Primer Baile",
-    description: "Primer baile de los novios y apertura de pista",
-  },
-  {
-    time: "00:00",
-    title: "Fiesta",
-    description: "Baile y celebración hasta la madrugada",
-  },
-  {
-    time: "03:00",
-    title: "Recena",
-    description: "Surtido de comida y bebidas",
-  },
-];
+import { activities } from "@/data/activities";
 
 const RSVP = () => {
   const [searchParams] = useSearchParams();
@@ -885,7 +848,7 @@ const RSVP = () => {
           
           <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl px-4">
             <MapPin className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
-            <span className="text-center">Hacienda Las Yeguas, Fuentes de Andalucía, Sevilla</span>
+            <span className="text-center">Hacienda Las Yeguas<br />Fuentes de Andalucía, Sevilla</span>
           </div>
         </div>
         
@@ -984,7 +947,7 @@ const RSVP = () => {
               Cronograma del Día
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg px-4">
-              Aquí encontrarás todos los detalles de las actividades del día más especial
+              Aquí encontrarás los detalles de los momentos y actividades más especiales de la boda
             </p>
           </motion.div>
 
@@ -1094,16 +1057,18 @@ const RSVP = () => {
             className="relative w-full mb-6 sm:mb-8"
           >
             <div 
-              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[16/10] bg-cover bg-center bg-no-repeat"
+              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: 'url(/confirmar.png)' }}
             >
               {/* Contenedor para el texto centrado en el área negra */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10 md:px-12 lg:px-16">
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-8 sm:px-12 md:px-16 lg:px-20">
                 <h2 className="font-playfair text-xl sm:text-2xl md:text-3xl font-bold text-black text-center mb-2 sm:mb-3 leading-tight">
                   Confirma tu Asistencia
                 </h2>
-                <p className="text-black text-xs sm:text-sm md:text-base text-center max-w-xl leading-relaxed">
-                  Hola {grupo.invitadoPrincipal.nombre}, completa tu información para confirmar tu asistencia
+                <p className="text-black text-[10px] sm:text-xs md:text-sm text-center max-w-md leading-tight">
+                  <span className="block">Hola {grupo.invitadoPrincipal.nombre},</span>
+                  <span className="block">completa tu información</span>
+                  <span className="block">para confirmar tu asistencia</span>
                 </p>
               </div>
             </div>

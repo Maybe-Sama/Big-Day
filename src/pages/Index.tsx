@@ -6,44 +6,7 @@ import Countdown from "@/components/Countdown";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
 import heroImage from "@/assets/hero-wedding.jpg";
-
-const activities = [
-  {
-    time: "19:00",
-    title: "Llegada de Invitados",
-    description: "Recepción y bienvenida en los jardines de la hacienda",
-  },
-  {
-    time: "19:30",
-    title: "Ceremonia",
-    description: "Acto emotivo donde los novios pronuncian sus votos",
-  },
-  {
-    time: "20:00",
-    title: "Cóctel",
-    description: "Aperitivos de bienvenida con canapés y bebidas",
-  },
-  {
-    time: "21:30",
-    title: "Cena",
-    description: "Cena de gala con menú de tres tiempos",
-  },
-  {
-    time: "23:30",
-    title: "Primer Baile",
-    description: "Primer baile de los novios y apertura de pista",
-  },
-  {
-    time: "00:00",
-    title: "Fiesta",
-    description: "Baile y celebración hasta la madrugada",
-  },
-  {
-    time: "03:00",
-    title: "Recena",
-    description: "Surtido de comida y bebidas",
-  },
-];
+import { activities } from "@/data/activities";
 
 const Index = () => {
   return (
@@ -63,7 +26,7 @@ const Index = () => {
           
           <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl px-4">
             <MapPin className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
-            <span className="text-center">Hacienda Las Yeguas, Fuentes de Andalucía, Sevilla</span>
+            <span className="text-center">Hacienda Las Yeguas<br />Fuentes de Andalucía, Sevilla</span>
           </div>
         </div>
         
@@ -162,7 +125,7 @@ const Index = () => {
               Cronograma del Día
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg px-4">
-              Aquí encontrarás todos los detalles de las actividades del día más especial
+              Aquí encontrarás los detalles de los momentos y actividades más especiales de la boda
             </p>
           </motion.div>
 
