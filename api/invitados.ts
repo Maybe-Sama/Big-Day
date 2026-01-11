@@ -80,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const grupos = await redis.get<unknown[]>(DB_KEY) || [];
       const filtered = grupos.filter((g: any) => g.id !== id);
-      await kv.set(DB_KEY, filtered);
+      await redis.set(DB_KEY, filtered);
       return res.status(200).json({ success: true });
     }
 
