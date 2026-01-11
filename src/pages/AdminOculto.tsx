@@ -148,13 +148,30 @@ const AdminOculto = () => {
 
       const data = await response.json();
       if (data.ok) {
-        setIsLoggedIn(true);
-        setAdminKeyInput('');
-        loadAllData();
-        toast({
-          title: "Sesión iniciada",
-          description: "Has iniciado sesión correctamente",
-        });
+        // Verificar inmediatamente que la sesión funciona
+        try {
+          const gruposData = await dbService.getAllGrupos();
+          // Si llegamos aquí, la sesión funciona
+          setIsLoggedIn(true);
+          setAdminKeyInput('');
+          loadAllData();
+          toast({
+            title: "Sesión iniciada",
+            description: "Has iniciado sesión correctamente",
+          });
+        } catch (sessionError: any) {
+          // Si falla con 401, la cookie no se creó o no se está enviando
+          if (sessionError.message.includes('401') || sessionError.message.includes('No autorizado')) {
+            toast({
+              title: "Error de sesión",
+              description: "Sesión no creada correctamente. Revisa que las cookies estén habilitadas en tu navegador.",
+              variant: "destructive",
+            });
+            console.error('[Login] La sesión no se creó correctamente. Verifica Set-Cookie en la respuesta del login.');
+          } else {
+            throw sessionError;
+          }
+        }
       }
     } catch (error: any) {
       toast({
@@ -517,6 +534,58 @@ const AdminOculto = () => {
     grupo.invitadoPrincipal.apellidos.toLowerCase().includes(searchTerm.toLowerCase()) ||
     grupo.invitadoPrincipal.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Pantalla de carga mientras verifica sesión
+  if (isCheckingSession) {
+    return (
+      <PageLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Verificando sesión...</p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Pantalla de login
+  if (!isLoggedIn) {
+    return (
+      <PageLayout>
+        <div className="flex items-center justify-center min-h-screen p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-2xl text-center">Panel de Administración</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="adminKey">Clave de Administración</Label>
+                  <Input
+                    id="adminKey"
+                    type="password"
+                    value={adminKeyInput}
+                    onChange={(e) => setAdminKeyInput(e.target.value)}
+                    placeholder="Introduce la clave de administración"
+                    disabled={isLoggingIn}
+                    autoFocus
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoggingIn}>
+                  {isLoggingIn ? "Iniciando sesión..." : "Iniciar Sesión"}
+                </Button>
+              </form>
+              <div className="mt-4 p-3 bg-muted rounded-md text-sm text-muted-foreground">
+                <p className="font-semibold mb-1">⚠️ Nota importante:</p>
+                <p>Este panel requiere cookies habilitadas. Si tienes problemas al iniciar sesión, verifica que tu navegador permita cookies para este sitio.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>

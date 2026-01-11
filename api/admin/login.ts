@@ -64,7 +64,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await redis.setex(sessionKey, SESSION_TTL, '1');
 
     // Establecer cookie HttpOnly
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Detectar HTTPS: en Vercel usar x-forwarded-proto, en local usar NODE_ENV
+    const isHttps = req.headers['x-forwarded-proto'] === 'https' || 
+                    process.env.NODE_ENV === 'production' ||
+                    req.headers['x-forwarded-proto'] === 'https';
+    
     const cookieOptions = [
       `admin_session=${sessionToken}`,
       'HttpOnly',
@@ -73,9 +77,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `Max-Age=${SESSION_TTL}`,
     ];
 
-    if (isProduction) {
+    if (isHttps) {
       cookieOptions.push('Secure');
     }
+
+    console.log('[Admin Login] Cookie configurada:', {
+      secure: isHttps,
+      hasToken: !!sessionToken,
+      tokenLength: sessionToken.length,
+    });
 
     res.setHeader('Set-Cookie', cookieOptions.join('; '));
 

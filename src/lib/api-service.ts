@@ -10,7 +10,7 @@ class ApiService {
     try {
       const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
-        credentials: requireAuth ? 'include' : 'same-origin', // Incluir cookies en llamadas privadas
+        credentials: 'include', // SIEMPRE incluir cookies para que funcionen en todos los casos
         headers: {
           'Content-Type': 'application/json',
           ...options?.headers,

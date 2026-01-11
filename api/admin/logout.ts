@@ -43,7 +43,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Limpiar cookie (Max-Age=0)
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isHttps = req.headers['x-forwarded-proto'] === 'https' || 
+                    process.env.NODE_ENV === 'production';
+    
     const cookieOptions = [
       `admin_session=`,
       'HttpOnly',
@@ -52,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       'Max-Age=0',
     ];
 
-    if (isProduction) {
+    if (isHttps) {
       cookieOptions.push('Secure');
     }
 
