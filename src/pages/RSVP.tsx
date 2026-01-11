@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, X, Play, Hand, Calendar, MapPin, ArrowRight, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, Play, Hand, Calendar, MapPin, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,6 +72,7 @@ const RSVP = () => {
   const [showVideo, setShowVideo] = useState(true);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Resetear el estado del video cada vez que se monta el componente (incluye refrescos)
   useEffect(() => {
@@ -79,6 +80,24 @@ const RSVP = () => {
     setVideoPlaying(false);
     console.log("Componente RSVP montado - mostrando primer frame del video");
   }, []); // Ejecutar solo al montar el componente
+
+  // Reproducir música de fondo automáticamente
+  useEffect(() => {
+    const playAudio = async () => {
+      if (audioRef.current) {
+        try {
+          audioRef.current.volume = 0.5; // Ajustar volumen al 50%
+          await audioRef.current.play();
+          console.log("Música de fondo iniciada");
+        } catch (error) {
+          console.warn("No se pudo reproducir el audio automáticamente (puede requerir interacción del usuario):", error);
+          // Intentar reproducir cuando el usuario haga clic en el video
+        }
+      }
+    };
+
+    playAudio();
+  }, []);
 
   // Cargar el primer frame del video sin reproducirlo
   useEffect(() => {
@@ -122,6 +141,16 @@ const RSVP = () => {
         setVideoPlaying(true);
         await videoRef.current.play();
         console.log("Video iniciado por clic del usuario");
+        
+        // Intentar reproducir el audio si no se ha iniciado automáticamente
+        if (audioRef.current && audioRef.current.paused) {
+          try {
+            await audioRef.current.play();
+            console.log("Música de fondo iniciada por interacción del usuario");
+          } catch (audioErr) {
+            console.warn("No se pudo reproducir el audio:", audioErr);
+          }
+        }
       } catch (err) {
         console.error("Error al iniciar el video:", err);
         setVideoPlaying(false);
@@ -479,9 +508,16 @@ const RSVP = () => {
   if (showVideo) {
     return (
       <PageLayout>
+        <audio
+          ref={audioRef}
+          src="/sounds/love.mp3"
+          loop
+          preload="auto"
+        />
         <div 
-          className="fixed inset-0 z-50 bg-black flex items-center justify-center cursor-pointer"
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center cursor-pointer m-0 p-0"
           onClick={handleVideoClick}
+          style={{ width: '100vw', height: '100vh', maxWidth: '100%', maxHeight: '100%' }}
         >
           <video
             ref={videoRef}
@@ -489,7 +525,8 @@ const RSVP = () => {
             playsInline
             preload="auto"
             loop={false}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover min-w-full min-h-full"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onClick={(e) => {
               // Prevenir que el clic se propague al contenedor si ya está reproduciéndose
               e.stopPropagation();
@@ -586,18 +623,6 @@ const RSVP = () => {
               </motion.div>
             </div>
           )}
-          {/* Botón para saltar el video */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log("Saltando video manualmente");
-              setShowVideo(false);
-            }}
-            className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
-            aria-label="Saltar video"
-          >
-            <X className="w-6 h-6" />
-          </button>
         </div>
       </PageLayout>
     );
@@ -606,6 +631,12 @@ const RSVP = () => {
   if (loading) {
     return (
       <PageLayout>
+        <audio
+          ref={audioRef}
+          src="/sounds/love.mp3"
+          loop
+          preload="auto"
+        />
         <LoadingState message="Cargando invitación..." />
       </PageLayout>
     );
@@ -614,6 +645,12 @@ const RSVP = () => {
   if (!token || !grupo) {
     return (
       <PageLayout>
+        <audio
+          ref={audioRef}
+          src="/sounds/love.mp3"
+          loop
+          preload="auto"
+        />
         <ErrorState
           title="Token no encontrado"
           description={
@@ -634,6 +671,12 @@ const RSVP = () => {
 
     return (
       <PageLayout>
+        <audio
+          ref={audioRef}
+          src="/sounds/love.mp3"
+          loop
+          preload="auto"
+        />
         <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4">
           <div className="container mx-auto max-w-2xl">
             <motion.div
@@ -676,6 +719,12 @@ const RSVP = () => {
 
   return (
     <PageLayout>
+      <audio
+        ref={audioRef}
+        src="/sounds/love.mp3"
+        loop
+        preload="auto"
+      />
       {/* Hero Section */}
       <PageHeader
         title="Virginia & Alejandro"
