@@ -618,7 +618,7 @@ const RSVP = () => {
               }
             }}
             onLoadStart={() => {
-              console.log("Iniciando carga del video desde:", "/invi.mov");
+              console.log("Iniciando carga del video desde:", "/invi.mp4");
               setVideoReady(false);
             }}
             onLoadedMetadata={() => {
@@ -644,9 +644,9 @@ const RSVP = () => {
               console.log("Video esperando datos...");
             }}
           >
-            <source src="/invi.mov" type="video/quicktime" />
-            <source src="/invi.mov" type="video/mp4" />
-            <source src="/invi.mov" type="video/x-m4v" />
+            <source src="/invi.mp4" type="video/quicktime" />
+            <source src="/invi.mp4" type="video/mp4" />
+            <source src="/invi.mp4" type="video/x-m4v" />
             Tu navegador no soporta la reproducción de video.
           </video>
           {/* Loader con corona.png rotando mientras carga el video */}
