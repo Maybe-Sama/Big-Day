@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useSearchParams, Navigate } from "react-router-dom";
 import { Users, Mail, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, Eye, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2 } from "lucide-react";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
@@ -34,29 +33,7 @@ import { ConfiguracionBuses } from "@/types/bus";
 import { ConfiguracionMesas } from "@/types/mesas";
 import { CarreraFotos, TODAS_LAS_MISIONES } from "@/types/carrera-fotos";
 
-// Obtener la clave de administración desde variables de entorno
-// Vite expone las variables con prefijo VITE_ a través de import.meta.env
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY;
-
-// Debug: Log para verificar que la variable se carga correctamente (solo en desarrollo)
-if (import.meta.env.DEV) {
-  console.log("[Admin Panel] Variable de entorno cargada:", ADMIN_KEY ? "✓ Configurada" : "✗ No configurada");
-  if (ADMIN_KEY) {
-    console.log("[Admin Panel] Clave esperada:", ADMIN_KEY.substring(0, 4) + "****");
-  }
-}
-
-// Validar que la variable de entorno esté configurada
-if (!ADMIN_KEY) {
-  console.error(
-    "ERROR CRÍTICO: VITE_ADMIN_KEY no está configurada en las variables de entorno. " +
-    "Por favor, crea un archivo .env con VITE_ADMIN_KEY=tu_clave_secreta y reinicia el servidor."
-  );
-}
-
 const AdminOculto = () => {
-  const [searchParams] = useSearchParams();
-  const key = searchParams.get("key");
   const { toast } = useToast();
   
   const [grupos, setGrupos] = useState<GrupoInvitados[]>([]);
@@ -83,55 +60,153 @@ const AdminOculto = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [carreras, setCarreras] = useState<CarreraFotos[]>([]);
   const [showCarreras, setShowCarreras] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [adminKeyInput, setAdminKeyInput] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
 
+  // Verificar sesión al cargar
   useEffect(() => {
-    // Validar que la clave de administración esté configurada
-    if (!ADMIN_KEY) {
+    checkSession();
+  }, []);
+
+  const checkSession = async () => {
+    try {
+      // Intentar cargar datos para verificar si hay sesión activa
+      const gruposData = await dbService.getAllGrupos();
+      setIsLoggedIn(true);
+      loadAllData();
+    } catch (error: any) {
+      // Si es 401, no hay sesión
+      if (error.message.includes('401') || error.message.includes('No autorizado')) {
+        setIsLoggedIn(false);
+      } else {
+        // Otro error, mostrar toast
+        toast({
+          title: "Error",
+          description: "No se pudo verificar la sesión. Inténtalo más tarde.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsCheckingSession(false);
+    }
+  };
+
+  const loadAllData = async () => {
+    loadGrupos();
+    
+    // Cargar configuración de mesas
+    const loadMesasConfig = async () => {
+      try {
+        const mesasConfig = await dbService.getConfiguracionMesas();
+        setConfigMesas(mesasConfig);
+      } catch (error) {
+        console.error('Error cargando configuración de mesas:', error);
+      }
+    };
+    loadMesasConfig();
+
+    // Cargar carreras de fotos
+    const loadCarreras = async () => {
+      try {
+        const carrerasData = await dbService.getAllCarreras();
+        setCarreras(carrerasData);
+      } catch (error) {
+        console.error('Error cargando carreras:', error);
+      }
+    };
+    loadCarreras();
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminKeyInput.trim()) {
       toast({
-        title: "Error de configuración",
-        description: "La clave de administración no está configurada. Contacta al administrador del sistema.",
+        title: "Error",
+        description: "Por favor, introduce la clave de administración",
         variant: "destructive",
       });
       return;
     }
 
-    // Debug: Log para verificar la comparación de claves (solo en desarrollo)
-    if (import.meta.env.DEV) {
-      console.log("[Admin Panel] Clave recibida en URL:", key ? key.substring(0, 4) + "****" : "ninguna");
-      console.log("[Admin Panel] Clave esperada:", ADMIN_KEY.substring(0, 4) + "****");
-      console.log("[Admin Panel] ¿Coinciden?:", key === ADMIN_KEY);
-    }
+    setIsLoggingIn(true);
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ key: adminKeyInput }),
+      });
 
-    if (key === ADMIN_KEY) {
-      loadGrupos();
-      
-      // Cargar configuración de mesas para mostrar en las cards/tabla
-      const loadMesasConfig = async () => {
-        try {
-          const mesasConfig = await dbService.getConfiguracionMesas();
-          setConfigMesas(mesasConfig);
-        } catch (error) {
-          console.error('Error cargando configuración de mesas:', error);
-        }
-      };
-      loadMesasConfig();
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(error.error || 'Error al iniciar sesión');
+      }
 
-      // Cargar carreras de fotos
-      const loadCarreras = async () => {
-        try {
-          const carrerasData = await dbService.getAllCarreras();
-          setCarreras(carrerasData);
-        } catch (error) {
-          console.error('Error cargando carreras:', error);
-        }
-      };
-      loadCarreras();
+      const data = await response.json();
+      if (data.ok) {
+        setIsLoggedIn(true);
+        setAdminKeyInput('');
+        loadAllData();
+        toast({
+          title: "Sesión iniciada",
+          description: "Has iniciado sesión correctamente",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error de autenticación",
+        description: error.message || "La clave de administración es incorrecta",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingIn(false);
     }
-  }, [key, toast]);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/admin/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        setIsLoggedIn(false);
+        setGrupos([]);
+        setStats({
+          totalGrupos: 0,
+          totalPersonas: 0,
+          confirmados: 0,
+          pendientes: 0,
+          rechazados: 0,
+          totalAsistentes: 0,
+          parejas: 0,
+          hijos: 0,
+        });
+        setConfigBuses(null);
+        setConfigMesas(null);
+        setCarreras([]);
+        toast({
+          title: "Sesión cerrada",
+          description: "Has cerrado sesión correctamente",
+        });
+      }
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cerrar sesión. Inténtalo más tarde.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const loadGrupos = async () => {
     try {
-      await dbService.init();
       
       // Cargar datos
       const gruposData = await dbService.getAllGrupos();
@@ -174,7 +249,7 @@ const AdminOculto = () => {
     try {
       console.log("Iniciando guardado en base de datos...");
       await dbService.saveGrupo(grupo);
-      console.log("✅ Grupo guardado exitosamente en IndexedDB");
+      console.log("✅ Grupo guardado exitosamente");
       
       console.log("Recargando grupos...");
       await loadGrupos();
@@ -443,39 +518,21 @@ const AdminOculto = () => {
     grupo.invitadoPrincipal.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Validar que la clave de administración esté configurada
-  if (!ADMIN_KEY) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center p-8">
-          <h1 className="text-2xl font-bold text-destructive mb-4">
-            Error de Configuración
-          </h1>
-          <p className="text-muted-foreground">
-            La clave de administración no está configurada en las variables de entorno.
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Por favor, crea un archivo .env con VITE_ADMIN_KEY=tu_clave_secreta
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (key !== ADMIN_KEY) {
-    return <Navigate to="/" replace />;
-  }
-
   return (
     <PageLayout>
       <div className="pt-12 sm:pt-14 md:pt-16 pb-8 sm:pb-12 md:pb-16 px-3 sm:px-4">
         <div className="container mx-auto max-w-7xl">
-          <PageHeader
-            title="Panel de los Novios"
-            description="Gestiona tus invitados y confirmaciones"
-            variant="simple"
-            className="pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6"
-          />
+          <div className="flex justify-between items-center pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6">
+            <PageHeader
+              title="Panel de los Novios"
+              description="Gestiona tus invitados y confirmaciones"
+              variant="simple"
+              className="pb-0"
+            />
+            <Button variant="outline" onClick={handleLogout} className="ml-4">
+              Cerrar Sesión
+            </Button>
+          </div>
 
           {/* Stats */}
           <motion.div

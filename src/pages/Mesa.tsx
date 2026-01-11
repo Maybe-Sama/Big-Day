@@ -59,7 +59,6 @@ const Mesa = () => {
       }
 
       try {
-        await dbService.init();
         
         // Cargar configuración de mesas primero
         const mesasConfig = await dbService.getConfiguracionMesas();

@@ -1,7 +1,6 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_ADMIN_KEY: string;
   readonly VITE_PUBLIC_URL?: string;
 }
 

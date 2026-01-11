@@ -11,7 +11,6 @@ export const generateToken = (): string => {
 
 export const validateToken = async (token: string): Promise<boolean> => {
   try {
-    await dbService.init();
     const grupo = await dbService.getGrupoByToken(token);
     return !!grupo;
   } catch (error) {
@@ -22,7 +21,6 @@ export const validateToken = async (token: string): Promise<boolean> => {
 
 export const getInvitadoByToken = async (token: string) => {
   try {
-    await dbService.init();
     const grupo = await dbService.getGrupoByToken(token);
     return grupo;
   } catch (error) {

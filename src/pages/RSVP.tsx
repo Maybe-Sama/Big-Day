@@ -137,7 +137,6 @@ const RSVP = () => {
       }
 
       try {
-        await dbService.init();
         const grupoData = await dbService.getGrupoByToken(token);
         
         if (!grupoData) {
@@ -152,9 +151,11 @@ const RSVP = () => {
         setConfigBuses(busesConfig);
         
         setLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading grupo:", error);
+        // El error ya viene con mensaje claro de api-service
         setLoading(false);
+        // El error se mostrará en el ErrorState si grupoData es null
       }
     };
 
@@ -618,7 +619,7 @@ const RSVP = () => {
           description={
             !token 
               ? "No se proporcionó un token de invitación. Por favor, usa el enlace completo que te enviaron."
-              : "El token de invitación no se encontró en la base de datos. Esto puede ocurrir si el enlace fue creado en otro dispositivo. Los datos están almacenados localmente en cada navegador."
+              : "Token no encontrado."
           }
         />
       </PageLayout>

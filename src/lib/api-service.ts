@@ -6,27 +6,54 @@ import { CarreraFotos } from '@/types/carrera-fotos';
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 class ApiService {
-  private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    });
+  private async fetchApi<T>(endpoint: string, options?: RequestInit, requireAuth: boolean = false): Promise<T> {
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        credentials: requireAuth ? 'include' : 'same-origin', // Incluir cookies en llamadas privadas
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+      });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
-      throw new Error(error.error || `HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        // Intentar parsear error como JSON
+        let errorMessage = 'Error desconocido';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+        } catch {
+          // Si no es JSON, usar el status
+          if (response.status === 404) {
+            errorMessage = 'Token no encontrado';
+          } else if (response.status === 401) {
+            errorMessage = 'No autorizado';
+          } else if (response.status >= 500) {
+            errorMessage = 'Servidor no disponible. Reintenta más tarde.';
+          } else {
+            errorMessage = `Error ${response.status}`;
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error: any) {
+      // Si es error de red (fetch falla)
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('No se pudo conectar con el servidor. Inténtalo más tarde.');
+      }
+      // Re-lanzar otros errores
+      throw error;
     }
-
-    return response.json();
   }
 
   // ========== GRUPOS DE INVITADOS ==========
 
   async getAllGrupos(): Promise<GrupoInvitados[]> {
-    return this.fetchApi<GrupoInvitados[]>('/invitados');
+    // Requiere admin key (llamada privada)
+    return this.fetchApi<GrupoInvitados[]>('/invitados', undefined, true);
   }
 
   async getGrupoById(id: string): Promise<GrupoInvitados | null> {
@@ -36,7 +63,8 @@ class ApiService {
 
   async getGrupoByToken(token: string): Promise<GrupoInvitados | null> {
     try {
-      return await this.fetchApi<GrupoInvitados>(`/invitados/${token}`);
+      // NO requiere admin key (llamada pública)
+      return await this.fetchApi<GrupoInvitados>(`/invitados?token=${encodeURIComponent(token)}`, undefined, false);
     } catch (error: any) {
       if (error.message.includes('404') || error.message.includes('no encontrado')) {
         return null;
@@ -46,16 +74,18 @@ class ApiService {
   }
 
   async saveGrupo(grupo: GrupoInvitados): Promise<void> {
+    // Requiere admin key (llamada privada)
     await this.fetchApi('/invitados', {
       method: 'POST',
       body: JSON.stringify(grupo),
-    });
+    }, true);
   }
 
   async deleteGrupo(id: string): Promise<void> {
+    // Requiere admin key (llamada privada)
     await this.fetchApi(`/invitados?id=${id}`, {
       method: 'DELETE',
-    });
+    }, true);
   }
 
   async getStats(): Promise<InvitadoStats> {
@@ -114,10 +144,11 @@ class ApiService {
   }
 
   async saveConfiguracionBuses(config: ConfiguracionBuses): Promise<void> {
+    // Requiere admin key (llamada privada)
     await this.fetchApi('/config/buses', {
       method: 'POST',
       body: JSON.stringify(config),
-    });
+    }, true);
   }
 
   // ========== CONFIGURACIÓN DE MESAS ==========
@@ -134,10 +165,11 @@ class ApiService {
   }
 
   async saveConfiguracionMesas(config: ConfiguracionMesas): Promise<void> {
+    // Requiere admin key (llamada privada)
     await this.fetchApi('/config/mesas', {
       method: 'POST',
       body: JSON.stringify(config),
-    });
+    }, true);
   }
 
   // ========== CARRERAS DE FOTOS ==========
@@ -173,10 +205,11 @@ class ApiService {
       carreras.push(carrera);
     }
 
+    // Requiere admin key (llamada privada)
     await this.fetchApi('/carreras', {
       method: 'POST',
       body: JSON.stringify(carreras),
-    });
+    }, true);
   }
 
   // ========== EXPORT/IMPORT ==========

@@ -2,7 +2,6 @@ import { dbService } from './database';
 
 export const clearAllData = async (): Promise<void> => {
   try {
-    await dbService.init();
     const grupos = await dbService.getAllGrupos();
     
     // Eliminar todos los grupos
