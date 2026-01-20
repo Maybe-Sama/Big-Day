@@ -552,283 +552,224 @@ const RSVP = () => {
   // Mostrar video primero cuando se entra a la página
   if (showVideo) {
     return (
-      <div className="min-h-screen w-full bg-neutral-950">
+      <PageLayout>
         <audio
           ref={audioRef}
           src="/sounds/love.mp3"
           loop
           preload="auto"
         />
-        <div className="min-h-screen w-full flex items-center justify-center p-3 md:p-8">
-          <div
-            className="
-              w-full
-              md:aspect-[9/16]
-              md:h-[92vh]
-              md:w-auto
-              md:max-w-[520px]
-              overflow-hidden
-              rounded-2xl
-              bg-black
-              shadow-2xl
-              ring-1 ring-white/10
-            "
+        <div 
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center cursor-pointer m-0 p-0"
+          onClick={handleVideoClick}
+          style={{ width: '100vw', height: '100vh', maxWidth: '100%', maxHeight: '100%' }}
+        >
+          <video
+            ref={videoRef}
+            muted
+            playsInline
+            preload={isIOS ? "metadata" : "auto"}
+            loop={false}
+            className={`w-full h-full object-cover min-w-full min-h-full transition-opacity duration-300 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onClick={(e) => {
+              // Prevenir que el clic se propague al contenedor si ya está reproduciéndose
+              e.stopPropagation();
+              if (!videoPlaying && videoRef.current) {
+                handleVideoClick();
+              }
+            }}
+            onEnded={() => {
+              console.log("Video terminado");
+              setShowVideo(false);
+            }}
+            onError={(e) => {
+              const video = e.currentTarget;
+              const error = video.error;
+              console.error("Error al reproducir el video:", {
+                code: error?.code,
+                message: error?.message,
+                mediaError: error
+              });
+              // No ocultar automáticamente el video si hay error
+              // Solo mostrar el error en consola, el usuario puede cerrarlo manualmente
+            }}
+            onLoadedData={() => {
+              console.log("Video cargado correctamente - mostrando primer frame");
+              // Asegurar que el video muestre el primer frame y esté pausado
+              if (videoRef.current && !videoPlaying) {
+                videoRef.current.currentTime = 0;
+                videoRef.current.pause(); // Asegurar que esté pausado
+                setVideoReady(true);
+              }
+            }}
+            onCanPlay={() => {
+              console.log("Video listo para reproducir - primer frame visible");
+              // Asegurar que el video muestre el primer frame y esté pausado
+              if (videoRef.current && !videoPlaying) {
+                videoRef.current.currentTime = 0;
+                videoRef.current.pause(); // Asegurar que esté pausado
+                setVideoReady(true);
+              }
+            }}
+            onPlay={() => {
+              // Si el video se reproduce sin que el usuario haya hecho clic, pausarlo
+              if (!videoPlaying && videoRef.current) {
+                console.warn("Video intentó reproducirse automáticamente, pausando...");
+                videoRef.current.pause();
+              }
+            }}
+            onLoadStart={() => {
+              console.log("Iniciando carga del video desde:", "/invi.mp4");
+              setVideoReady(false);
+            }}
+            onLoadedMetadata={() => {
+              console.log("Metadata del video cargada");
+              // Establecer el tiempo a 0 tan pronto como tengamos metadata
+              if (videoRef.current && !videoPlaying) {
+                videoRef.current.currentTime = 0;
+                videoRef.current.pause();
+                // En iOS, si tenemos metadata después de interacción, intentar mostrar
+                if (isIOS && userInteracted && videoRef.current.readyState >= 1) {
+                  setTimeout(() => {
+                    if (videoRef.current && videoRef.current.readyState >= 2) {
+                      setVideoReady(true);
+                    }
+                  }, 200);
+                }
+              }
+            }}
+            onStalled={() => {
+              console.warn("Video se ha detenido (stalled)");
+            }}
+            onWaiting={() => {
+              console.log("Video esperando datos...");
+            }}
           >
-            <div className="h-full w-full relative">
-              <div 
-                className="h-full w-full bg-black flex items-center justify-center cursor-pointer"
-                onClick={handleVideoClick}
-              >
-                <video
-                  ref={videoRef}
-                  muted
-                  playsInline
-                  preload={isIOS ? "metadata" : "auto"}
-                  loop={false}
-                  className={`h-full w-full object-cover transition-opacity duration-300 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
-                  onClick={(e) => {
-                    // Prevenir que el clic se propague al contenedor si ya está reproduciéndose
-                    e.stopPropagation();
-                    if (!videoPlaying && videoRef.current) {
-                      handleVideoClick();
-                    }
+            <source src="/invi.mp4" type="video/quicktime" />
+            <source src="/invi.mp4" type="video/mp4" />
+            <source src="/invi.mp4" type="video/x-m4v" />
+            Tu navegador no soporta la reproducción de video.
+          </video>
+          {/* Loader con corona.png rotando mientras carga el video */}
+          {!videoReady && (
+            <div 
+              className={`absolute inset-0 bg-black flex items-center justify-center z-20 ${isIOS ? 'cursor-pointer' : ''}`}
+              onClick={(e) => {
+                if (isIOS) {
+                  e.stopPropagation();
+                  handleLoaderClick();
+                }
+              }}
+            >
+              <div className="relative flex items-center justify-center">
+                {/* Corona rotando */}
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear"
                   }}
-                  onEnded={() => {
-                    console.log("Video terminado");
-                    setShowVideo(false);
-                  }}
-                  onError={(e) => {
-                    const video = e.currentTarget;
-                    const error = video.error;
-                    console.error("Error al reproducir el video:", {
-                      code: error?.code,
-                      message: error?.message,
-                      mediaError: error
-                    });
-                    // No ocultar automáticamente el video si hay error
-                    // Solo mostrar el error en consola, el usuario puede cerrarlo manualmente
-                  }}
-                  onLoadedData={() => {
-                    console.log("Video cargado correctamente - mostrando primer frame");
-                    // Asegurar que el video muestre el primer frame y esté pausado
-                    if (videoRef.current && !videoPlaying) {
-                      videoRef.current.currentTime = 0;
-                      videoRef.current.pause(); // Asegurar que esté pausado
-                      setVideoReady(true);
-                    }
-                  }}
-                  onCanPlay={() => {
-                    console.log("Video listo para reproducir - primer frame visible");
-                    // Asegurar que el video muestre el primer frame y esté pausado
-                    if (videoRef.current && !videoPlaying) {
-                      videoRef.current.currentTime = 0;
-                      videoRef.current.pause(); // Asegurar que esté pausado
-                      setVideoReady(true);
-                    }
-                  }}
-                  onPlay={() => {
-                    // Si el video se reproduce sin que el usuario haya hecho clic, pausarlo
-                    if (!videoPlaying && videoRef.current) {
-                      console.warn("Video intentó reproducirse automáticamente, pausando...");
-                      videoRef.current.pause();
-                    }
-                  }}
-                  onLoadStart={() => {
-                    console.log("Iniciando carga del video desde:", "/invi.mp4");
-                    setVideoReady(false);
-                  }}
-                  onLoadedMetadata={() => {
-                    console.log("Metadata del video cargada");
-                    // Establecer el tiempo a 0 tan pronto como tengamos metadata
-                    if (videoRef.current && !videoPlaying) {
-                      videoRef.current.currentTime = 0;
-                      videoRef.current.pause();
-                      // En iOS, si tenemos metadata después de interacción, intentar mostrar
-                      if (isIOS && userInteracted && videoRef.current.readyState >= 1) {
-                        setTimeout(() => {
-                          if (videoRef.current && videoRef.current.readyState >= 2) {
-                            setVideoReady(true);
-                          }
-                        }, 200);
-                      }
-                    }
-                  }}
-                  onStalled={() => {
-                    console.warn("Video se ha detenido (stalled)");
-                  }}
-                  onWaiting={() => {
-                    console.log("Video esperando datos...");
-                  }}
+                  className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40"
                 >
-                  <source src="/invi.mp4" type="video/quicktime" />
-                  <source src="/invi.mp4" type="video/mp4" />
-                  <source src="/invi.mp4" type="video/x-m4v" />
-                  Tu navegador no soporta la reproducción de video.
-                </video>
+                  <img
+                    src="/corona.png"
+                    alt="Cargando..."
+                    className="w-full h-full object-contain"
+                  />
+                </motion.div>
               </div>
-              {/* Loader con corona.png rotando mientras carga el video */}
-              {!videoReady && (
-                <div 
-                  className={`absolute inset-0 bg-black flex items-center justify-center z-20 ${isIOS ? 'cursor-pointer' : ''}`}
-                  onClick={(e) => {
-                    if (isIOS) {
-                      e.stopPropagation();
-                      handleLoaderClick();
-                    }
+              {/* Texto indicativo solo en iOS */}
+              {isIOS && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
                   }}
+                  className="absolute bottom-8 sm:bottom-12 text-white text-sm sm:text-base opacity-75 text-center px-4"
                 >
-                  <div className="relative flex items-center justify-center">
-                    {/* Corona rotando */}
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "linear"
-                      }}
-                      className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40"
-                    >
-                      <img
-                        src="/corona.png"
-                        alt="Cargando..."
-                        className="w-full h-full object-contain"
-                      />
-                    </motion.div>
-                  </div>
-                  {/* Texto indicativo solo en iOS */}
-                  {isIOS && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                      className="absolute bottom-8 sm:bottom-12 text-white text-sm sm:text-base opacity-75 text-center px-4"
-                    >
-                      Toca para cargar el video
-                    </motion.p>
-                  )}
-                </div>
-              )}
-              {/* Animación de puntero/dedo haciendo clic */}
-              {!videoPlaying && videoReady && (
-                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 pointer-events-none z-10">
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ 
-                      opacity: [0, 1, 1, 1],
-                      y: [0, 0, 8, 0],
-                      scale: [1, 1, 0.9, 1]
-                    }}
-                    transition={{
-                      opacity: { duration: 0.5 },
-                      y: {
-                        duration: 1.5,
-                        repeat: Infinity,
-                        repeatDelay: 1,
-                        ease: "easeInOut"
-                      },
-                      scale: {
-                        duration: 1.5,
-                        repeat: Infinity,
-                        repeatDelay: 1,
-                        ease: "easeInOut"
-                      }
-                    }}
-                    className="relative w-fit h-fit"
-                  >
-                    <Hand 
-                      className="w-8 h-8 drop-shadow-[0_0_10px_rgba(0,0,0,0.8),0_2px_4px_rgba(0,0,0,0.5)]" 
-                      fill="none"
-                      stroke="currentColor"
-                      style={{ color: 'rgb(180, 170, 150)' }}
-                    />
-                  </motion.div>
-                </div>
+                  Toca para cargar el video
+                </motion.p>
               )}
             </div>
-          </div>
+          )}
+          {/* Animación de puntero/dedo haciendo clic */}
+          {!videoPlaying && videoReady && (
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 pointer-events-none z-10">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ 
+                  opacity: [0, 1, 1, 1],
+                  y: [0, 0, 8, 0],
+                  scale: [1, 1, 0.9, 1]
+                }}
+                transition={{
+                  opacity: { duration: 0.5 },
+                  y: {
+                    duration: 1.5,
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                    ease: "easeInOut"
+                  },
+                  scale: {
+                    duration: 1.5,
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                    ease: "easeInOut"
+                  }
+                }}
+                className="relative w-fit h-fit"
+              >
+                <Hand 
+                  className="w-8 h-8 drop-shadow-[0_0_10px_rgba(0,0,0,0.8),0_2px_4px_rgba(0,0,0,0.5)]" 
+                  fill="none"
+                  stroke="currentColor"
+                  style={{ color: 'rgb(180, 170, 150)' }}
+                />
+              </motion.div>
+            </div>
+          )}
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-neutral-950">
-        <div className="min-h-screen w-full flex items-center justify-center p-3 md:p-8">
-          <div
-            className="
-              w-full
-              md:aspect-[9/16]
-              md:h-[92vh]
-              md:w-auto
-              md:max-w-[520px]
-              overflow-hidden
-              rounded-2xl
-              bg-black
-              shadow-2xl
-              ring-1 ring-white/10
-            "
-          >
-            <div className="h-full w-full overflow-y-auto">
-              <PageLayout>
-                <audio
-                  ref={audioRef}
-                  src="/sounds/love.mp3"
-                  loop
-                  preload="auto"
-                />
-                <LoadingState message="Cargando invitación..." />
-              </PageLayout>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageLayout>
+        <audio
+          ref={audioRef}
+          src="/sounds/love.mp3"
+          loop
+          preload="auto"
+        />
+        <LoadingState message="Cargando invitación..." />
+      </PageLayout>
     );
   }
 
   if (!token || !grupo) {
     return (
-      <div className="min-h-screen w-full bg-neutral-950">
-        <div className="min-h-screen w-full flex items-center justify-center p-3 md:p-8">
-          <div
-            className="
-              w-full
-              md:aspect-[9/16]
-              md:h-[92vh]
-              md:w-auto
-              md:max-w-[520px]
-              overflow-hidden
-              rounded-2xl
-              bg-black
-              shadow-2xl
-              ring-1 ring-white/10
-            "
-          >
-            <div className="h-full w-full overflow-y-auto">
-              <PageLayout>
-                <audio
-                  ref={audioRef}
-                  src="/sounds/love.mp3"
-                  loop
-                  preload="auto"
-                />
-                <ErrorState
-                  title="Token no encontrado"
-                  description={
-                    !token 
-                      ? "No se proporcionó un token de invitación. Por favor, usa el enlace completo que te enviaron."
-                      : "Token no encontrado."
-                  }
-                />
-              </PageLayout>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageLayout>
+        <audio
+          ref={audioRef}
+          src="/sounds/love.mp3"
+          loop
+          preload="auto"
+        />
+        <ErrorState
+          title="Token no encontrado"
+          description={
+            !token 
+              ? "No se proporcionó un token de invitación. Por favor, usa el enlace completo que te enviaron."
+              : "Token no encontrado."
+          }
+        />
+      </PageLayout>
     );
   }
 
@@ -839,57 +780,36 @@ const RSVP = () => {
     ].filter(p => p.asistencia === 'confirmado').length;
 
     return (
-      <div className="min-h-screen w-full bg-neutral-950">
-        <div className="min-h-screen w-full flex items-center justify-center p-3 md:p-8">
-          <div
-            className="
-              w-full
-              md:aspect-[9/16]
-              md:h-[92vh]
-              md:w-auto
-              md:max-w-[520px]
-              overflow-hidden
-              rounded-2xl
-              bg-black
-              shadow-2xl
-              ring-1 ring-white/10
-            "
-          >
-            <div className="h-full w-full overflow-y-auto">
-              <PageLayout>
-                <audio
-                  ref={audioRef}
-                  src="/sounds/love.mp3"
-                  loop
-                  preload="auto"
-                />
-                <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4">
-                  <div className="container mx-auto max-w-2xl">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="bg-card rounded-xl sm:rounded-2xl shadow-soft p-6 sm:p-8 text-center"
-                    >
-                      <CheckCircle className="w-16 h-16 sm:w-20 sm:h-20 text-primary mx-auto mb-4 sm:mb-6" />
-                      <h1 className="font-playfair text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">
-                        ¡Confirmación Guardada!
-                      </h1>
-                      <p className="text-base sm:text-lg text-muted-foreground mb-3 sm:mb-4">
-                        Hola {grupo.invitadoPrincipal.nombre}, hemos guardado tu información correctamente.
-                      </p>
-                      {totalConfirmados > 0 && (
-                        <p className="text-sm sm:text-base text-muted-foreground">
-                          {totalConfirmados} persona{totalConfirmados > 1 ? 's' : ''} confirmada{totalConfirmados > 1 ? 's' : ''} su asistencia.
-                        </p>
-                      )}
-                    </motion.div>
-                  </div>
-                </div>
-              </PageLayout>
-            </div>
+      <PageLayout>
+        <audio
+          ref={audioRef}
+          src="/sounds/love.mp3"
+          loop
+          preload="auto"
+        />
+        <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4">
+          <div className="container mx-auto max-w-2xl">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-card rounded-xl sm:rounded-2xl shadow-soft p-6 sm:p-8 text-center"
+            >
+              <CheckCircle className="w-16 h-16 sm:w-20 sm:h-20 text-primary mx-auto mb-4 sm:mb-6" />
+              <h1 className="font-playfair text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">
+                ¡Confirmación Guardada!
+              </h1>
+              <p className="text-base sm:text-lg text-muted-foreground mb-3 sm:mb-4">
+                Hola {grupo.invitadoPrincipal.nombre}, hemos guardado tu información correctamente.
+              </p>
+              {totalConfirmados > 0 && (
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  {totalConfirmados} persona{totalConfirmados > 1 ? 's' : ''} confirmada{totalConfirmados > 1 ? 's' : ''} su asistencia.
+                </p>
+              )}
+            </motion.div>
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -908,32 +828,15 @@ const RSVP = () => {
   const busSeleccionadoId = busActual?.id || '';
 
   return (
-    <div className="min-h-screen w-full bg-neutral-950">
-      <div className="min-h-screen w-full flex items-center justify-center p-3 md:p-8">
-        <div
-          className="
-            w-full
-            md:aspect-[9/16]
-            md:h-[92vh]
-            md:w-auto
-            md:max-w-[520px]
-            overflow-hidden
-            rounded-2xl
-            bg-black
-            shadow-2xl
-            ring-1 ring-white/10
-          "
-        >
-          <div className="h-full w-full overflow-y-auto">
-            <PageLayout>
-              <audio
-                ref={audioRef}
-                src="/sounds/love.mp3"
-                loop
-                preload="auto"
-              />
-              {/* Hero Section */}
-              <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
+    <PageLayout>
+      <audio
+        ref={audioRef}
+        src="/sounds/love.mp3"
+        loop
+        preload="auto"
+      />
+      {/* Hero Section */}
+      <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center hero-bg-position"
@@ -1694,11 +1597,7 @@ const RSVP = () => {
           </motion.form>
         </div>
       </section>
-            </PageLayout>
-          </div>
-        </div>
-      </div>
-    </div>
+    </PageLayout>
   );
 };
 
