@@ -852,7 +852,7 @@ const RSVP = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative z-10 text-center px-4 sm:px-6 text-white max-w-5xl mx-auto mt-32 sm:mt-80 md:mt-80"
+          className="relative z-10 text-center px-6 sm:px-6 text-white max-w-5xl mx-auto mt-32 sm:mt-80 md:mt-80"
         >
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -911,7 +911,7 @@ const RSVP = () => {
       </section>
 
       {/* Countdown Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4">
+      <section className="py-12 sm:py-16 md:py-20 px-6 sm:px-4">
         <div className="container mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -933,7 +933,7 @@ const RSVP = () => {
       </section>
 
       {/* Info Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4 bg-secondary/30">
+      <section className="py-12 sm:py-16 md:py-20 px-6 sm:px-4 bg-secondary/30">
         <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -980,7 +980,7 @@ const RSVP = () => {
       </section>
 
       {/* Timeline Section */}
-      <section className="py-8 sm:py-10 md:py-12 px-4">
+      <section className="py-8 sm:py-10 md:py-12 px-6 sm:px-4">
         <div className="container mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1039,7 +1039,7 @@ const RSVP = () => {
       </section>
 
       {/* Location Info Section */}
-      <section className="py-10 sm:py-12 md:py-16 px-4 bg-secondary/30">
+      <section className="py-10 sm:py-12 md:py-16 px-6 sm:px-4 bg-secondary/30">
         <div className="container mx-auto max-w-4xl">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -1092,7 +1092,7 @@ const RSVP = () => {
       </section>
 
       {/* RSVP Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4">
+      <section className="py-12 sm:py-16 md:py-20 px-6 sm:px-4">
         <div className="container mx-auto max-w-4xl">
           {/* Marco decorativo con título y subtítulo */}
           <motion.div
