@@ -13,15 +13,20 @@ const Navbar = () => {
   
   const isActive = (path: string) => location.pathname === path;
   
-  // Solo mostrar "Confirmar" en el navbar si estamos en la página RSVP con token válido
-  const navItems = [
-    { path: "/", label: "Inicio" },
-    { path: "/actividades", label: "Actividades" },
-    ...(location.pathname === "/rsvp" && hasValidToken 
-      ? [{ path: "/rsvp", label: "Confirmar" }] 
-      : []),
-    { path: "/fotos", label: "Fotos" },
-  ];
+  // En la página RSVP con token válido, solo mostrar "Invitación" y "Fotos"
+  const navItems = location.pathname === "/rsvp" && hasValidToken
+    ? [
+        { path: "/rsvp", label: "Invitación" },
+        { path: "/fotos", label: "Fotos" },
+      ]
+    : [
+        { path: "/", label: "Inicio" },
+        { path: "/actividades", label: "Actividades" },
+        ...(location.pathname === "/rsvp" && hasValidToken 
+          ? [{ path: "/rsvp", label: "Confirmar" }] 
+          : []),
+        { path: "/fotos", label: "Fotos" },
+      ];
 
   return (
     <motion.nav 
