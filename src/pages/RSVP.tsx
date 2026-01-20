@@ -20,6 +20,8 @@ import LoadingState from "@/components/common/LoadingState";
 import Countdown from "@/components/Countdown";
 import heroImage from "@/assets/hero-wedding.jpg";
 import { activities } from "@/data/activities";
+import Lottie from "lottie-react";
+import scrollDownAnimation from "@/assets/scroll-down.json";
 
 const RSVP = () => {
   const [searchParams] = useSearchParams();
@@ -834,36 +836,45 @@ const RSVP = () => {
         preload="auto"
       />
       {/* Hero Section */}
-      <PageHeader
-        title="Virginia & Alejandro"
-        description="Nos casamos y queremos celebrarlo contigo"
-        variant="hero"
-        backgroundImage={heroImage}
-      >
-        <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-          <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl">
-            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
-            <span className="text-center">13 de Junio, 2026 • 19:00h</span>
+      <div className="relative">
+        <PageHeader
+          title="Virginia & Alejandro"
+          description="Nos casamos y queremos celebrarlo contigo"
+          variant="hero"
+          backgroundImage={heroImage}
+        >
+          <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
+              <span className="text-center">13 de Junio, 2026 • 19:00h</span>
+            </div>
+            
+            <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl px-4">
+              <MapPin className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
+              <span className="text-center">Hacienda Las Yeguas<br />Fuentes de Andalucía, Sevilla</span>
+            </div>
           </div>
-          
-          <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl px-4">
-            <MapPin className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
-            <span className="text-center">Hacienda Las Yeguas<br />Fuentes de Andalucía, Sevilla</span>
-          </div>
-        </div>
+        </PageHeader>
         
+        {/* Animación Lottie en el tercio inferior de la imagen */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 1 }}
-          className="absolute left-1/2 transform -translate-x-1/2 hidden sm:block"
-          style={{ bottom: '-2rem' }}
+          className="absolute left-1/2 transform -translate-x-1/2 pointer-events-none z-20"
+          style={{ 
+            top: '66.67%',
+            width: '60px',
+            height: '60px'
+          }}
         >
-          <div className="animate-bounce">
-            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white rotate-90" />
-          </div>
+          <Lottie 
+            animationData={scrollDownAnimation}
+            loop={true}
+            style={{ width: '100%', height: '100%' }}
+          />
         </motion.div>
-      </PageHeader>
+      </div>
 
       {/* Countdown Section */}
       <section className="py-12 sm:py-16 md:py-20 px-4">
