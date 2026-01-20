@@ -103,3 +103,4 @@ GOFILE_FOLDER_ID=...
 
 **Nota:** El archivo `.env` está en `.gitignore` y no se sube al repositorio. Nunca compartas tu clave de administración.
 
+

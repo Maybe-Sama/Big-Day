@@ -2,10 +2,22 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
+import { Redis } from '@upstash/redis';
 import { uploadToGofile, validateEnv } from './lib/gofile.js';
 
 // Cargar variables de entorno desde .env
 dotenv.config();
+
+// Configurar Redis para desarrollo local
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '',
+});
+
+const ADMIN_KEY = process.env.ADMIN_KEY;
+const SESSION_TTL = 24 * 60 * 60; // 24 horas en segundos
+const SESSION_KEY_PREFIX = 'admin:session:';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -228,6 +240,161 @@ app.post('/api/gofile/upload', upload.array('files', 50), async (req, res) => {
   }
 });
 
+/**
+ * Endpoint POST /api/admin/login - Autenticar admin y crear sesión
+ */
+app.post('/api/admin/login', async (req, res) => {
+  // CORS headers
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  try {
+    // Verificar que Redis esté configurado (solo si hay variables de entorno)
+    const hasRedisConfig = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    if (!hasRedisConfig) {
+      console.warn('[Admin Login] Advertencia: Variables de entorno de Redis no configuradas. Usando modo desarrollo sin persistencia.');
+    }
+
+    // Verificar que ADMIN_KEY esté configurada
+    if (!ADMIN_KEY) {
+      console.error('Error: ADMIN_KEY no configurada');
+      return res.status(500).json({ error: 'Servidor no disponible' });
+    }
+
+    const { key } = req.body;
+
+    if (!key || typeof key !== 'string') {
+      return res.status(400).json({ error: 'Clave requerida' });
+    }
+
+    // Validar clave contra ADMIN_KEY
+    if (key !== ADMIN_KEY) {
+      console.log('[Admin Login] Intento de login fallido');
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    // Generar token de sesión aleatorio
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    const sessionKey = `${SESSION_KEY_PREFIX}${sessionToken}`;
+
+    // Guardar sesión en Redis con TTL (solo si Redis está configurado)
+    if (hasRedisConfig) {
+      try {
+        await redis.setex(sessionKey, SESSION_TTL, '1');
+      } catch (redisError) {
+        console.error('[Admin Login] Error guardando sesión en Redis:', redisError);
+        // Continuar sin Redis en desarrollo
+      }
+    }
+
+    // Establecer cookie HttpOnly
+    // En desarrollo local, no usar Secure (solo en HTTPS)
+    const isHttps = req.headers['x-forwarded-proto'] === 'https' || 
+                    process.env.NODE_ENV === 'production';
+    
+    const cookieOptions = [
+      `admin_session=${sessionToken}`,
+      'HttpOnly',
+      `Path=/`,
+      `SameSite=Lax`,
+      `Max-Age=${SESSION_TTL}`,
+    ];
+
+    if (isHttps) {
+      cookieOptions.push('Secure');
+    }
+
+    console.log('[Admin Login] Cookie configurada:', {
+      secure: isHttps,
+      hasToken: !!sessionToken,
+      tokenLength: sessionToken.length,
+    });
+
+    res.setHeader('Set-Cookie', cookieOptions.join('; '));
+
+    console.log('[Admin Login] Sesión creada exitosamente');
+    return res.status(200).json({ ok: true });
+  } catch (error: any) {
+    console.error('Error en API admin/login:', error);
+    return res.status(500).json({ error: 'Servidor no disponible' });
+  }
+});
+
+/**
+ * Endpoint POST /api/admin/logout - Cerrar sesión admin
+ */
+app.post('/api/admin/logout', async (req, res) => {
+  // CORS headers
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  try {
+    // Obtener cookie de sesión
+    const cookies = req.headers.cookie || '';
+    const sessionMatch = cookies.match(/admin_session=([^;]+)/);
+    
+    if (sessionMatch) {
+      const sessionToken = sessionMatch[1];
+      const sessionKey = `${SESSION_KEY_PREFIX}${sessionToken}`;
+      
+      // Eliminar sesión de Redis (solo si Redis está configurado)
+      const hasRedisConfig = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+      if (hasRedisConfig) {
+        try {
+          await redis.del(sessionKey);
+          console.log('[Admin Logout] Sesión eliminada de Redis');
+        } catch (redisError) {
+          console.error('[Admin Logout] Error eliminando sesión de Redis:', redisError);
+          // Continuar sin Redis en desarrollo
+        }
+      }
+    }
+
+    // Limpiar cookie (Max-Age=0)
+    const isHttps = req.headers['x-forwarded-proto'] === 'https' || 
+                    process.env.NODE_ENV === 'production';
+    
+    const cookieOptions = [
+      `admin_session=`,
+      'HttpOnly',
+      `Path=/`,
+      `SameSite=Lax`,
+      'Max-Age=0',
+    ];
+
+    if (isHttps) {
+      cookieOptions.push('Secure');
+    }
+
+    res.setHeader('Set-Cookie', cookieOptions.join('; '));
+
+    return res.status(200).json({ ok: true });
+  } catch (error: any) {
+    console.error('Error en API admin/logout:', error);
+    return res.status(500).json({ error: 'Servidor no disponible' });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -236,5 +403,6 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend ejecutándose en http://localhost:${PORT}`);
   console.log(`📁 Endpoint de subida: http://localhost:${PORT}/api/gofile/upload`);
+  console.log(`🔐 Endpoint de admin: http://localhost:${PORT}/api/admin/login`);
 });
 

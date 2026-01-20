@@ -11,7 +11,7 @@ export const activities = [
   {
     time: "19:30",
     title: "Ceremonia",
-    description: "Acto emotivo al aire libre donde los novios pronuncian sus votos",
+    description: "Acto emotivo al aire libre donde los novios pronunciarán sus votos",
   },
   {
     time: "20:00",
@@ -36,7 +36,7 @@ export const activities = [
   {
     time: "03:00",
     title: "Recena",
-    description: "Surtido de comida, bedidas y pasteles",
+    description: "Surtido de comida, bedidas y dulces",
   },
 ];
 
