@@ -47,7 +47,7 @@ const RSVP = () => {
 
   const normalizedToken = useMemo(() => token?.trim() || "", [token]);
 
-  const patchRsvp = async (payload: unknown): Promise<GrupoInvitados> => {
+  const patchRsvp = async (payload: unknown, attempt: 0 | 1 = 0): Promise<GrupoInvitados> => {
     if (!normalizedToken) {
       throw new Error("Token requerido");
     }
@@ -59,6 +59,16 @@ const RSVP = () => {
     });
 
     if (!response.ok) {
+      // 409: retry una sola vez con backoff simple 250–400ms
+      if (response.status === 409) {
+        if (attempt === 0) {
+          const delayMs = 250 + Math.floor(Math.random() * 151); // 250..400
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          return patchRsvp(payload, 1);
+        }
+        throw new Error("Se actualizó hace un momento. Refresca la página y vuelve a intentarlo.");
+      }
+
       let message = `Error ${response.status}`;
       try {
         const data = await response.json();
