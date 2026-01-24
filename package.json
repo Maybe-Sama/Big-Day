@@ -5,11 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:web": "vite",
+    "dev:web:express": "cross-env VITE_API_MODE=express VITE_EXPRESS_PROXY_TARGET=http://localhost:3001 vite",
+    "dev:web:vercel": "cross-env VITE_API_MODE=vercel VITE_VERCEL_PROXY_TARGET=http://localhost:3333 VITE_EXPRESS_PROXY_TARGET=http://localhost:3001 vite",
     "dev:server": "tsx watch server/index.ts",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
+    "dev:express": "tsx watch server/index.ts",
+    "dev:api": "vercel dev --listen 3333 --yes",
+    "dev:all": "concurrently \"npm run dev:web:vercel\" \"npm run dev:api\" \"npm run dev:express\"",
+    "dev:all:express": "concurrently \"npm run dev:web:express\" \"npm run dev:express\"",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "audit:local": "node tools/audit-api.mjs",
+    "audit:prod": "node tools/audit-api.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -85,6 +93,7 @@
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
     "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
@@ -95,6 +104,7 @@
     "tsx": "^4.7.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
+    "vercel": "^50.5.0",
     "vite": "^5.4.19"
   }
 }

@@ -34,6 +34,7 @@ const RSVP = () => {
   const [configBuses, setConfigBuses] = useState<ConfiguracionBuses | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showAlergiasPrincipal, setShowAlergiasPrincipal] = useState(false);
   const [showVideo, setShowVideo] = useState(true);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
@@ -41,6 +42,7 @@ const RSVP = () => {
   const [userInteracted, setUserInteracted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const alergiasPrincipalInitRef = useRef(false);
 
   // Detectar iOS
   useEffect(() => {
@@ -236,6 +238,13 @@ const RSVP = () => {
     loadData();
   }, [token]);
 
+  useEffect(() => {
+    if (!grupo) return;
+    if (alergiasPrincipalInitRef.current) return;
+    setShowAlergiasPrincipal(Boolean(grupo.invitadoPrincipal.alergias?.trim()));
+    alergiasPrincipalInitRef.current = true;
+  }, [grupo]);
+
   const updateInvitadoPrincipal = (field: keyof GrupoInvitados['invitadoPrincipal'], value: string) => {
     if (!grupo) return;
     setGrupo({
@@ -354,6 +363,7 @@ const RSVP = () => {
       };
 
       await dbService.saveGrupo(grupoActualizado);
+      // Solo reflejar cambios locales si el servidor confirmó persistencia.
       setGrupo(grupoActualizado);
       setIsEditing(false);
       
@@ -361,11 +371,13 @@ const RSVP = () => {
         title: "¡Cambios guardados!",
         description: "La información se ha guardado exitosamente",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving grupo:", error);
       toast({
         title: "Error",
-        description: "No se pudo guardar la información. Por favor, intenta de nuevo.",
+        description: error?.message
+          ? `No se pudo guardar: ${error.message}`
+          : "No se pudo guardar la información. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -445,17 +457,20 @@ const RSVP = () => {
       };
 
       await dbService.saveGrupo(grupoActualizado);
+      // Solo reflejar cambios locales si el servidor confirmó persistencia.
       setGrupo(grupoActualizado);
       
       toast({
         title: "¡Invitación guardada!",
         description: "Los datos se han guardado exitosamente. Puedes continuar completando la información más tarde.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving grupo:", error);
       toast({
         title: "Error",
-        description: "No se pudo guardar la información. Por favor, intenta de nuevo.",
+        description: error?.message
+          ? `No se pudo guardar: ${error.message}`
+          : "No se pudo guardar la información. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -531,11 +546,13 @@ const RSVP = () => {
         title: "¡Respuesta enviada!",
         description: "Tu confirmación ha sido enviada exitosamente",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving grupo:", error);
       toast({
         title: "Error",
-        description: "No se pudo enviar la respuesta. Por favor, intenta de nuevo.",
+        description: error?.message
+          ? `No se pudo guardar: ${error.message}`
+          : "No se pudo enviar la respuesta. Por favor, intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -1159,17 +1176,6 @@ const RSVP = () => {
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="email-principal" className="text-sm">Email</Label>
-                      <Input
-                        id="email-principal"
-                        type="email"
-                        value={grupo.invitadoPrincipal.email}
-                        onChange={(e) => updateInvitadoPrincipal('email', e.target.value)}
-                        placeholder="email@ejemplo.com"
-                        className="text-sm h-9 sm:h-10 mt-1"
-                      />
-                    </div>
-                    <div>
                       <Label htmlFor="alergias-principal" className="text-sm">Alergias / Intolerancias</Label>
                       <Input
                         id="alergias-principal"
@@ -1221,12 +1227,48 @@ const RSVP = () => {
                         <p className="text-sm sm:text-base mt-1 break-all">{grupo.invitadoPrincipal.email}</p>
                       </div>
                     )}
-                    {grupo.invitadoPrincipal.alergias && (
-                      <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Alergias / Intolerancias</Label>
-                        <p className="text-sm sm:text-base mt-1">{grupo.invitadoPrincipal.alergias}</p>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">¿Alguna alergía/intolerancia?</Label>
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="principal-alergias-si"
+                            checked={showAlergiasPrincipal}
+                            onCheckedChange={(checked) => {
+                              const next = checked === true;
+                              setShowAlergiasPrincipal(next);
+                              if (!next) updateInvitadoPrincipal('alergias', '');
+                            }}
+                          />
+                          <Label htmlFor="principal-alergias-si" className="text-xs sm:text-sm cursor-pointer">Sí</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="principal-alergias-no"
+                            checked={!showAlergiasPrincipal}
+                            onCheckedChange={(checked) => {
+                              const next = checked === true;
+                              if (!next) return;
+                              setShowAlergiasPrincipal(false);
+                              updateInvitadoPrincipal('alergias', '');
+                            }}
+                          />
+                          <Label htmlFor="principal-alergias-no" className="text-xs sm:text-sm cursor-pointer">No</Label>
+                        </div>
                       </div>
-                    )}
+                      {showAlergiasPrincipal && (
+                        <div className="mt-2">
+                          <Input
+                            id="alergias-principal-readonly"
+                            value={grupo.invitadoPrincipal.alergias || ''}
+                            onChange={(e) => updateInvitadoPrincipal('alergias', e.target.value)}
+                            placeholder="Ej: Gluten, lactosa, frutos secos..."
+                            className="text-sm h-9 sm:h-10 mt-1"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Deja en blanco si no hay alergias</p>
+                        </div>
+                      )}
+                    </div>
                     <div>
                       <Label className="text-sm font-medium">Confirmar Asistencia *</Label>
                       <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2">

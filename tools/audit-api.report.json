@@ -1,0 +1,184 @@
+{
+  "startedAt": "2026-01-24T19:58:36.749Z",
+  "baseUrls": [
+    "https://big-day-five.vercel.app"
+  ],
+  "notes": [
+    "Output redacts token/email-like strings.",
+    "Writes are disabled by default for non-localhost targets.",
+    "Provide AUDIT_ADMIN_KEY to test admin-protected flows."
+  ],
+  "runs": [
+    {
+      "baseUrl": "https://big-day-five.vercel.app",
+      "allowWrite": false,
+      "env": {
+        "node": "v20.18.3",
+        "auditAllowWrite": false,
+        "auditAdminKeyProvided": false
+      },
+      "tests": [
+        {
+          "name": "T1 public GET /api/debug",
+          "ok": false,
+          "ms": 989,
+          "request": {
+            "url": "https://big-day-five.vercel.app/api/debug",
+            "method": "GET"
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "access-control-allow-origin": "*",
+              "access-control-allow-methods": "GET, OPTIONS",
+              "access-control-allow-headers": "Content-Type"
+            },
+            "bodyPreview": "{\"config\":{\"hasRedisUrl\":true,\"hasRedisToken\":true,\"redisConfigured\":true},\"data\":{\"totalGrupos\":10,\"grupos\":[{\"id\":\"1769279688261\",\"nombre\":\"Mamá\",\"apellidos\":\"Caro\",\"token\":\"ff86gfgs\",\"email\":\"\"},{\"id\":\"1769279856401\",\"nombre\":\"Toni\",\"apellidos\":\"Ruiz\",\"token\":\"pl0dxan2\",\"email\":\"\"},{\"id\":\"1769279875518\",\"nombre\":\"Hermano\",\"apellidos\":\"Fernández Caro\",\"token\":\"bugdxpor\",\"email\":\"\"},{\"id\":\"1769280005425\",\"nombre\":\"Papá\",\"apellidos\":\"Fernández Utrilla\",\"token\":\"1jl7l8zf\",\"email\":\"\"},{\"id\":\"17692"
+          },
+          "assert": {
+            "pass": false,
+            "expected": "T1: status in [401, 404]",
+            "actual": "200"
+          }
+        },
+        {
+          "name": "T2 public POST /api/config/mesas",
+          "ok": false,
+          "ms": 847,
+          "request": {
+            "url": "https://big-day-five.vercel.app/api/config/mesas",
+            "method": "POST"
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "access-control-allow-origin": "*",
+              "access-control-allow-methods": "GET, POST, OPTIONS",
+              "access-control-allow-headers": "Content-Type"
+            },
+            "bodyPreview": "{\"success\":true,\"config\":{}}"
+          },
+          "assert": {
+            "pass": false,
+            "expected": "T2: status in [401, 403, 404]",
+            "actual": "200"
+          }
+        },
+        {
+          "name": "T2 public POST /api/config/buses",
+          "ok": false,
+          "ms": 874,
+          "request": {
+            "url": "https://big-day-five.vercel.app/api/config/buses",
+            "method": "POST"
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "access-control-allow-origin": "*",
+              "access-control-allow-methods": "GET, POST, OPTIONS",
+              "access-control-allow-headers": "Content-Type"
+            },
+            "bodyPreview": "{\"success\":true,\"config\":{}}"
+          },
+          "assert": {
+            "pass": false,
+            "expected": "T2: status in [401, 403, 404]",
+            "actual": "200"
+          }
+        },
+        {
+          "name": "Prep admin login (optional)",
+          "ok": true,
+          "ms": 1,
+          "skipped": true,
+          "reason": "AUDIT_ADMIN_KEY not provided"
+        },
+        {
+          "name": "Prep create test grupo (optional; localhost only by default)",
+          "ok": true,
+          "ms": 0,
+          "skipped": true,
+          "reason": "Writes disabled (set AUDIT_ALLOW_WRITE=1)"
+        },
+        {
+          "name": "T3a public GET /api/invitados?token=... (RSVP read)",
+          "ok": true,
+          "ms": 937,
+          "request": {
+            "url": "https://big-day-five.vercel.app/api/invitados?token=tok_****a0bf",
+            "method": "GET"
+          },
+          "response": {
+            "status": 404,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
+              "access-control-allow-headers": "Content-Type",
+              "access-control-allow-credentials": "true"
+            },
+            "bodyPreview": "{\"error\":\"Token no encontrado\"}"
+          },
+          "assert": {
+            "pass": true,
+            "expected": "T3a: status in [200, 404]",
+            "actual": "404"
+          }
+        },
+        {
+          "name": "T3b public POST /api/invitados (RSVP write attempt; should fail)",
+          "ok": true,
+          "ms": 147,
+          "request": {
+            "url": "https://big-day-five.vercel.app/api/invitados",
+            "method": "POST"
+          },
+          "response": {
+            "status": 401,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
+              "access-control-allow-headers": "Content-Type",
+              "access-control-allow-credentials": "true"
+            },
+            "bodyPreview": "{\"error\":\"No autorizado\"}"
+          },
+          "assert": {
+            "pass": true,
+            "expected": "T3b: status in [401, 403, 404]",
+            "actual": "401"
+          }
+        },
+        {
+          "name": "T4 lost-update simulation (optional)",
+          "ok": true,
+          "ms": 1,
+          "skipped": true,
+          "reason": "Writes disabled"
+        },
+        {
+          "name": "T5 env var presence (runner process)",
+          "ok": true,
+          "ms": 0,
+          "present": {
+            "ADMIN_KEY": false,
+            "KV_REST_API_URL": false,
+            "KV_REST_API_TOKEN": false,
+            "UPSTASH_REDIS_REST_URL": false,
+            "UPSTASH_REDIS_REST_TOKEN": false
+          },
+          "dotenvPresent": {
+            "ADMIN_KEY": true,
+            "KV_REST_API_URL": true,
+            "KV_REST_API_TOKEN": true,
+            "UPSTASH_REDIS_REST_URL": false,
+            "UPSTASH_REDIS_REST_TOKEN": false
+          }
+        }
+      ]
+    }
+  ]
+}

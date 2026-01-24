@@ -9,9 +9,25 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 3210,
     proxy: {
-      // Redirigir todas las llamadas /api/* al servidor Express backend
+      /**
+       * Paridad local vs prod:
+       * - API real (Vercel Functions en /api/*): normalmente se sirve con `vercel dev` (default 3333).
+       * - Endpoints legacy en Express (gofile, etc.): siguen en 3001.
+       *
+       * Control:
+       * - VITE_API_MODE=vercel|express
+       * - VITE_VERCEL_PROXY_TARGET (default http://localhost:3333)
+       * - VITE_EXPRESS_PROXY_TARGET (default http://localhost:3001)
+       */
+      "/api/gofile": {
+        target: process.env.VITE_EXPRESS_PROXY_TARGET || "http://localhost:3001",
+        changeOrigin: true,
+      },
       "/api": {
-        target: "http://localhost:3001",
+        target:
+          (process.env.VITE_API_MODE || "express") === "express"
+            ? process.env.VITE_EXPRESS_PROXY_TARGET || "http://localhost:3001"
+            : process.env.VITE_VERCEL_PROXY_TARGET || "http://localhost:3333",
         changeOrigin: true,
       },
     },
