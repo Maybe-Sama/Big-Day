@@ -1409,7 +1409,7 @@ const RSVP = () => {
               <CardHeader className="p-4 sm:p-5 md:p-6">
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <Bus className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Transporte en Bus
+                  Transporte en Bus (Hora por confirmar)
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-5 md:p-6 pt-0 space-y-3 sm:space-y-4">
