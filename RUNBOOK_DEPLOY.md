@@ -36,7 +36,13 @@ Base URL de producción:
 ### Test 1 — `/api/debug` (debe ser 404 en prod)
 
 ```bash
-curl -i https://big-day-five.vercel.app/api/debug
+# IMPORTANTE: no imprimir body (podría contener PII si hay regresión)
+#
+# Windows (PowerShell/cmd):
+curl -sS -D - -o NUL https://big-day-five.vercel.app/api/debug
+#
+# Linux/macOS:
+# curl -sS -D - -o /dev/null https://big-day-five.vercel.app/api/debug
 ```
 
 **Esperado**:
@@ -46,9 +52,14 @@ curl -i https://big-day-five.vercel.app/api/debug
 ### Test 2 — POST sin auth a config (debe ser 401/403)
 
 ```bash
-curl -i -X POST https://big-day-five.vercel.app/api/config/mesas -H "Content-Type: application/json" --data "{}"
-curl -i -X POST https://big-day-five.vercel.app/api/config/buses -H "Content-Type: application/json" --data "{}"
-curl -i -X POST https://big-day-five.vercel.app/api/carreras -H "Content-Type: application/json" --data "[]"
+curl -sS -D - -o NUL -X POST https://big-day-five.vercel.app/api/config/mesas -H "Content-Type: application/json" --data "{}"
+curl -sS -D - -o NUL -X POST https://big-day-five.vercel.app/api/config/buses -H "Content-Type: application/json" --data "{}"
+curl -sS -D - -o NUL -X POST https://big-day-five.vercel.app/api/carreras -H "Content-Type: application/json" --data "[]"
+#
+# Linux/macOS:
+# curl -sS -D - -o /dev/null -X POST https://big-day-five.vercel.app/api/config/mesas -H "Content-Type: application/json" --data "{}"
+# curl -sS -D - -o /dev/null -X POST https://big-day-five.vercel.app/api/config/buses -H "Content-Type: application/json" --data "{}"
+# curl -sS -D - -o /dev/null -X POST https://big-day-five.vercel.app/api/carreras -H "Content-Type: application/json" --data "[]"
 ```
 
 **Esperado**:

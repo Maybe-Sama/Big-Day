@@ -36,6 +36,18 @@ function redactTokenLike(s) {
   if (typeof s !== "string") return s;
   // redact common token-ish strings and admin_session cookies
   return s
+    // redact JSON fields explicitly (covers short tokens too)
+    .replace(/(\"token\"\s*:\s*\")([^\"\n]{1,64})(\")/gi, (_m, a, v, b) => {
+      const t = String(v);
+      const masked = t.length <= 8 ? "****" : `${t.slice(0, 2)}****${t.slice(-2)}`;
+      return `${a}${masked}${b}`;
+    })
+    .replace(/(\"email\"\s*:\s*\")([^\"\n]{1,128})(\")/gi, (_m, a, v, b) => {
+      const e = String(v);
+      const at = e.indexOf("@");
+      if (at > 1) return `${a}${e[0]}***${e.slice(at)}${b}`;
+      return `${a}***@redacted${b}`;
+    })
     .replace(/admin_session=([a-f0-9]{8})[a-f0-9]+/gi, "admin_session=$1****")
     .replace(/\b(tok|token|sess|session|key|kv|redis)_[a-z0-9-]{6,}\b/gi, (m) =>
       `${m.slice(0, 4)}****${m.slice(-4)}`

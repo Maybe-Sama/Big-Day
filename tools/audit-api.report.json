@@ -1,5 +1,5 @@
 {
-  "startedAt": "2026-01-24T19:58:36.749Z",
+  "startedAt": "2026-01-24T20:05:41.035Z",
   "baseUrls": [
     "https://big-day-five.vercel.app"
   ],
@@ -21,7 +21,7 @@
         {
           "name": "T1 public GET /api/debug",
           "ok": false,
-          "ms": 989,
+          "ms": 486,
           "request": {
             "url": "https://big-day-five.vercel.app/api/debug",
             "method": "GET"
@@ -34,7 +34,7 @@
               "access-control-allow-methods": "GET, OPTIONS",
               "access-control-allow-headers": "Content-Type"
             },
-            "bodyPreview": "{\"config\":{\"hasRedisUrl\":true,\"hasRedisToken\":true,\"redisConfigured\":true},\"data\":{\"totalGrupos\":10,\"grupos\":[{\"id\":\"1769279688261\",\"nombre\":\"Mamá\",\"apellidos\":\"Caro\",\"token\":\"ff86gfgs\",\"email\":\"\"},{\"id\":\"1769279856401\",\"nombre\":\"Toni\",\"apellidos\":\"Ruiz\",\"token\":\"pl0dxan2\",\"email\":\"\"},{\"id\":\"1769279875518\",\"nombre\":\"Hermano\",\"apellidos\":\"Fernández Caro\",\"token\":\"bugdxpor\",\"email\":\"\"},{\"id\":\"1769280005425\",\"nombre\":\"Papá\",\"apellidos\":\"Fernández Utrilla\",\"token\":\"1jl7l8zf\",\"email\":\"\"},{\"id\":\"17692"
+            "bodyPreview": "{\"config\":{\"hasRedisUrl\":true,\"hasRedisToken\":true,\"redisConfigured\":true},\"data\":{\"totalGrupos\":10,\"grupos\":[{\"id\":\"1769279688261\",\"nombre\":\"Mamá\",\"apellidos\":\"Caro\",\"token\":\"****\",\"email\":\"\"},{\"id\":\"1769279856401\",\"nombre\":\"Toni\",\"apellidos\":\"Ruiz\",\"token\":\"****\",\"email\":\"\"},{\"id\":\"1769279875518\",\"nombre\":\"Hermano\",\"apellidos\":\"Fernández Caro\",\"token\":\"****\",\"email\":\"\"},{\"id\":\"1769280005425\",\"nombre\":\"Papá\",\"apellidos\":\"Fernández Utrilla\",\"token\":\"****\",\"email\":\"\"},{\"id\":\"17692"
           },
           "assert": {
             "pass": false,
@@ -45,7 +45,7 @@
         {
           "name": "T2 public POST /api/config/mesas",
           "ok": false,
-          "ms": 847,
+          "ms": 230,
           "request": {
             "url": "https://big-day-five.vercel.app/api/config/mesas",
             "method": "POST"
@@ -69,7 +69,7 @@
         {
           "name": "T2 public POST /api/config/buses",
           "ok": false,
-          "ms": 874,
+          "ms": 353,
           "request": {
             "url": "https://big-day-five.vercel.app/api/config/buses",
             "method": "POST"
@@ -93,7 +93,7 @@
         {
           "name": "Prep admin login (optional)",
           "ok": true,
-          "ms": 1,
+          "ms": 0,
           "skipped": true,
           "reason": "AUDIT_ADMIN_KEY not provided"
         },
@@ -107,9 +107,9 @@
         {
           "name": "T3a public GET /api/invitados?token=... (RSVP read)",
           "ok": true,
-          "ms": 937,
+          "ms": 828,
           "request": {
-            "url": "https://big-day-five.vercel.app/api/invitados?token=tok_****a0bf",
+            "url": "https://big-day-five.vercel.app/api/invitados?token=tok_****187e",
             "method": "GET"
           },
           "response": {
