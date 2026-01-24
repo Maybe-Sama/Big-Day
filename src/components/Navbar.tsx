@@ -44,7 +44,7 @@ const Navbar = () => {
             aria-label="Inicio"
           >
             <img
-              src="/favico.png"
+              src="/head-pic.png"
               alt="Virginia & Alejandro"
               className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-16 md:h-16 max-w-none max-h-none transition-transform group-hover:scale-110"
               loading="eager"

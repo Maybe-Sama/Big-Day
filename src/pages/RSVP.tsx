@@ -1008,7 +1008,7 @@ const RSVP = () => {
 
       {/* Timeline Section */}
       <section className="py-8 sm:py-10 md:py-12 px-6 sm:px-4">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1067,7 +1067,7 @@ const RSVP = () => {
 
       {/* RSVP Section */}
       <section className="py-12 sm:py-16 md:py-20 px-6 sm:px-4">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-6xl">
           {/* Marco decorativo con título y subtítulo */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
