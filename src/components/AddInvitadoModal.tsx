@@ -21,7 +21,6 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
   const [invitadoPrincipal, setInvitadoPrincipal] = useState({
     nombre: '',
     apellidos: '',
-    email: '',
     asistencia: 'pendiente' as 'pendiente' | 'confirmado' | 'rechazado',
     alergias: '', // Se completará en RSVP
   });
@@ -53,7 +52,7 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
   };
 
   const handleSave = () => {
-    if (!invitadoPrincipal.nombre || !invitadoPrincipal.apellidos || !invitadoPrincipal.email) {
+    if (!invitadoPrincipal.nombre || !invitadoPrincipal.apellidos) {
       return;
     }
 
@@ -71,7 +70,9 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
       invitadoPrincipal: {
         nombre: invitadoPrincipal.nombre.trim(),
         apellidos: invitadoPrincipal.apellidos.trim(),
-        email: invitadoPrincipal.email.trim(),
+        // No pedimos correo al crear el grupo desde el panel
+        // (se mantiene como string para no romper búsquedas/tabla existentes).
+        email: '',
         asistencia: 'pendiente', // Se confirmará en RSVP
         alergias: undefined, // Se añadirá en RSVP
       },
@@ -93,7 +94,6 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
       tieneInvitadoPrincipal: !!grupo.invitadoPrincipal,
       tieneNombre: !!grupo.invitadoPrincipal.nombre,
       tieneApellidos: !!grupo.invitadoPrincipal.apellidos,
-      tieneEmail: !!grupo.invitadoPrincipal.email,
       tieneToken: !!grupo.token,
       tieneAsistencia: !!grupo.asistencia,
       tieneFechaCreacion: !!grupo.fechaCreacion,
@@ -110,12 +110,12 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
   };
 
   const handleClose = () => {
-    setInvitadoPrincipal({ nombre: '', apellidos: '', email: '', asistencia: 'pendiente', alergias: '' });
+    setInvitadoPrincipal({ nombre: '', apellidos: '', asistencia: 'pendiente', alergias: '' });
     setAcompanantes([]);
     onClose();
   };
 
-  const isFormValid = invitadoPrincipal.nombre && invitadoPrincipal.apellidos && invitadoPrincipal.email;
+  const isFormValid = invitadoPrincipal.nombre && invitadoPrincipal.apellidos;
 
   return (
       <AppModal
@@ -171,17 +171,6 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
                   className="text-sm h-9 sm:h-10 mt-1"
                 />
               </div>
-            </div>
-            <div>
-              <Label htmlFor="email" className="text-sm">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={invitadoPrincipal.email}
-                onChange={(e) => setInvitadoPrincipal(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="email@ejemplo.com"
-                className="text-sm h-9 sm:h-10 mt-1"
-              />
             </div>
           </CardContent>
         </Card>

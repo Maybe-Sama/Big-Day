@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Mail, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, Eye, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2 } from "lucide-react";
+import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, Eye, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2 } from "lucide-react";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
 import { AppModal } from "@/components/common";
@@ -58,6 +58,7 @@ const AdminOculto = () => {
   const [configBuses, setConfigBuses] = useState<ConfiguracionBuses | null>(null);
   const [configMesas, setConfigMesas] = useState<ConfiguracionMesas | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [asistenciaFilter, setAsistenciaFilter] = useState<'all' | 'pendiente' | 'confirmado' | 'rechazado'>('all');
   const [carreras, setCarreras] = useState<CarreraFotos[]>([]);
   const [showCarreras, setShowCarreras] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -239,7 +240,6 @@ const AdminOculto = () => {
         gruposData.forEach((grupo, index) => {
           console.log(`\n[${index + 1}] Grupo ID: ${grupo.id}`);
           console.log(`  - Invitado Principal: ${grupo.invitadoPrincipal.nombre} ${grupo.invitadoPrincipal.apellidos}`);
-          console.log(`  - Email: ${grupo.invitadoPrincipal.email}`);
           console.log(`  - Token: ${grupo.token}`);
           console.log(`  - Acompañantes: ${grupo.acompanantes.length}`);
           console.log(`  - Asistencia: ${grupo.asistencia}`);
@@ -326,7 +326,7 @@ const AdminOculto = () => {
       
       toast({
         title: "Link de invitación copiado",
-        description: `Puedes enviarlo a ${grupo.invitadoPrincipal.nombre} ${grupo.invitadoPrincipal.apellidos} por email o WhatsApp`,
+        description: `Puedes enviarlo a ${grupo.invitadoPrincipal.nombre} ${grupo.invitadoPrincipal.apellidos} por WhatsApp o donde prefieras`,
       });
     }).catch(() => {
       toast({
@@ -529,11 +529,17 @@ const AdminOculto = () => {
     }
   };
 
-  const filteredGrupos = grupos.filter(grupo => 
-    grupo.invitadoPrincipal.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    grupo.invitadoPrincipal.apellidos.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    grupo.invitadoPrincipal.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredGrupos = grupos.filter(grupo => {
+    const matchesSearch = !normalizedSearch ||
+      grupo.invitadoPrincipal.nombre.toLowerCase().includes(normalizedSearch) ||
+      grupo.invitadoPrincipal.apellidos.toLowerCase().includes(normalizedSearch);
+
+    const matchesAsistencia = asistenciaFilter === 'all' ||
+      grupo.invitadoPrincipal.asistencia === asistenciaFilter;
+
+    return matchesSearch && matchesAsistencia;
+  });
 
   // Pantalla de carga mientras verifica sesión
   if (isCheckingSession) {
@@ -728,12 +734,28 @@ const AdminOculto = () => {
                 Verificar BD
               </Button>
             </div>
-            <Input
-              placeholder="Buscar por nombre, apellidos o email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-sm h-9 sm:h-10"
-            />
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="Buscar por nombre o apellidos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full text-sm h-9 sm:h-10"
+              />
+              <Select
+                value={asistenciaFilter}
+                onValueChange={(value: 'all' | 'pendiente' | 'confirmado' | 'rechazado') => setAsistenciaFilter(value)}
+              >
+                <SelectTrigger className="w-full sm:w-[240px] text-sm h-9 sm:h-10">
+                  <SelectValue placeholder="Filtrar por confirmación" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="pendiente">Pendiente</SelectItem>
+                  <SelectItem value="confirmado">Confirmado</SelectItem>
+                  <SelectItem value="rechazado">Rechazado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </motion.div>
 
           {/* Mobile Cards View */}
@@ -761,9 +783,6 @@ const AdminOculto = () => {
                       <h3 className="font-semibold text-sm sm:text-base mb-0.5 truncate">
                         {grupo.invitadoPrincipal.nombre} {grupo.invitadoPrincipal.apellidos}
                       </h3>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-1.5 truncate">
-                        {grupo.invitadoPrincipal.email}
-                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         <Badge
                           variant={
@@ -899,7 +918,6 @@ const AdminOculto = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-sm">Invitado Principal</TableHead>
-                    <TableHead className="text-sm">Email</TableHead>
                     <TableHead className="text-sm">Acompañantes</TableHead>
                     <TableHead className="text-sm">Total Personas</TableHead>
                     <TableHead className="text-sm">Asistencia</TableHead>
@@ -911,7 +929,7 @@ const AdminOculto = () => {
                 <TableBody>
                   {filteredGrupos.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={7} className="text-center py-8">
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
                           <Users className="w-12 h-12 mb-4 opacity-50" />
                           <p className="text-sm">No hay grupos de invitados</p>
@@ -952,9 +970,6 @@ const AdminOculto = () => {
                               </div>
                             )}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          <div>{grupo.invitadoPrincipal.email}</div>
                         </TableCell>
                         <TableCell className="text-sm">
                           <div className="space-y-1">
@@ -1504,16 +1519,6 @@ const AdminOculto = () => {
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="edit-email-principal" className="text-sm">Email *</Label>
-                      <Input
-                        id="edit-email-principal"
-                        type="email"
-                        value={editingGrupo.invitadoPrincipal.email}
-                        onChange={(e) => updateInvitadoPrincipal('email', e.target.value)}
-                        className="mt-1 text-sm h-9 sm:h-10"
-                      />
-                    </div>
-                    <div>
                       <Label htmlFor="edit-asistencia-principal" className="text-sm">Estado de Asistencia</Label>
                       <Select
                         value={editingGrupo.invitadoPrincipal.asistencia}
@@ -1672,7 +1677,7 @@ const AdminOculto = () => {
                   <CardHeader className="p-4 sm:p-6">
                     <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                       <Bus className="w-4 h-4 sm:w-5 sm:h-5" />
-                      Transporte en Bus
+                      Transporte en Bus (Hora por confirmar)
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
@@ -1956,10 +1961,6 @@ const AdminOculto = () => {
                         </p>
                       </div>
                       <div>
-                        <span className="font-medium text-sm sm:text-base">Email:</span>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-all">{selectedGrupo.invitadoPrincipal.email}</p>
-                      </div>
-                      <div>
                         <span className="font-medium text-sm sm:text-base">Estado de asistencia:</span>
                         <Badge
                           variant={
@@ -2184,12 +2185,10 @@ const AdminOculto = () => {
                               if (capitanGrupo) {
                                 let capitanNombre = '';
                                 let capitanApellidos = '';
-                                let capitanEmail = '';
                                 
                                 if (miembroId === 'principal') {
                                   capitanNombre = capitanGrupo.invitadoPrincipal.nombre;
                                   capitanApellidos = capitanGrupo.invitadoPrincipal.apellidos;
-                                  capitanEmail = capitanGrupo.invitadoPrincipal.email;
                                 } else {
                                   const acompanante = capitanGrupo.acompanantes.find(ac => ac.id === miembroId);
                                   if (acompanante) {
@@ -2208,11 +2207,6 @@ const AdminOculto = () => {
                                       <p className="text-sm sm:text-base font-semibold text-yellow-700 dark:text-yellow-300">
                                         {capitanNombre} {capitanApellidos}
                                       </p>
-                                      {capitanEmail && (
-                                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                                          {capitanEmail}
-                                        </p>
-                                      )}
                                     </div>
                                   );
                                 }
