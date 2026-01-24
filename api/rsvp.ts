@@ -68,6 +68,16 @@ function sanitizeGrupoForResponse(grupo: any) {
   };
 }
 
+function cloneGrupoForUpdate(grupo: any) {
+  return {
+    ...grupo,
+    invitadoPrincipal: { ...(grupo?.invitadoPrincipal || {}) },
+    acompanantes: Array.isArray(grupo?.acompanantes)
+      ? grupo.acompanantes.map((ac: any) => ({ ...ac }))
+      : grupo?.acompanantes,
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = req.headers.origin;
   const allowedOrigins = new Set<string>(
@@ -114,68 +124,99 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const patch = parsed.data;
 
-    const grupos = (await redis.get<unknown[]>(DB_KEY)) || [];
-    const idx = grupos.findIndex((g: any) => normalizeToken(String(g?.token || '')) === normalizedToken);
-    if (idx < 0) {
-      return res.status(404).json({ error: 'Token no encontrado' });
-    }
+    const findIndexByToken = (arr: unknown[]) =>
+      arr.findIndex((g: any) => normalizeToken(String(g?.token || '')) === normalizedToken);
 
-    const current: any = grupos[idx];
+    // Protección ligera contra colisiones:
+    // intentamos 2 veces aplicar el patch si detectamos que cambió fechaActualizacion.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const grupos = (await redis.get<unknown[]>(DB_KEY)) || [];
+      const idx = findIndexByToken(grupos);
+      if (idx < 0) {
+        return res.status(404).json({ error: 'Token no encontrado' });
+      }
 
-    // Prohibido: id, token, invitadoPrincipal.email, mesa, fechaCreacion
-    // (no hay forma de modificarlos porque el schema es strict y solo permite whitelist)
+      const base: any = grupos[idx];
+      const baseFecha = String(base?.fechaActualizacion || '');
+      const updated: any = cloneGrupoForUpdate(base);
 
-    // Aplicar patch a campos de grupo permitidos
-    if (typeof patch.asistencia !== 'undefined') {
-      current.asistencia = patch.asistencia;
-    }
-    if (typeof patch.confirmacion_bus !== 'undefined') {
-      current.confirmacion_bus = patch.confirmacion_bus;
-    }
-    if (typeof patch.ubicacion_bus !== 'undefined') {
-      current.ubicacion_bus = patch.ubicacion_bus || undefined;
-    }
-
-    // Invitado principal
-    if (patch.invitadoPrincipal) {
-      if (!current.invitadoPrincipal || typeof current.invitadoPrincipal !== 'object') {
+      if (!updated.invitadoPrincipal || typeof updated.invitadoPrincipal !== 'object') {
         return res.status(500).json({ error: 'Servidor no disponible' });
       }
-      if (typeof patch.invitadoPrincipal.asistencia !== 'undefined') {
-        current.invitadoPrincipal.asistencia = patch.invitadoPrincipal.asistencia;
-      }
-      if (typeof patch.invitadoPrincipal.alergias !== 'undefined') {
-        current.invitadoPrincipal.alergias = patch.invitadoPrincipal.alergias || undefined;
-      }
-    }
 
-    // Acompañantes: solo actualizar existentes (no permitir crear)
-    if (patch.acompanantes) {
-      if (!Array.isArray(current.acompanantes)) {
-        return res.status(400).json({ error: 'Acompañantes inválidos' });
+      // Prohibido: id, token, invitadoPrincipal.email, mesa, fechaCreacion
+      // (no hay forma de modificarlos porque el schema es strict y solo permite whitelist)
+
+      // 1) Unificar asistencia (un solo estado efectivo):
+      // - Si llega invitadoPrincipal.asistencia, manda.
+      // - Si no, usar asistencia (grupo).
+      const desiredAsistencia =
+        patch.invitadoPrincipal?.asistencia ?? patch.asistencia;
+      if (typeof desiredAsistencia !== 'undefined') {
+        updated.asistencia = desiredAsistencia;
+        updated.invitadoPrincipal.asistencia = desiredAsistencia;
       }
-      const existingIds = new Set<string>(current.acompanantes.map((ac: any) => String(ac?.id || '')));
-      for (const acPatch of patch.acompanantes) {
-        if (!existingIds.has(acPatch.id)) {
-          return res.status(400).json({ error: 'Acompañante no permitido' });
+
+      // Campos de grupo permitidos
+      if (typeof patch.confirmacion_bus !== 'undefined') {
+        updated.confirmacion_bus = patch.confirmacion_bus;
+      }
+      if (typeof patch.ubicacion_bus !== 'undefined') {
+        updated.ubicacion_bus = patch.ubicacion_bus || undefined;
+      }
+
+      // Invitado principal (solo alergias aquí; asistencia ya unificada arriba)
+      if (patch.invitadoPrincipal && typeof patch.invitadoPrincipal.alergias !== 'undefined') {
+        updated.invitadoPrincipal.alergias = patch.invitadoPrincipal.alergias || undefined;
+      }
+
+      // Acompañantes: solo actualizar existentes (no permitir crear)
+      if (patch.acompanantes) {
+        if (!Array.isArray(updated.acompanantes)) {
+          return res.status(400).json({ error: 'Acompañantes inválidos' });
         }
+        const existingIds = new Set<string>(
+          updated.acompanantes.map((ac: any) => String(ac?.id || '')),
+        );
+        for (const acPatch of patch.acompanantes) {
+          if (!existingIds.has(acPatch.id)) {
+            return res.status(400).json({ error: 'Acompañante no permitido' });
+          }
+        }
+        updated.acompanantes = updated.acompanantes.map((ac: any) => {
+          const id = String(ac?.id || '');
+          const p = patch.acompanantes?.find((x) => x.id === id);
+          if (!p) return ac;
+          const next = { ...ac };
+          if (typeof p.asistencia !== 'undefined') next.asistencia = p.asistencia;
+          if (typeof p.alergias !== 'undefined') next.alergias = p.alergias || undefined;
+          return next;
+        });
       }
-      current.acompanantes = current.acompanantes.map((ac: any) => {
-        const id = String(ac?.id || '');
-        const p = patch.acompanantes?.find((x) => x.id === id);
-        if (!p) return ac;
-        const next = { ...ac };
-        if (typeof p.asistencia !== 'undefined') next.asistencia = p.asistencia;
-        if (typeof p.alergias !== 'undefined') next.alergias = p.alergias || undefined;
-        return next;
-      });
+
+      updated.fechaActualizacion = new Date().toISOString();
+
+      // Releer y comparar fechaActualizacion para detectar write concurrente
+      const gruposNow = (await redis.get<unknown[]>(DB_KEY)) || [];
+      const idxNow = findIndexByToken(gruposNow);
+      if (idxNow < 0) {
+        return res.status(404).json({ error: 'Token no encontrado' });
+      }
+      const nowFecha = String((gruposNow[idxNow] as any)?.fechaActualizacion || '');
+
+      if (nowFecha !== baseFecha) {
+        if (attempt === 0) {
+          continue; // retry una vez sobre el estado más reciente
+        }
+        return res.status(409).json({ error: 'Conflicto: el grupo fue actualizado recientemente. Reintenta.' });
+      }
+
+      gruposNow[idxNow] = updated;
+      await redis.set(DB_KEY, gruposNow);
+      return res.status(200).json(sanitizeGrupoForResponse(updated));
     }
 
-    current.fechaActualizacion = new Date().toISOString();
-    grupos[idx] = current;
-    await redis.set(DB_KEY, grupos);
-
-    return res.status(200).json(sanitizeGrupoForResponse(current));
+    return res.status(409).json({ error: 'Conflicto: el grupo fue actualizado recientemente. Reintenta.' });
   } catch (error) {
     console.error('Error en API rsvp:', error);
     return res.status(500).json({ error: 'Servidor no disponible' });

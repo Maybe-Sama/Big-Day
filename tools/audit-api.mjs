@@ -381,6 +381,102 @@ async function runForBase(baseUrl, opts) {
     };
   });
 
+  // Optional: two sequential PATCH to reduce lost-update risk (localhost only).
+  await record("T3e PATCH /api/rsvp twice (optional)", async () => {
+    if (!allowWrite) return { skipped: true, reason: "Writes disabled (localhost only)" };
+    if (!rsvpToken) return { skipped: true, reason: "AUDIT_RSVP_TOKEN not provided" };
+
+    const u = (path) => new URL(path, baseUrl).toString();
+
+    const p1 = await fetchText(
+      baseUrl,
+      `/api/rsvp?token=${encodeURIComponent(rsvpToken)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invitadoPrincipal: { asistencia: "confirmado" },
+          confirmacion_bus: true,
+        }),
+      }
+    );
+    const p2 = await fetchText(
+      baseUrl,
+      `/api/rsvp?token=${encodeURIComponent(rsvpToken)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ubicacion_bus: "Audit Bus",
+        }),
+      }
+    );
+
+    // Validate both were accepted
+    if (!p1.res.ok || !p2.res.ok) {
+      return {
+        request: { url: u(`/api/rsvp?token=${encodeURIComponent(rsvpToken)}`), method: "PATCH" },
+        response: {
+          status: `${p1.res.status}/${p2.res.status}`,
+          headers: {},
+          bodyPreview: redactTokenLike(`${p1.text}\n---\n${p2.text}`.slice(0, 800)),
+        },
+        assert: {
+          pass: false,
+          expected: "T3e: both PATCH should be 200",
+          actual: `${p1.res.status}/${p2.res.status}`,
+        },
+      };
+    }
+
+    // Read back using public token read (may or may not be masked by backend)
+    const readBack = await fetchText(
+      baseUrl,
+      `/api/invitados?token=${encodeURIComponent(rsvpToken)}`,
+      { method: "GET" }
+    );
+    let observed = null;
+    try {
+      observed = JSON.parse(readBack.text);
+    } catch {
+      observed = null;
+    }
+
+    const ok =
+      readBack.res.ok &&
+      observed &&
+      observed.confirmacion_bus === true &&
+      observed.ubicacion_bus === "Audit Bus" &&
+      (observed.invitadoPrincipal?.asistencia === "confirmado" || observed.asistencia === "confirmado");
+
+    return {
+      request: { url: u(`/api/rsvp?token=${encodeURIComponent(rsvpToken)}`), method: "PATCH" },
+      response: {
+        status: readBack.res.status,
+        headers: pickHeaders(readBack.res),
+        bodyPreview: redactTokenLike(readBack.text.slice(0, 600)),
+      },
+      finalObserved: observed
+        ? {
+            asistencia: observed.asistencia,
+            invitadoPrincipal_asistencia: observed?.invitadoPrincipal?.asistencia,
+            confirmacion_bus: observed.confirmacion_bus,
+            ubicacion_bus: observed.ubicacion_bus,
+          }
+        : null,
+      assert: {
+        pass: !!ok,
+        expected: "T3e: confirmacion_bus=true AND ubicacion_bus='Audit Bus' AND asistencia='confirmado'",
+        actual: observed ? safeJson({
+          asistencia: observed.asistencia,
+          invitadoPrincipal_asistencia: observed?.invitadoPrincipal?.asistencia,
+          confirmacion_bus: observed.confirmacion_bus,
+          ubicacion_bus: observed.ubicacion_bus,
+        }) : "non-JSON response",
+      },
+    };
+  });
+
   // Test 4: Concurrency / lost update simulation (only when we can write)
   await record("T4 lost-update simulation (optional)", async () => {
     if (!allowWrite) return { skipped: true, reason: "Writes disabled" };
