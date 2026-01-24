@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, Eye, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2 } from "lucide-react";
+import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, Eye, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload } from "lucide-react";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
 import { AppModal } from "@/components/common";
@@ -66,6 +66,13 @@ const AdminOculto = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
+  // Backup/Restore
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [backupDryRunResult, setBackupDryRunResult] = useState<any | null>(null);
+  const [backupConfirmText, setBackupConfirmText] = useState('');
+  const [isBackupBusy, setIsBackupBusy] = useState(false);
+  const [backupLastSnapshotKey, setBackupLastSnapshotKey] = useState<string | null>(null);
+
   // Verificar sesión al cargar
   useEffect(() => {
     checkSession();
@@ -118,6 +125,151 @@ const AdminOculto = () => {
       }
     };
     loadCarreras();
+  };
+
+  const downloadBackup = async () => {
+    setIsBackupBusy(true);
+    setBackupLastSnapshotKey(null);
+    try {
+      const response = await fetch('/api/admin/backup/export', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        let message = `Error ${response.status}`;
+        try {
+          const data = await response.json();
+          if (data?.error) message = data.error;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get('content-disposition') || '';
+      const filenameMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+      const filename = filenameMatch?.[1] || `big-day-backup.json`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Backup descargado",
+        description: "Se descargó el archivo de backup correctamente.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message ? `No se pudo descargar: ${error.message}` : "No se pudo descargar el backup.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBackupBusy(false);
+    }
+  };
+
+  const readBackupFileJson = async (file: File): Promise<unknown> => {
+    const text = await file.text();
+    return JSON.parse(text);
+  };
+
+  const runBackupDryRun = async () => {
+    if (!backupFile) {
+      toast({ title: "Error", description: "Selecciona un archivo .json primero.", variant: "destructive" });
+      return;
+    }
+    setIsBackupBusy(true);
+    setBackupDryRunResult(null);
+    setBackupLastSnapshotKey(null);
+    try {
+      const payload = await readBackupFileJson(backupFile);
+      const response = await fetch('/api/admin/backup/import?mode=dry-run', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || `Error ${response.status}`);
+      }
+
+      setBackupDryRunResult(data);
+      toast({
+        title: "Backup analizado",
+        description: "Dry-run completado. Revisa el resumen antes de restaurar.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message ? `No se pudo analizar: ${error.message}` : "No se pudo analizar el backup.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBackupBusy(false);
+    }
+  };
+
+  const applyBackupRestore = async () => {
+    if (!backupFile) {
+      toast({ title: "Error", description: "Selecciona un archivo .json primero.", variant: "destructive" });
+      return;
+    }
+    if (backupConfirmText.trim() !== 'RESTORE') {
+      toast({
+        title: "Confirmación requerida",
+        description: "Escribe RESTORE para habilitar la restauración.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsBackupBusy(true);
+    setBackupLastSnapshotKey(null);
+    try {
+      const payload = await readBackupFileJson(backupFile);
+      const response = await fetch('/api/admin/backup/import?mode=apply', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || `Error ${response.status}`);
+      }
+
+      setBackupLastSnapshotKey(data?.snapshotKey || null);
+      setBackupConfirmText('');
+      setBackupDryRunResult(null);
+
+      toast({
+        title: "Backup restaurado",
+        description: data?.snapshotKey
+          ? `Restauración completada. Snapshot guardado: ${data.snapshotKey}`
+          : "Restauración completada.",
+      });
+
+      // Recargar todo el panel
+      loadAllData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message ? `No se pudo restaurar: ${error.message}` : "No se pudo restaurar el backup.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBackupBusy(false);
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -753,6 +905,102 @@ const AdminOculto = () => {
                   <SelectItem value="rechazado">Rechazado</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Backup / Restore */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+              <Card>
+                <CardHeader className="p-4 sm:p-5">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Descargar backup
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 pt-0">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Descarga un JSON con invitados + configuración (mesas, buses, carreras).
+                  </p>
+                  <Button
+                    onClick={downloadBackup}
+                    disabled={isBackupBusy}
+                    className="w-full"
+                  >
+                    {isBackupBusy ? "Preparando..." : "Descargar backup"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="p-4 sm:p-5">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    Restaurar backup
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 pt-0 space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="backupFile">Archivo JSON</Label>
+                    <Input
+                      id="backupFile"
+                      type="file"
+                      accept="application/json"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setBackupFile(f);
+                        setBackupDryRunResult(null);
+                        setBackupLastSnapshotKey(null);
+                        setBackupConfirmText('');
+                      }}
+                      disabled={isBackupBusy}
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={runBackupDryRun}
+                      disabled={!backupFile || isBackupBusy}
+                      className="w-full"
+                    >
+                      Analizar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={applyBackupRestore}
+                      disabled={!backupFile || isBackupBusy || backupConfirmText.trim() !== 'RESTORE'}
+                      className="w-full"
+                    >
+                      Aplicar
+                    </Button>
+                  </div>
+
+                  {backupDryRunResult && (
+                    <div className="rounded-md border bg-muted/30 p-3 text-xs overflow-auto max-h-48">
+                      <pre className="whitespace-pre-wrap break-words">
+                        {JSON.stringify(backupDryRunResult, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="restoreConfirm" className="text-sm">
+                      Confirmación (escribe <code>RESTORE</code>)
+                    </Label>
+                    <Input
+                      id="restoreConfirm"
+                      value={backupConfirmText}
+                      onChange={(e) => setBackupConfirmText(e.target.value)}
+                      placeholder="RESTORE"
+                      disabled={isBackupBusy}
+                    />
+                    {backupLastSnapshotKey && (
+                      <p className="text-xs text-muted-foreground">
+                        Snapshot guardado en KV: <code>{backupLastSnapshotKey}</code>
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </motion.div>
 

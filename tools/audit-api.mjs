@@ -261,6 +261,59 @@ async function runForBase(baseUrl, opts) {
     };
   });
 
+  // Optional: admin backup export + dry-run import (localhost only)
+  await record("T6 admin backup export (optional)", async () => {
+    if (!allowWrite) return { skipped: true, reason: "Writes disabled (localhost only)" };
+    if (!adminCookie) return { skipped: true, reason: "No admin_session cookie (need AUDIT_ADMIN_KEY)" };
+
+    const { url, res, text } = await fetchText(baseUrl, "/api/admin/backup/export", {
+      method: "GET",
+      headers: { Cookie: adminCookie },
+    });
+    return {
+      request: { url, method: "GET" },
+      response: {
+        status: res.status,
+        headers: pickHeaders(res),
+        bodyPreview: redactTokenLike(text.slice(0, 700)),
+      },
+      assert: assertStatusIn("T6", res.status, [200, 404]),
+      extracted: {
+        looksLikeBackup: text.includes("\"meta\"") && text.includes("\"data\""),
+      },
+      _rawBackup: res.ok ? text : undefined,
+    };
+  });
+
+  await record("T7 admin backup import dry-run (optional)", async () => {
+    if (!allowWrite) return { skipped: true, reason: "Writes disabled (localhost only)" };
+    if (!adminCookie) return { skipped: true, reason: "No admin_session cookie (need AUDIT_ADMIN_KEY)" };
+
+    // Reuse export payload if possible; otherwise skip to avoid synthetic data.
+    const exportRes = await fetchText(baseUrl, "/api/admin/backup/export", {
+      method: "GET",
+      headers: { Cookie: adminCookie },
+    });
+    if (!exportRes.res.ok) {
+      return { skipped: true, reason: `Export failed (${exportRes.res.status})` };
+    }
+
+    const { url, res, text } = await fetchText(baseUrl, "/api/admin/backup/import?mode=dry-run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: exportRes.text,
+    });
+    return {
+      request: { url, method: "POST" },
+      response: {
+        status: res.status,
+        headers: pickHeaders(res),
+        bodyPreview: redactTokenLike(text.slice(0, 700)),
+      },
+      assert: assertStatusIn("T7", res.status, [200, 404]),
+    };
+  });
+
   // Test 3: RSVP persistence attempt
   // - If /api/invitados exists, demonstrate that writing without admin_session fails (expected 401).
   // - If allowWrite + adminCookie, create a test group so we can attempt token reads/writes.
