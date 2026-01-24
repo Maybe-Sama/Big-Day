@@ -75,7 +75,6 @@ export async function getIds(): Promise<string[]> {
 }
 
 export async function setIds(ids: string[]): Promise<void> {
-  // Dedup + stable
   const unique = Array.from(new Set(ids.filter(Boolean)));
   await redis.set(IDS_KEY, unique);
 }
@@ -133,7 +132,6 @@ export async function upsertGrupo(grupo: GrupoInvitadosEntity): Promise<void> {
 
 export async function deleteGrupoById(id: string): Promise<void> {
   const current = await getGrupoById(id);
-  // Best-effort cleanup of indices
   if (current?.token) {
     const tok = normalizeToken(current.token);
     await redis.del(tokenKey(tok));

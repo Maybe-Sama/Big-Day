@@ -131,7 +131,7 @@ const AdminOculto = () => {
     setIsBackupBusy(true);
     setBackupLastSnapshotKey(null);
     try {
-      const response = await fetch('/api/admin/backup/export', {
+      const response = await fetch('/api/admin?action=backup-export', {
         method: 'GET',
         credentials: 'include',
       });
@@ -191,7 +191,7 @@ const AdminOculto = () => {
     setBackupLastSnapshotKey(null);
     try {
       const payload = await readBackupFileJson(backupFile);
-      const response = await fetch('/api/admin/backup/import?mode=dry-run', {
+      const response = await fetch('/api/admin?action=backup-import&mode=dry-run', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -236,7 +236,7 @@ const AdminOculto = () => {
     setBackupLastSnapshotKey(null);
     try {
       const payload = await readBackupFileJson(backupFile);
-      const response = await fetch('/api/admin/backup/import?mode=apply', {
+      const response = await fetch('/api/admin?action=backup-import&mode=apply', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -285,7 +285,7 @@ const AdminOculto = () => {
 
     setIsLoggingIn(true);
     try {
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch('/api/admin?action=login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -339,7 +339,7 @@ const AdminOculto = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/admin/logout', {
+      const response = await fetch('/api/admin?action=logout', {
         method: 'POST',
         credentials: 'include',
       });

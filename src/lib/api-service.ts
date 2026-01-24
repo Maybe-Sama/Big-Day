@@ -134,7 +134,7 @@ class ApiService {
 
   async getConfiguracionBuses(): Promise<ConfiguracionBuses | null> {
     try {
-      return await this.fetchApi<ConfiguracionBuses>('/config/buses');
+      return await this.fetchApi<ConfiguracionBuses>('/config?kind=buses');
     } catch (error: any) {
       if (error.message.includes('404')) {
         return null;
@@ -145,7 +145,7 @@ class ApiService {
 
   async saveConfiguracionBuses(config: ConfiguracionBuses): Promise<void> {
     // Requiere admin key (llamada privada)
-    await this.fetchApi('/config/buses', {
+    await this.fetchApi('/config?kind=buses', {
       method: 'POST',
       body: JSON.stringify(config),
     }, true);
@@ -155,7 +155,7 @@ class ApiService {
 
   async getConfiguracionMesas(): Promise<ConfiguracionMesas | null> {
     try {
-      return await this.fetchApi<ConfiguracionMesas>('/config/mesas');
+      return await this.fetchApi<ConfiguracionMesas>('/config?kind=mesas');
     } catch (error: any) {
       if (error.message.includes('404')) {
         return null;
@@ -166,7 +166,7 @@ class ApiService {
 
   async saveConfiguracionMesas(config: ConfiguracionMesas): Promise<void> {
     // Requiere admin key (llamada privada)
-    await this.fetchApi('/config/mesas', {
+    await this.fetchApi('/config?kind=mesas', {
       method: 'POST',
       body: JSON.stringify(config),
     }, true);
@@ -176,7 +176,7 @@ class ApiService {
 
   async getAllCarreras(): Promise<CarreraFotos[]> {
     try {
-      return await this.fetchApi<CarreraFotos[]>('/carreras') || [];
+      return await this.fetchApi<CarreraFotos[]>('/config?kind=carreras') || [];
     } catch (error: any) {
       if (error.message.includes('404')) {
         return [];
@@ -206,7 +206,7 @@ class ApiService {
     }
 
     // Requiere admin key (llamada privada)
-    await this.fetchApi('/carreras', {
+    await this.fetchApi('/config?kind=carreras', {
       method: 'POST',
       body: JSON.stringify(carreras),
     }, true);

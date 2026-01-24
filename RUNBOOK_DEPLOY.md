@@ -3,7 +3,7 @@
 ## Objetivo
 Validar y desplegar el hotfix de seguridad que:
 - **Desactiva** `/api/debug` en **producción** (404 siempre).
-- **Protege** `POST` en `/api/config/buses`, `/api/config/mesas`, `/api/carreras` con `admin_session`.
+- **Protege** `POST` en `/api/config?kind=...` (mesas/buses/carreras) con `admin_session`.
 - Evita UX engañosa en `RSVP` cuando el guardado falla (no “finge” persistencia).
 
 Este runbook está diseñado para ejecutarse **sin exponer secretos**.
@@ -52,14 +52,14 @@ curl -sS -D - -o NUL https://big-day-five.vercel.app/api/debug
 ### Test 2 — POST sin auth a config (debe ser 401/403)
 
 ```bash
-curl -sS -D - -o NUL -X POST https://big-day-five.vercel.app/api/config/mesas -H "Content-Type: application/json" --data "{}"
-curl -sS -D - -o NUL -X POST https://big-day-five.vercel.app/api/config/buses -H "Content-Type: application/json" --data "{}"
-curl -sS -D - -o NUL -X POST https://big-day-five.vercel.app/api/carreras -H "Content-Type: application/json" --data "[]"
+curl -sS -D - -o NUL -X POST "https://big-day-five.vercel.app/api/config?kind=mesas" -H "Content-Type: application/json" --data "{}"
+curl -sS -D - -o NUL -X POST "https://big-day-five.vercel.app/api/config?kind=buses" -H "Content-Type: application/json" --data "{}"
+curl -sS -D - -o NUL -X POST "https://big-day-five.vercel.app/api/config?kind=carreras" -H "Content-Type: application/json" --data "[]"
 #
 # Linux/macOS:
-# curl -sS -D - -o /dev/null -X POST https://big-day-five.vercel.app/api/config/mesas -H "Content-Type: application/json" --data "{}"
-# curl -sS -D - -o /dev/null -X POST https://big-day-five.vercel.app/api/config/buses -H "Content-Type: application/json" --data "{}"
-# curl -sS -D - -o /dev/null -X POST https://big-day-five.vercel.app/api/carreras -H "Content-Type: application/json" --data "[]"
+# curl -sS -D - -o /dev/null -X POST "https://big-day-five.vercel.app/api/config?kind=mesas" -H "Content-Type: application/json" --data "{}"
+# curl -sS -D - -o /dev/null -X POST "https://big-day-five.vercel.app/api/config?kind=buses" -H "Content-Type: application/json" --data "{}"
+# curl -sS -D - -o /dev/null -X POST "https://big-day-five.vercel.app/api/config?kind=carreras" -H "Content-Type: application/json" --data "[]"
 ```
 
 **Esperado**:
@@ -69,9 +69,9 @@ curl -sS -D - -o NUL -X POST https://big-day-five.vercel.app/api/carreras -H "Co
 ### Test 3 — GET público a config/carreras (puede ser 200 o null/[])
 
 ```bash
-curl -i https://big-day-five.vercel.app/api/config/mesas
-curl -i https://big-day-five.vercel.app/api/config/buses
-curl -i https://big-day-five.vercel.app/api/carreras
+curl -i "https://big-day-five.vercel.app/api/config?kind=mesas"
+curl -i "https://big-day-five.vercel.app/api/config?kind=buses"
+curl -i "https://big-day-five.vercel.app/api/config?kind=carreras"
 ```
 
 **Esperado**:
@@ -94,7 +94,7 @@ AUDIT_BASE_URLS="https://big-day-five.vercel.app" node tools/audit-api.mjs
 
 ## Verificación post-deploy (con sesión admin) — opcional
 Para validar que el admin sigue pudiendo escribir config/carreras, hay que:
-1) Loguearse en UI admin (o usar `/api/admin/login`).
+1) Loguearse en UI admin (o usar `/api/admin?action=login`).
 2) Reintentar el POST con cookie `admin_session`.
 
 > No incluyas cookies/tokens en tickets ni en logs.

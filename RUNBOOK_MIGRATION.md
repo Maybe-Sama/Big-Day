@@ -41,7 +41,7 @@ Esto no cambia las lecturas/escrituras principales todavía.
 Requiere cookie `admin_session` (sesión admin activa).
 
 ```bash
-curl -i -X POST "https://big-day-five.vercel.app/api/admin-migrate?mode=dry-run" -b cookies.txt
+curl -i -X POST "https://big-day-five.vercel.app/api/admin?action=migrate&mode=dry-run" -b cookies.txt
 ```
 
 **Esperado**: `200` con resumen:
@@ -54,7 +54,7 @@ curl -i -X POST "https://big-day-five.vercel.app/api/admin-migrate?mode=dry-run"
 ### 2.2 Apply (crea snapshot server-side y ejecuta migración)
 
 ```bash
-curl -i -X POST "https://big-day-five.vercel.app/api/admin-migrate?mode=apply" -b cookies.txt
+curl -i -X POST "https://big-day-five.vercel.app/api/admin?action=migrate&mode=apply" -b cookies.txt
 ```
 
 **Esperado**: `200` con:
@@ -63,8 +63,8 @@ curl -i -X POST "https://big-day-five.vercel.app/api/admin-migrate?mode=apply" -
 
 > La migración es **idempotente**. Ejecutarla varias veces no debe duplicar `invitados:ids` ni romper el mapping token→id.
 
-> Nota de routing: en algunos despliegues Vercel puede no rutear correctamente rutas anidadas como `/api/admin/migrate` y caer al SPA.
-> El endpoint **canónico de operación** es `/api/admin-migrate`.
+> Nota de routing/limit: en Vercel Hobby puedes exceder el límite de Functions y entonces endpoints nuevos caen al SPA.
+> Para operar con menos functions, el endpoint **canónico** de migración es `/api/admin?action=migrate`.
 
 ---
 
@@ -100,8 +100,8 @@ Si hay problemas:
 1) Set `STORAGE_MODE=legacy` en Vercel y redeploy.
 2) Los datos escritos durante `entity` **siguen en KV** en `invitados:grupo:*`. (No se borran).
 
-> Si necesitas volver a legacy y conservar los cambios hechos en entity, re-ejecuta `POST /api/admin/migrate?mode=apply` tras volver a legacy (no borra legacy, pero re-genera entity; para “reverse” no hay endpoint automático).
-> Si estás usando este runbook, usa el endpoint canónico: `POST /api/admin-migrate?mode=apply`.
+> Si necesitas volver a legacy y conservar los cambios hechos en entity, re-ejecuta `POST /api/admin?action=migrate&mode=apply` tras volver a legacy (no borra legacy, pero re-genera entity; para “reverse” no hay endpoint automático).
+> Si estás usando este runbook, usa el endpoint canónico: `POST /api/admin?action=migrate&mode=apply`.
 
 ### Restaurar desde snapshot de migración
 Si algo salió mal durante migración:

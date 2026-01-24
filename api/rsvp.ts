@@ -8,7 +8,7 @@ import {
   getGrupoByToken as getEntityGrupoByToken,
   upsertGrupo as upsertEntityGrupo,
   normalizeToken as normalizeTokenShared,
-} from './lib/storage.js';
+} from '../serverlib/storage.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
