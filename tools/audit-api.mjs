@@ -531,10 +531,44 @@ async function runForBase(baseUrl, opts) {
   });
 
   // Optional: migration dry-run/apply (localhost only)
+  await record("T8a GET /api/admin-migrate (should be JSON 405)", async () => {
+    const { url, res, text } = await fetchText(baseUrl, "/api/admin-migrate", { method: "GET" });
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const looksHtml = text.toLowerCase().includes("<!doctype html") || ct.includes("text/html");
+    return {
+      request: { url, method: "GET" },
+      response: { status: res.status, headers: pickHeaders(res), bodyPreview: redactTokenLike(text.slice(0, 400)) },
+      assert: {
+        pass: (res.status === 405 || res.status === 404) && !looksHtml,
+        expected: "T8a: status 405/404 and NOT HTML (no SPA fallback)",
+        actual: `status=${res.status}, content-type=${ct || "none"}, looksHtml=${String(looksHtml)}`,
+      },
+    };
+  });
+
+  await record("T8b POST /api/admin-migrate dry-run without cookie (should 401 JSON)", async () => {
+    const { url, res, text } = await fetchText(baseUrl, "/api/admin-migrate?mode=dry-run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const looksHtml = text.toLowerCase().includes("<!doctype html") || ct.includes("text/html");
+    return {
+      request: { url, method: "POST" },
+      response: { status: res.status, headers: pickHeaders(res), bodyPreview: redactTokenLike(text.slice(0, 400)) },
+      assert: {
+        pass: (res.status === 401 || res.status === 404) && !looksHtml,
+        expected: "T8b: status 401/404 and NOT HTML (no SPA fallback)",
+        actual: `status=${res.status}, content-type=${ct || "none"}, looksHtml=${String(looksHtml)}`,
+      },
+    };
+  });
+
   await record("T8 admin migrate dry-run (optional)", async () => {
     if (!allowWrite) return { skipped: true, reason: "Writes disabled (localhost only)" };
     if (!adminCookie) return { skipped: true, reason: "No admin_session cookie (need AUDIT_ADMIN_KEY)" };
-    const { url, res, text } = await fetchText(baseUrl, "/api/admin/migrate?mode=dry-run", {
+    const { url, res, text } = await fetchText(baseUrl, "/api/admin-migrate?mode=dry-run", {
       method: "POST",
       headers: { Cookie: adminCookie },
     });
@@ -548,7 +582,7 @@ async function runForBase(baseUrl, opts) {
   await record("T9 admin migrate apply (optional)", async () => {
     if (!allowWrite) return { skipped: true, reason: "Writes disabled (localhost only)" };
     if (!adminCookie) return { skipped: true, reason: "No admin_session cookie (need AUDIT_ADMIN_KEY)" };
-    const { url, res, text } = await fetchText(baseUrl, "/api/admin/migrate?mode=apply", {
+    const { url, res, text } = await fetchText(baseUrl, "/api/admin-migrate?mode=apply", {
       method: "POST",
       headers: { Cookie: adminCookie },
       body: "",
