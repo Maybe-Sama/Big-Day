@@ -335,7 +335,6 @@ const RSVP = () => {
         b.nombre === busIdSeleccionado ||
         `Bus #${b.numero}` === busIdSeleccionado
       );
-      const paradaInfo = busInfo?.paradas.find(p => p.nombre === grupo.parada_bus);
 
       const grupoActualizado: GrupoInvitados = {
         ...grupo,
@@ -352,7 +351,6 @@ const RSVP = () => {
         ubicacion_bus: grupo.confirmacion_bus && busInfo?.nombre 
           ? busInfo.nombre 
           : (grupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
-        parada_bus: grupo.confirmacion_bus && paradaInfo ? paradaInfo.nombre : undefined,
       };
 
       await dbService.saveGrupo(grupoActualizado);
@@ -428,7 +426,6 @@ const RSVP = () => {
         b.nombre === busIdSeleccionado ||
         `Bus #${b.numero}` === busIdSeleccionado
       );
-      const paradaInfo = busInfo?.paradas.find(p => p.nombre === grupo.parada_bus);
 
       const grupoActualizado: GrupoInvitados = {
         ...grupo,
@@ -445,7 +442,6 @@ const RSVP = () => {
         ubicacion_bus: grupo.confirmacion_bus && busInfo?.nombre 
           ? busInfo.nombre 
           : (grupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
-        parada_bus: grupo.confirmacion_bus && paradaInfo ? paradaInfo.nombre : undefined,
       };
 
       await dbService.saveGrupo(grupoActualizado);
@@ -510,7 +506,6 @@ const RSVP = () => {
         b.nombre === busIdSeleccionado ||
         `Bus #${b.numero}` === busIdSeleccionado
       );
-      const paradaInfo = busInfo?.paradas.find(p => p.nombre === grupo.parada_bus);
 
       const grupoActualizado: GrupoInvitados = {
         ...grupo,
@@ -527,7 +522,6 @@ const RSVP = () => {
         ubicacion_bus: grupo.confirmacion_bus && busInfo?.nombre 
           ? busInfo.nombre 
           : (grupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
-        parada_bus: grupo.confirmacion_bus && paradaInfo ? paradaInfo.nombre : undefined,
       };
 
       await dbService.saveGrupo(grupoActualizado);
@@ -822,7 +816,6 @@ const RSVP = () => {
       `Bus #${b.numero}` === grupo.ubicacion_bus
     );
   });
-  const paradasDisponibles = busActual?.paradas || [];
   
   // ID del bus seleccionado para el Select
   const busSeleccionadoId = busActual?.id || '';
@@ -1066,27 +1059,33 @@ const RSVP = () => {
       </section>
 
       {/* RSVP Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-6 sm:px-4">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-8">
         <div className="container mx-auto max-w-6xl">
           {/* Marco decorativo con título y subtítulo */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative w-full mb-6 sm:mb-8"
+            className="relative w-full mb-8 sm:mb-10"
           >
             <div 
-              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] bg-cover bg-center bg-no-repeat"
+              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: 'url(/confirmar.png)' }}
             >
               {/* Contenedor para el texto centrado en el área negra */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-8 sm:px-12 md:px-16 lg:px-20">
-                <h2 className="font-playfair text-xl sm:text-2xl md:text-3xl font-bold text-black text-center mb-2 sm:mb-3 leading-tight">
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24">
+                <h2 className="font-playfair text-2xl sm:text-3xl md:text-4xl font-bold text-black text-center mb-2 sm:mb-3 leading-tight">
                   Confirma tu Asistencia
                 </h2>
-                <p className="text-black text-[10px] sm:text-xs md:text-sm text-center max-w-md leading-tight">
-                  <span className="block">Hola {grupo.invitadoPrincipal.nombre},</span>
-                  <span className="block">completa tu información</span>
+                <p className="text-black text-sm sm:text-base md:text-lg text-center max-w-2xl leading-snug">
+                  <span className="block">
+                    Hola{" "}
+                    <span className="font-playfair font-bold text-lg sm:text-xl md:text-2xl">
+                      {grupo.invitadoPrincipal.nombre}
+                    </span>
+                    ,
+                  </span>
+                  <span className="block">por favor, completa tu información</span>
                   <span className="block">para confirmar tu asistencia</span>
                 </p>
               </div>
@@ -1422,7 +1421,6 @@ const RSVP = () => {
                         ...grupo,
                         confirmacion_bus: !!checked,
                         ubicacion_bus: !checked ? undefined : grupo.ubicacion_bus,
-                        parada_bus: !checked ? undefined : grupo.parada_bus,
                       });
                     }}
                   />
@@ -1451,7 +1449,6 @@ const RSVP = () => {
                                 setGrupo({
                                   ...grupo,
                                   ubicacion_bus: busSeleccionado.id,
-                                  parada_bus: undefined,
                                 });
                               }
                             }}
@@ -1468,44 +1465,6 @@ const RSVP = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        
-                        {busActual && paradasDisponibles.length > 0 && (
-                          <div>
-                            <Label htmlFor="parada-seleccionada" className="text-sm">Seleccionar Parada</Label>
-                            <Select
-                              value={grupo.parada_bus || ''}
-                              onValueChange={(value) => {
-                                setGrupo({
-                                  ...grupo,
-                                  parada_bus: value || undefined,
-                                });
-                              }}
-                            >
-                              <SelectTrigger id="parada-seleccionada" className="text-sm h-9 sm:h-10 mt-1">
-                                <SelectValue placeholder="Selecciona una parada" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {paradasDisponibles.map((parada) => (
-                                  <SelectItem key={parada.id} value={parada.nombre}>
-                                    {parada.nombre}
-                                    {parada.ubicacion && ` - ${parada.ubicacion}`}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Parada donde subirán al {busActual.nombre || `Bus #${busActual.numero}`}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {busActual && paradasDisponibles.length === 0 && (
-                          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                            <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                              Este bus no tiene paradas configuradas. Contacta con los novios.
-                            </p>
-                          </div>
-                        )}
                       </>
                     )}
                   </div>

@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, Bus, Trash2 } from 'lucide-react';
+import { Plus, Bus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppModal } from '@/components/common';
-import { ConfiguracionBuses, BusConfig, ParadaBus } from '@/types/bus';
+import { ConfiguracionBuses, BusConfig } from '@/types/bus';
 import { dbService } from '@/lib/database';
 
 interface ConfigBusesModalProps {
@@ -66,7 +65,7 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
     const nuevoBus: BusConfig = {
       id: Date.now().toString(),
       numero: buses.length + 1,
-      paradas: [],
+      nombre: '',
     };
     setBuses([...buses, nuevoBus]);
   };
@@ -78,42 +77,9 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
     setBuses(nuevosBuses);
   };
 
-  const updateBus = (busId: string, field: keyof BusConfig, value: string | ParadaBus[]) => {
+  const updateBus = (busId: string, field: keyof BusConfig, value: string) => {
     setBuses(buses.map(bus =>
       bus.id === busId ? { ...bus, [field]: value } : bus
-    ));
-  };
-
-  const addParada = (busId: string) => {
-    const nuevaParada: ParadaBus = {
-      id: Date.now().toString(),
-      nombre: '',
-    };
-    setBuses(buses.map(bus =>
-      bus.id === busId
-        ? { ...bus, paradas: [...bus.paradas, nuevaParada] }
-        : bus
-    ));
-  };
-
-  const removeParada = (busId: string, paradaId: string) => {
-    setBuses(buses.map(bus =>
-      bus.id === busId
-        ? { ...bus, paradas: bus.paradas.filter(p => p.id !== paradaId) }
-        : bus
-    ));
-  };
-
-  const updateParada = (busId: string, paradaId: string, field: keyof ParadaBus, value: string) => {
-    setBuses(buses.map(bus =>
-      bus.id === busId
-        ? {
-            ...bus,
-            paradas: bus.paradas.map(p =>
-              p.id === paradaId ? { ...p, [field]: value } : p
-            ),
-          }
-        : bus
     ));
   };
 
@@ -121,8 +87,8 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Configurar Buses y Paradas"
-      description="Define el número de buses y las paradas que hará cada uno"
+      title="Configurar Buses"
+      description="Define el número de buses y su ubicación"
       maxWidth="4xl"
       footer={
         <>
@@ -197,60 +163,6 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
                     </Button>
                   </div>
 
-                  {/* Paradas del bus */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">Paradas del Bus</Label>
-                      <Button
-                        onClick={() => addParada(bus.id)}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-8"
-                      >
-                        <Plus className="w-3 h-3 mr-1.5" />
-                        Añadir Parada
-                      </Button>
-                    </div>
-
-                    {bus.paradas.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-2">
-                        No hay paradas configuradas para este bus
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {bus.paradas.map((parada, index) => (
-                          <div
-                            key={parada.id}
-                            className="flex items-center gap-2 p-2 bg-muted/50 rounded"
-                          >
-                            <span className="text-xs font-medium w-8 flex-shrink-0">
-                              #{index + 1}
-                            </span>
-                            <Input
-                              value={parada.nombre}
-                              onChange={(e) => updateParada(bus.id, parada.id, 'nombre', e.target.value)}
-                              placeholder="Nombre de la parada"
-                              className="text-sm h-8 flex-1"
-                            />
-                            <Input
-                              value={parada.ubicacion || ''}
-                              onChange={(e) => updateParada(bus.id, parada.id, 'ubicacion', e.target.value)}
-                              placeholder="Ubicación (opcional)"
-                              className="text-sm h-8 flex-1"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeParada(bus.id, parada.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </motion.div>
               ))}
             </div>

@@ -487,7 +487,6 @@ const AdminOculto = () => {
         b.nombre === busIdSeleccionado ||
         `Bus #${b.numero}` === busIdSeleccionado
       );
-      const paradaInfo = busInfo?.paradas.find(p => p.nombre === editingGrupo.parada_bus);
 
       const grupoActualizado: GrupoInvitados = {
         ...editingGrupo,
@@ -505,7 +504,6 @@ const AdminOculto = () => {
         ubicacion_bus: editingGrupo.confirmacion_bus && busInfo?.nombre 
           ? busInfo.nombre 
           : (editingGrupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
-        parada_bus: editingGrupo.confirmacion_bus && paradaInfo ? paradaInfo.nombre : undefined,
       };
 
       await dbService.saveGrupo(grupoActualizado);
@@ -1689,7 +1687,6 @@ const AdminOculto = () => {
                           updateEditingGrupo('confirmacion_bus', checked === true);
                           if (!checked) {
                             updateEditingGrupo('ubicacion_bus', undefined);
-                            updateEditingGrupo('parada_bus', undefined);
                           }
                         }}
                       />
@@ -1728,7 +1725,6 @@ const AdminOculto = () => {
                                   const busSeleccionado = configBuses.buses.find(b => b.id === value);
                                   if (busSeleccionado) {
                                     updateEditingGrupo('ubicacion_bus', busSeleccionado.id);
-                                    updateEditingGrupo('parada_bus', undefined);
                                   }
                                 }}
                               >
@@ -1744,56 +1740,6 @@ const AdminOculto = () => {
                                 </SelectContent>
                               </Select>
                             </div>
-                            
-                            {(() => {
-                              const busActual = configBuses.buses.find(b => 
-                                b.id === editingGrupo.ubicacion_bus || 
-                                b.nombre === editingGrupo.ubicacion_bus ||
-                                `Bus #${b.numero}` === editingGrupo.ubicacion_bus
-                              );
-                              const paradasDisponibles = busActual?.paradas || [];
-                              
-                              if (busActual && paradasDisponibles.length > 0) {
-                                return (
-                                  <div>
-                                    <Label htmlFor="edit-parada-seleccionada" className="text-sm">Seleccionar Parada</Label>
-                                    <Select
-                                      value={editingGrupo.parada_bus || ''}
-                                      onValueChange={(value) => {
-                                        updateEditingGrupo('parada_bus', value || undefined);
-                                      }}
-                                    >
-                                      <SelectTrigger id="edit-parada-seleccionada" className="text-sm h-9 sm:h-10 mt-1">
-                                        <SelectValue placeholder="Selecciona una parada" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {paradasDisponibles.map((parada) => (
-                                          <SelectItem key={parada.id} value={parada.nombre}>
-                                            {parada.nombre}
-                                            {parada.ubicacion && ` - ${parada.ubicacion}`}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Parada donde subirán al {busActual.nombre || `Bus #${busActual.numero}`}
-                                    </p>
-                                  </div>
-                                );
-                              }
-                              
-                              if (busActual && paradasDisponibles.length === 0) {
-                                return (
-                                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                                    <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                                      Este bus no tiene paradas configuradas.
-                                    </p>
-                                  </div>
-                                );
-                              }
-                              
-                              return null;
-                            })()}
                           </>
                         )}
                       </motion.div>
@@ -2118,14 +2064,6 @@ const AdminOculto = () => {
                               <span className="font-medium text-sm sm:text-base">Ubicación/Origen:</span>
                               <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                                 {selectedGrupo.ubicacion_bus}
-                              </p>
-                            </div>
-                          )}
-                          {selectedGrupo.parada_bus && (
-                            <div>
-                              <span className="font-medium text-sm sm:text-base">Parada específica:</span>
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                                {selectedGrupo.parada_bus}
                               </p>
                             </div>
                           )}

@@ -83,7 +83,6 @@ export const migrateOldData = async (): Promise<void> => {
         notas: `Migrado desde datos antiguos. Acompañantes originales: ${oldInvitado.acompanantes}`,
         confirmacion_bus: false, // Por defecto no usan bus
         ubicacion_bus: undefined,
-        parada_bus: undefined,
         mesa: undefined, // Sin mesa asignada por defecto
       };
     });

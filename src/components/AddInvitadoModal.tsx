@@ -84,7 +84,6 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
       notas: undefined, // Opcional, se puede añadir después
       confirmacion_bus: false, // Se configurará en RSVP
       ubicacion_bus: undefined,
-      parada_bus: undefined,
     };
 
     console.log("=== DEBUG: Grupo a guardar ===");

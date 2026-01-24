@@ -26,7 +26,6 @@ export interface GrupoInvitados {
   // Campos de bus
   confirmacion_bus: boolean; // Si el grupo va a coger el bus
   ubicacion_bus?: string; // Desde qué ubicación/parada del bus
-  parada_bus?: string; // Nombre específico de la parada
   // Campo de mesa
   mesa?: string; // ID de la mesa asignada
 }
