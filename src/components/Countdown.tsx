@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 const Countdown = () => {
   // Fecha de la boda: 13 de junio de 2026 a las 19:00 (hora España peninsular, CEST)
   // Nota: incluimos offset para evitar que el navegador lo interprete en la zona horaria del visitante.
-  const WEDDING_DATE = "2026-06-13T19:00:00+02:00";
+  const WEDDING_DATE = "2026-06-13T19:00:00+01:00";
   
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
