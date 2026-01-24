@@ -1,6 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
 import { validateAdminSession } from './lib/auth.js';
+import {
+  GrupoInvitadosEntity,
+  getGrupoById,
+  getGrupoByToken as getEntityGrupoByToken,
+  listGrupos as listEntityGrupos,
+  upsertGrupo as upsertEntityGrupo,
+  deleteGrupoById as deleteEntityGrupoById,
+  readLegacyGrupos,
+  writeLegacyGrupos,
+} from './lib/storage.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
@@ -11,6 +21,8 @@ const DB_KEY = 'invitados:grupos';
 const CONFIG_BUSES_KEY = 'invitados:config:buses';
 const CONFIG_MESAS_KEY = 'invitados:config:mesas';
 const CARRERAS_KEY = 'invitados:carreras';
+
+const STORAGE_MODE = (process.env.STORAGE_MODE || 'legacy').toLowerCase() as 'legacy' | 'entity';
 
 // GET /api/invitados - Obtener todos los grupos
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -41,23 +53,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       // Si hay token en query, buscar grupo específico (PÚBLICO - no requiere admin key)
       if (token && typeof token === 'string') {
-        // Normalizar token: trim y lowercase
         const normalizedToken = token.trim().toLowerCase();
-        console.log(`[API] GET /invitados?token=${normalizedToken} (público)`);
-        
+        // No loguear tokens completos
+        console.log(`[API] GET /invitados?token=**** (público)`);
+
+        if (STORAGE_MODE === 'entity') {
+          const grupo = await getEntityGrupoByToken(normalizedToken);
+          if (!grupo) {
+            return res.status(404).json({ error: 'Token no encontrado' });
+          }
+          return res.status(200).json(grupo);
+        }
+
         const grupos = await redis.get<unknown[]>(DB_KEY) || [];
-        // Buscar por token normalizado
-        const grupo = grupos.find((g: any) => {
-          const grupoToken = (g.token || '').trim().toLowerCase();
-          return grupoToken === normalizedToken;
-        });
+        const grupo = grupos.find((g: any) => ((g.token || '').trim().toLowerCase()) === normalizedToken);
         
         if (!grupo) {
-          console.log(`[API] Token no encontrado: ${normalizedToken}`);
           return res.status(404).json({ error: 'Token no encontrado' });
         }
         
-        console.log(`[API] Grupo encontrado: ${(grupo as any).invitadoPrincipal?.nombre}`);
         return res.status(200).json(grupo);
       }
       
@@ -67,9 +81,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('[API] GET /invitados sin token: acceso no autorizado');
         return res.status(401).json({ error: 'No autorizado' });
       }
-      
+
+      if (STORAGE_MODE === 'entity') {
+        const grupos = await listEntityGrupos();
+        return res.status(200).json(grupos);
+      }
+
       const grupos = await redis.get<unknown[]>(DB_KEY) || [];
-      console.log(`[API] GET /invitados: ${grupos.length} grupos encontrados (admin)`);
       return res.status(200).json(grupos);
     }
 
@@ -87,21 +105,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Grupo inválido: falta el ID' });
       }
 
-      console.log(`[API] POST /invitados: Guardando grupo ${grupo.id} con token ${grupo.token}`);
-      
-      const grupos = await redis.get<unknown[]>(DB_KEY) || [];
-      const index = grupos.findIndex((g: any) => g.id === grupo.id);
-      
-      if (index >= 0) {
-        grupos[index] = grupo;
-        console.log(`[API] Grupo actualizado: ${grupo.id}`);
-      } else {
-        grupos.push(grupo);
-        console.log(`[API] Grupo nuevo añadido: ${grupo.id}`);
+      // No loguear token completo
+      console.log(`[API] POST /invitados: Guardando grupo ${grupo.id}`);
+
+      if (STORAGE_MODE === 'entity') {
+        await upsertEntityGrupo(grupo as GrupoInvitadosEntity);
+
+        // Compat temporal: mantener legacy como backup (best-effort).
+        const legacy = await readLegacyGrupos();
+        const idx = legacy.findIndex((g: any) => g?.id === grupo.id);
+        const next = [...legacy];
+        if (idx >= 0) next[idx] = grupo;
+        else next.push(grupo);
+        await writeLegacyGrupos(next);
+
+        return res.status(200).json({ success: true, grupo });
       }
 
+      const grupos = await redis.get<unknown[]>(DB_KEY) || [];
+      const index = grupos.findIndex((g: any) => g.id === grupo.id);
+      if (index >= 0) grupos[index] = grupo;
+      else grupos.push(grupo);
       await redis.set(DB_KEY, grupos);
-      console.log(`[API] Total grupos guardados: ${grupos.length}`);
       return res.status(200).json({ success: true, grupo });
     }
 
@@ -119,13 +144,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Grupo inválido: falta el ID' });
       }
 
-      const grupos = await redis.get<unknown[]>(DB_KEY) || [];
-      const index = grupos.findIndex((g: any) => g.id === grupo.id);
-      
-      if (index < 0) {
-        return res.status(404).json({ error: 'Grupo no encontrado' });
+      if (STORAGE_MODE === 'entity') {
+        const existing = await getGrupoById(String(grupo.id));
+        if (!existing) return res.status(404).json({ error: 'Grupo no encontrado' });
+
+        await upsertEntityGrupo(grupo as GrupoInvitadosEntity);
+        // best-effort legacy sync
+        const legacy = await readLegacyGrupos();
+        const idx = legacy.findIndex((g: any) => g?.id === grupo.id);
+        const next = [...legacy];
+        if (idx >= 0) next[idx] = grupo;
+        else next.push(grupo);
+        await writeLegacyGrupos(next);
+
+        return res.status(200).json({ success: true, grupo });
       }
 
+      const grupos = await redis.get<unknown[]>(DB_KEY) || [];
+      const index = grupos.findIndex((g: any) => g.id === grupo.id);
+      if (index < 0) return res.status(404).json({ error: 'Grupo no encontrado' });
       grupos[index] = grupo;
       await redis.set(DB_KEY, grupos);
       return res.status(200).json({ success: true, grupo });
@@ -143,6 +180,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'ID requerido' });
+      }
+
+      if (STORAGE_MODE === 'entity') {
+        await deleteEntityGrupoById(id);
+        // best-effort legacy sync
+        const legacy = await readLegacyGrupos();
+        const filtered = legacy.filter((g: any) => g?.id !== id);
+        await writeLegacyGrupos(filtered);
+        return res.status(200).json({ success: true });
       }
 
       const grupos = await redis.get<unknown[]>(DB_KEY) || [];

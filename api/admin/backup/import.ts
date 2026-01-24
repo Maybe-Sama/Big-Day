@@ -2,16 +2,24 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
 import { z } from 'zod';
 import { validateAdminSession } from '../../lib/auth.js';
+import {
+  CARRERAS_KEY,
+  CONFIG_BUSES_KEY,
+  CONFIG_MESAS_KEY,
+  IDS_KEY,
+  LEGACY_GRUPOS_KEY,
+  GrupoInvitadosEntity,
+  grupoKey,
+  normalizeToken,
+  tokenKey,
+} from '../../lib/storage.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
   token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '',
 });
 
-const DB_KEY = 'invitados:grupos';
-const CONFIG_BUSES_KEY = 'invitados:config:buses';
-const CONFIG_MESAS_KEY = 'invitados:config:mesas';
-const CARRERAS_KEY = 'invitados:carreras';
+const STORAGE_MODE = (process.env.STORAGE_MODE || 'legacy').toLowerCase() as 'legacy' | 'entity';
 
 function setCors(req: VercelRequest, res: VercelResponse) {
   const origin = req.headers.origin;
@@ -162,10 +170,6 @@ const BackupSchemaV1 = z
   })
   .strict();
 
-function normalizeToken(t: string) {
-  return t.trim().toLowerCase();
-}
-
 function maskToken(token: string) {
   const t = String(token || '');
   if (!t) return 'tok_****';
@@ -264,17 +268,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const snapshotAt = new Date().toISOString();
     const snapshotKey = `backup:snapshot:${snapshotAt.replace(/[:.]/g, '-')}`;
 
-    const [currentGrupos, currentMesas, currentBuses, currentCarreras] = await Promise.all([
-      redis.get<unknown[]>(DB_KEY),
+    // Snapshot depende del modo activo (para rollback operativo)
+    const [currentLegacyGrupos, currentIds, currentMesas, currentBuses, currentCarreras] = await Promise.all([
+      redis.get<unknown[]>(LEGACY_GRUPOS_KEY),
+      redis.get<string[]>(IDS_KEY),
       redis.get<unknown>(CONFIG_MESAS_KEY),
       redis.get<unknown>(CONFIG_BUSES_KEY),
       redis.get<unknown[]>(CARRERAS_KEY),
     ]);
 
+    const currentEntityGrupos = STORAGE_MODE === 'entity'
+      ? await Promise.all(((currentIds || []) as string[]).map(async (id) => redis.get<unknown>(grupoKey(id))))
+      : [];
+
     const snapshot = {
       meta: { version: 1 as const, snapshotAt, reason: 'import' as const },
       data: {
-        grupos: currentGrupos || [],
+        // Incluimos legacy siempre (por compat). Entity se incluye si está activo.
+        legacyGrupos: currentLegacyGrupos || [],
+        entity: STORAGE_MODE === 'entity'
+          ? { ids: currentIds || [], grupos: currentEntityGrupos.filter(Boolean) }
+          : null,
         config: {
           mesas: currentMesas ?? null,
           buses: currentBuses ?? null,
@@ -285,8 +299,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await redis.set(snapshotKey, snapshot);
 
+    // Escribir data según modo activo
+    if (STORAGE_MODE === 'entity') {
+      const idsNew = new Set<string>();
+      for (const g of backup.data.grupos as unknown as GrupoInvitadosEntity[]) {
+        if (!g?.id || !g?.token) continue;
+        const id = String(g.id);
+        const tok = normalizeToken(String(g.token));
+        if (!id || !tok) continue;
+        await redis.set(grupoKey(id), g);
+        await redis.set(tokenKey(tok), id);
+        idsNew.add(id);
+      }
+      await redis.set(IDS_KEY, Array.from(idsNew));
+      // Mantener legacy como backup restaurable
+      await redis.set(LEGACY_GRUPOS_KEY, backup.data.grupos);
+    } else {
+      await redis.set(LEGACY_GRUPOS_KEY, backup.data.grupos);
+    }
+
     await Promise.all([
-      redis.set(DB_KEY, backup.data.grupos),
       redis.set(CONFIG_MESAS_KEY, backup.data.config.mesas),
       redis.set(CONFIG_BUSES_KEY, backup.data.config.buses),
       redis.set(CARRERAS_KEY, backup.data.config.carreras),
@@ -299,6 +331,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       snapshotKey,
       summary,
+      storageMode: STORAGE_MODE,
     });
   } catch (error: any) {
     const msg = String(error?.message || '');

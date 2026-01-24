@@ -1,6 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
 import { z } from 'zod';
+import {
+  GrupoInvitadosEntity,
+  getGrupoIdByToken,
+  getGrupoById,
+  getGrupoByToken as getEntityGrupoByToken,
+  upsertGrupo as upsertEntityGrupo,
+  normalizeToken as normalizeTokenShared,
+} from './lib/storage.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
@@ -8,6 +16,7 @@ const redis = new Redis({
 });
 
 const DB_KEY = 'invitados:grupos';
+const STORAGE_MODE = (process.env.STORAGE_MODE || 'legacy').toLowerCase() as 'legacy' | 'entity';
 
 const AsistenciaSchema = z.enum(['pendiente', 'confirmado', 'rechazado']);
 
@@ -38,7 +47,7 @@ const RsvpPatchSchema = z
   .strict();
 
 function normalizeToken(token: string): string {
-  return token.trim().toLowerCase();
+  return normalizeTokenShared(token);
 }
 
 function maskToken(token?: unknown): string {
@@ -123,6 +132,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Payload inválido' });
     }
     const patch = parsed.data;
+
+    if (STORAGE_MODE === 'entity') {
+      // Entity store path: update single group key by token->id mapping.
+      const tok = normalizedToken;
+      let id = await getGrupoIdByToken(tok);
+
+      // Fallback: if mapping missing (not migrated yet), try to read legacy once and “lift” to entity.
+      if (!id) {
+        const legacy = (await redis.get<unknown[]>(DB_KEY)) || [];
+        const legacyGrupo = legacy.find((g: any) => normalizeToken(String(g?.token || '')) === tok) as unknown as GrupoInvitadosEntity | undefined;
+        if (!legacyGrupo?.id) {
+          return res.status(404).json({ error: 'Token no encontrado' });
+        }
+        await upsertEntityGrupo(legacyGrupo);
+        id = legacyGrupo.id;
+      }
+
+      // optimistic retry (2 attempts) on fechaActualizacion
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const current = await getGrupoById(id);
+        if (!current) return res.status(404).json({ error: 'Token no encontrado' });
+        const baseFecha = String(current.fechaActualizacion || '');
+
+        const updated: any = cloneGrupoForUpdate(current);
+        const desiredAsistencia = patch.invitadoPrincipal?.asistencia ?? patch.asistencia;
+        if (typeof desiredAsistencia !== 'undefined') {
+          updated.asistencia = desiredAsistencia;
+          updated.invitadoPrincipal.asistencia = desiredAsistencia;
+        }
+        if (typeof patch.confirmacion_bus !== 'undefined') updated.confirmacion_bus = patch.confirmacion_bus;
+        if (typeof patch.ubicacion_bus !== 'undefined') updated.ubicacion_bus = patch.ubicacion_bus || undefined;
+        if (patch.invitadoPrincipal && typeof patch.invitadoPrincipal.alergias !== 'undefined') {
+          updated.invitadoPrincipal.alergias = patch.invitadoPrincipal.alergias || undefined;
+        }
+        if (patch.acompanantes) {
+          if (!Array.isArray(updated.acompanantes)) return res.status(400).json({ error: 'Acompañantes inválidos' });
+          const existingIds = new Set<string>(updated.acompanantes.map((ac: any) => String(ac?.id || '')));
+          for (const acPatch of patch.acompanantes) {
+            if (!existingIds.has(acPatch.id)) return res.status(400).json({ error: 'Acompañante no permitido' });
+          }
+          updated.acompanantes = updated.acompanantes.map((ac: any) => {
+            const p = patch.acompanantes?.find((x) => x.id === String(ac?.id || ''));
+            if (!p) return ac;
+            const next = { ...ac };
+            if (typeof p.asistencia !== 'undefined') next.asistencia = p.asistencia;
+            if (typeof p.alergias !== 'undefined') next.alergias = p.alergias || undefined;
+            return next;
+          });
+        }
+        updated.fechaActualizacion = new Date().toISOString();
+
+        const reread = await getGrupoById(id);
+        const nowFecha = String(reread?.fechaActualizacion || '');
+        if (nowFecha !== baseFecha) {
+          if (attempt === 0) continue;
+          return res.status(409).json({ error: 'Conflicto: el grupo fue actualizado recientemente. Reintenta.' });
+        }
+
+        await upsertEntityGrupo(updated as GrupoInvitadosEntity);
+        return res.status(200).json(sanitizeGrupoForResponse(updated));
+      }
+
+      return res.status(409).json({ error: 'Conflicto: el grupo fue actualizado recientemente. Reintenta.' });
+    }
 
     const findIndexByToken = (arr: unknown[]) =>
       arr.findIndex((g: any) => normalizeToken(String(g?.token || '')) === normalizedToken);

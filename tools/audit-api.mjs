@@ -530,6 +530,36 @@ async function runForBase(baseUrl, opts) {
     };
   });
 
+  // Optional: migration dry-run/apply (localhost only)
+  await record("T8 admin migrate dry-run (optional)", async () => {
+    if (!allowWrite) return { skipped: true, reason: "Writes disabled (localhost only)" };
+    if (!adminCookie) return { skipped: true, reason: "No admin_session cookie (need AUDIT_ADMIN_KEY)" };
+    const { url, res, text } = await fetchText(baseUrl, "/api/admin/migrate?mode=dry-run", {
+      method: "POST",
+      headers: { Cookie: adminCookie },
+    });
+    return {
+      request: { url, method: "POST" },
+      response: { status: res.status, headers: pickHeaders(res), bodyPreview: redactTokenLike(text.slice(0, 700)) },
+      assert: assertStatusIn("T8", res.status, [200, 404]),
+    };
+  });
+
+  await record("T9 admin migrate apply (optional)", async () => {
+    if (!allowWrite) return { skipped: true, reason: "Writes disabled (localhost only)" };
+    if (!adminCookie) return { skipped: true, reason: "No admin_session cookie (need AUDIT_ADMIN_KEY)" };
+    const { url, res, text } = await fetchText(baseUrl, "/api/admin/migrate?mode=apply", {
+      method: "POST",
+      headers: { Cookie: adminCookie },
+      body: "",
+    });
+    return {
+      request: { url, method: "POST" },
+      response: { status: res.status, headers: pickHeaders(res), bodyPreview: redactTokenLike(text.slice(0, 700)) },
+      assert: assertStatusIn("T9", res.status, [200, 404]),
+    };
+  });
+
   // Test 4: Concurrency / lost update simulation (only when we can write)
   await record("T4 lost-update simulation (optional)", async () => {
     if (!allowWrite) return { skipped: true, reason: "Writes disabled" };

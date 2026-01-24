@@ -1,16 +1,20 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
 import { validateAdminSession } from '../../lib/auth.js';
+import {
+  CARRERAS_KEY,
+  CONFIG_BUSES_KEY,
+  CONFIG_MESAS_KEY,
+  LEGACY_GRUPOS_KEY,
+  listGrupos,
+} from '../../lib/storage.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
   token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '',
 });
 
-const DB_KEY = 'invitados:grupos';
-const CONFIG_BUSES_KEY = 'invitados:config:buses';
-const CONFIG_MESAS_KEY = 'invitados:config:mesas';
-const CARRERAS_KEY = 'invitados:carreras';
+const STORAGE_MODE = (process.env.STORAGE_MODE || 'legacy').toLowerCase() as 'legacy' | 'entity';
 
 function setCors(req: VercelRequest, res: VercelResponse) {
   const origin = req.headers.origin;
@@ -70,14 +74,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Servidor no disponible' });
     }
 
-    const [gruposRaw, mesasRaw, busesRaw, carrerasRaw] = await Promise.all([
-      redis.get<unknown[]>(DB_KEY),
+    const [mesasRaw, busesRaw, carrerasRaw] = await Promise.all([
       redis.get<unknown>(CONFIG_MESAS_KEY),
       redis.get<unknown>(CONFIG_BUSES_KEY),
       redis.get<unknown[]>(CARRERAS_KEY),
     ]);
 
-    const grupos = gruposRaw || [];
+    const grupos =
+      STORAGE_MODE === 'entity'
+        ? await listGrupos()
+        : (await redis.get<unknown[]>(LEGACY_GRUPOS_KEY)) || [];
     const mesas = mesasRaw ?? null;
     const buses = busesRaw ?? null;
     const carreras = carrerasRaw || [];
@@ -90,6 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         counts: {
           grupos: grupos.length,
         },
+        storageMode: STORAGE_MODE,
       },
       data: {
         grupos,
