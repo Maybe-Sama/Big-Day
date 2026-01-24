@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { Heart, Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -37,9 +37,14 @@ const Navbar = () => {
       <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <Heart className="w-5 h-5 md:w-6 md:h-6 text-primary transition-transform group-hover:scale-110" />
-            <span className="font-playfair text-lg md:text-xl font-semibold">V&A</span>
+          <Link to="/" className="flex items-center gap-2 group" aria-label="Inicio">
+            <img
+              src="/favico.png"
+              alt="Virginia & Alejandro"
+              className="w-7 h-7 md:w-8 md:h-8 transition-transform group-hover:scale-110"
+              loading="eager"
+              decoding="async"
+            />
           </Link>
           
           {/* Desktop Menu */}
@@ -70,7 +75,13 @@ const Navbar = () => {
             <SheetContent side="right" className="w-[280px] sm:w-[320px]">
               <div className="flex flex-col gap-6 mt-8">
                 <div className="flex items-center gap-2 mb-4">
-                  <Heart className="w-6 h-6 text-primary" />
+                  <img
+                    src="/favico.png"
+                    alt=""
+                    className="w-8 h-8"
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <span className="font-playfair text-2xl font-semibold">Virginia & Alejandro</span>
                 </div>
                 

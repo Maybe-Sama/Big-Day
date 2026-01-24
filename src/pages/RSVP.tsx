@@ -965,58 +965,42 @@ const RSVP = () => {
                 un espacio único rodeado de naturaleza y elegancia, perfecto 
                 para crear recuerdos inolvidables.
               </p>
-              {/* Location Info Section */}
-              <section className="py-10 sm:py-12 md:py-16 px-6 sm:px-4 bg-secondary/30">
-                <div className="container mx-auto max-w-4xl">
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="text-center mb-6 sm:mb-8"
-                  >
-                    <h2 className="font-playfair text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-primary">Ubicación</h2>
-                    <p className="text-muted-foreground text-base sm:text-lg">Hacienda Las Yeguas</p>
-                    <p className="text-muted-foreground text-sm sm:text-base">Fuentes de Andalucía, Sevilla</p>
-                  </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="rounded-xl sm:rounded-2xl overflow-hidden shadow-medium h-64 sm:h-80 md:h-96"
+              >
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1730.0834020846341!2d-5.356581926832529!3d37.47354133699385!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd12be54cac59d87%3A0xdfb78eea5b7e9d60!2sHacienda%20Las%20Yeguas!5e1!3m2!1ses!2ses!4v1763518614644!5m2!1ses!2ses"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Ubicación de la boda"
+                />
+              </motion.div>
 
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    className="rounded-xl sm:rounded-2xl overflow-hidden shadow-medium h-64 sm:h-80 md:h-96"
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="mt-6 sm:mt-8 text-center"
+              >
+                <Button asChild className="shadow-gold hover:shadow-medium transition-smooth w-full sm:w-auto text-sm sm:text-base">
+                  <a
+                    href="https://maps.google.com/?q=Hacienda+Las+Yeguas"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2"
                   >
-                    <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1730.0834020846341!2d-5.356581926832529!3d37.47354133699385!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd12be54cac59d87%3A0xdfb78eea5b7e9d60!2sHacienda%20Las%20Yeguas!5e1!3m2!1ses!2ses!4v1763518614644!5m2!1ses!2ses"
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title="Ubicación de la boda"
-                    />
-                  </motion.div>
-
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="mt-6 sm:mt-8 text-center"
-                  >
-                    <Button asChild className="shadow-gold hover:shadow-medium transition-smooth w-full sm:w-auto text-sm sm:text-base">
-                      <a
-                        href="https://maps.google.com/?q=Hacienda+Las+Yeguas"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2"
-                      >
-                        <MapPin className="w-4 h-4" />
-                        Abrir en Google Maps
-                      </a>
-                    </Button>
-                  </motion.div>
-                </div>
-              </section>
+                    <MapPin className="w-4 h-4" />
+                    Abrir en Google Maps
+                  </a>
+                </Button>
+              </motion.div>
             </div>
           </motion.div>
         </div>
@@ -1080,8 +1064,6 @@ const RSVP = () => {
           </div>
         </div>
       </section>
-
-      
 
       {/* RSVP Section */}
       <section className="py-12 sm:py-16 md:py-20 px-6 sm:px-4">
