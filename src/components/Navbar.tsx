@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Menu } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -37,11 +37,16 @@ const Navbar = () => {
       <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group" aria-label="Inicio">
+          {/* Mantiene el alto del navbar y permite un logo grande sin "estirar" la barra */}
+          <Link
+            to="/"
+            className="relative flex items-center justify-center w-8 h-8 md:w-9 md:h-9 overflow-visible group"
+            aria-label="Inicio"
+          >
             <img
               src="/favico.png"
               alt="Virginia & Alejandro"
-              className="w-7 h-7 md:w-8 md:h-8 transition-transform group-hover:scale-110"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 md:w-16 md:h-16 max-w-none max-h-none transition-transform group-hover:scale-110"
               loading="eager"
               decoding="async"
             />
@@ -78,7 +83,7 @@ const Navbar = () => {
                   <img
                     src="/favico.png"
                     alt=""
-                    className="w-8 h-8"
+                    className="w-16 h-16 max-w-none max-h-none"
                     loading="lazy"
                     decoding="async"
                   />
