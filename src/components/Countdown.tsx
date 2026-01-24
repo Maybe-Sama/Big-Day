@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 const Countdown = () => {
-  const weddingDate = new Date("2025-06-15T19:00:00").getTime();
+  // Fecha de la boda: 15 de junio de 2025 a las 19:00
+  const WEDDING_DATE = "2025-06-15T19:00:00";
+  
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -11,17 +13,46 @@ const Countdown = () => {
   });
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const calculateTimeLeft = () => {
       const now = new Date().getTime();
+      // Calcular la fecha de la boda en cada actualización para evitar problemas de zona horaria
+      const weddingDate = new Date(WEDDING_DATE).getTime();
       const distance = weddingDate - now;
 
+      // Si la fecha ya pasó, mostrar ceros
+      if (distance <= 0) {
+        setTimeLeft({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+        });
+        return;
+      }
+
+      // Calcular de forma más precisa y robusta
+      // Convertir distancia a segundos totales
+      const totalSeconds = Math.floor(distance / 1000);
+      
+      // Calcular días, horas, minutos y segundos
+      const days = Math.floor(totalSeconds / (60 * 60 * 24));
+      const hours = Math.floor((totalSeconds % (60 * 60 * 24)) / (60 * 60));
+      const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+      const seconds = totalSeconds % 60;
+
       setTimeLeft({
-        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((distance % (1000 * 60)) / 1000),
+        days,
+        hours,
+        minutes,
+        seconds,
       });
-    }, 1000);
+    };
+
+    // Calcular inmediatamente al montar
+    calculateTimeLeft();
+
+    // Actualizar cada segundo
+    const interval = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -63,7 +94,7 @@ const Countdown = () => {
                 transform: 'translateY(-8px)'
               }}
             >
-              {unit.value.toString().padStart(2, "0")}
+              {Math.max(0, unit.value).toString().padStart(2, "0")}
             </div>
           </div>
           

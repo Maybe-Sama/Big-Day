@@ -966,7 +966,7 @@ const RSVP = () => {
                 para crear recuerdos inolvidables.
               </p>
               <a 
-                href="https://maps.google.com" 
+                href="https://maps.google.com/?q=Hacienda+Las+Yeguas" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-primary hover:underline inline-flex items-center gap-2 text-sm sm:text-base"
