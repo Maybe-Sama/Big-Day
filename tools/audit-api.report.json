@@ -1,7 +1,8 @@
 {
-  "startedAt": "2026-01-24T20:05:41.035Z",
+  "startedAt": "2026-01-24T20:17:47.767Z",
   "baseUrls": [
-    "https://big-day-five.vercel.app"
+    "http://localhost:3210",
+    "http://localhost:3001"
   ],
   "notes": [
     "Output redacts token/email-like strings.",
@@ -10,92 +11,111 @@
   ],
   "runs": [
     {
-      "baseUrl": "https://big-day-five.vercel.app",
+      "baseUrl": "http://localhost:3210",
       "allowWrite": false,
       "env": {
         "node": "v20.18.3",
         "auditAllowWrite": false,
-        "auditAdminKeyProvided": false
+        "auditAdminKeyProvided": true
       },
       "tests": [
         {
           "name": "T1 public GET /api/debug",
-          "ok": false,
-          "ms": 486,
+          "ok": true,
+          "ms": 78,
           "request": {
-            "url": "https://big-day-five.vercel.app/api/debug",
+            "url": "http://localhost:3210/api/debug",
             "method": "GET"
           },
           "response": {
-            "status": 200,
+            "status": 404,
             "headers": {
-              "content-type": "application/json; charset=utf-8",
+              "content-type": "text/html; charset=utf-8",
               "access-control-allow-origin": "*",
-              "access-control-allow-methods": "GET, OPTIONS",
-              "access-control-allow-headers": "Content-Type"
+              "vary": "Origin",
+              "x-powered-by": "Express"
             },
-            "bodyPreview": "{\"config\":{\"hasRedisUrl\":true,\"hasRedisToken\":true,\"redisConfigured\":true},\"data\":{\"totalGrupos\":10,\"grupos\":[{\"id\":\"1769279688261\",\"nombre\":\"Mamá\",\"apellidos\":\"Caro\",\"token\":\"****\",\"email\":\"\"},{\"id\":\"1769279856401\",\"nombre\":\"Toni\",\"apellidos\":\"Ruiz\",\"token\":\"****\",\"email\":\"\"},{\"id\":\"1769279875518\",\"nombre\":\"Hermano\",\"apellidos\":\"Fernández Caro\",\"token\":\"****\",\"email\":\"\"},{\"id\":\"1769280005425\",\"nombre\":\"Papá\",\"apellidos\":\"Fernández Utrilla\",\"token\":\"****\",\"email\":\"\"},{\"id\":\"17692"
+            "bodyPreview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/debug</pre>\n</body>\n</html>\n"
           },
           "assert": {
-            "pass": false,
+            "pass": true,
             "expected": "T1: status in [401, 404]",
-            "actual": "200"
+            "actual": "404"
           }
         },
         {
           "name": "T2 public POST /api/config/mesas",
-          "ok": false,
-          "ms": 230,
+          "ok": true,
+          "ms": 12,
           "request": {
-            "url": "https://big-day-five.vercel.app/api/config/mesas",
+            "url": "http://localhost:3210/api/config/mesas",
             "method": "POST"
           },
           "response": {
-            "status": 200,
+            "status": 404,
             "headers": {
-              "content-type": "application/json; charset=utf-8",
+              "content-type": "text/html; charset=utf-8",
               "access-control-allow-origin": "*",
-              "access-control-allow-methods": "GET, POST, OPTIONS",
-              "access-control-allow-headers": "Content-Type"
+              "vary": "Origin",
+              "x-powered-by": "Express"
             },
-            "bodyPreview": "{\"success\":true,\"config\":{}}"
+            "bodyPreview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot POST /api/config/mesas</pre>\n</body>\n</html>\n"
           },
           "assert": {
-            "pass": false,
+            "pass": true,
             "expected": "T2: status in [401, 403, 404]",
-            "actual": "200"
+            "actual": "404"
           }
         },
         {
           "name": "T2 public POST /api/config/buses",
-          "ok": false,
-          "ms": 353,
+          "ok": true,
+          "ms": 7,
           "request": {
-            "url": "https://big-day-five.vercel.app/api/config/buses",
+            "url": "http://localhost:3210/api/config/buses",
             "method": "POST"
           },
           "response": {
-            "status": 200,
+            "status": 404,
             "headers": {
-              "content-type": "application/json; charset=utf-8",
+              "content-type": "text/html; charset=utf-8",
               "access-control-allow-origin": "*",
-              "access-control-allow-methods": "GET, POST, OPTIONS",
-              "access-control-allow-headers": "Content-Type"
+              "vary": "Origin",
+              "x-powered-by": "Express"
             },
-            "bodyPreview": "{\"success\":true,\"config\":{}}"
+            "bodyPreview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot POST /api/config/buses</pre>\n</body>\n</html>\n"
           },
           "assert": {
-            "pass": false,
+            "pass": true,
             "expected": "T2: status in [401, 403, 404]",
-            "actual": "200"
+            "actual": "404"
           }
         },
         {
           "name": "Prep admin login (optional)",
           "ok": true,
-          "ms": 0,
-          "skipped": true,
-          "reason": "AUDIT_ADMIN_KEY not provided"
+          "ms": 407,
+          "request": {
+            "url": "http://localhost:3210/api/admin/login",
+            "method": "POST"
+          },
+          "response": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8",
+              "access-control-allow-origin": "*",
+              "access-control-allow-methods": "POST, OPTIONS",
+              "access-control-allow-headers": "Content-Type",
+              "access-control-allow-credentials": "true",
+              "set-cookie": "admin_session=4f3003ca****; HttpOnly; Path=/; SameSite=Lax; Max-Age=86400",
+              "vary": "Origin",
+              "x-powered-by": "Express"
+            },
+            "bodyPreview": "{\"ok\":true}"
+          },
+          "extracted": {
+            "hasAdminCookie": true
+          }
         },
         {
           "name": "Prep create test grupo (optional; localhost only by default)",
@@ -106,56 +126,158 @@
         },
         {
           "name": "T3a public GET /api/invitados?token=... (RSVP read)",
-          "ok": true,
-          "ms": 828,
+          "ok": false,
+          "ms": 69,
           "request": {
-            "url": "https://big-day-five.vercel.app/api/invitados?token=tok_****187e",
+            "url": "http://localhost:3210/api/invitados?token=tok_****1149",
             "method": "GET"
           },
           "response": {
-            "status": 404,
+            "status": 500,
             "headers": {
-              "content-type": "application/json; charset=utf-8",
-              "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-              "access-control-allow-headers": "Content-Type",
-              "access-control-allow-credentials": "true"
+              "content-type": "text/plain",
+              "vary": "Origin"
             },
-            "bodyPreview": "{\"error\":\"Token no encontrado\"}"
+            "bodyPreview": ""
           },
           "assert": {
-            "pass": true,
+            "pass": false,
             "expected": "T3a: status in [200, 404]",
-            "actual": "404"
+            "actual": "500"
           }
         },
         {
           "name": "T3b public POST /api/invitados (RSVP write attempt; should fail)",
-          "ok": true,
-          "ms": 147,
+          "ok": false,
+          "ms": 9,
           "request": {
-            "url": "https://big-day-five.vercel.app/api/invitados",
+            "url": "http://localhost:3210/api/invitados",
             "method": "POST"
           },
           "response": {
-            "status": 401,
+            "status": 500,
             "headers": {
-              "content-type": "application/json; charset=utf-8",
-              "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-              "access-control-allow-headers": "Content-Type",
-              "access-control-allow-credentials": "true"
+              "content-type": "text/plain",
+              "vary": "Origin"
             },
-            "bodyPreview": "{\"error\":\"No autorizado\"}"
+            "bodyPreview": ""
           },
           "assert": {
-            "pass": true,
+            "pass": false,
             "expected": "T3b: status in [401, 403, 404]",
-            "actual": "401"
+            "actual": "500"
           }
+        },
+        {
+          "name": "T3c PATCH /api/rsvp without token (should 400)",
+          "ok": false,
+          "ms": 34,
+          "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:13502:13\n    at async fetchText (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:72:15)\n    at async file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:338:32\n    at async record (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:171:17)\n    at async runForBase (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:337:3)\n    at async main (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:578:15)"
+        },
+        {
+          "name": "T3d PATCH /api/rsvp with token (optional)",
+          "ok": true,
+          "ms": 0,
+          "skipped": true,
+          "reason": "Writes disabled (localhost only)"
         },
         {
           "name": "T4 lost-update simulation (optional)",
           "ok": true,
+          "ms": 0,
+          "skipped": true,
+          "reason": "Writes disabled"
+        },
+        {
+          "name": "T5 env var presence (runner process)",
+          "ok": true,
           "ms": 1,
+          "present": {
+            "ADMIN_KEY": false,
+            "KV_REST_API_URL": false,
+            "KV_REST_API_TOKEN": false,
+            "UPSTASH_REDIS_REST_URL": false,
+            "UPSTASH_REDIS_REST_TOKEN": false
+          },
+          "dotenvPresent": {
+            "ADMIN_KEY": true,
+            "KV_REST_API_URL": true,
+            "KV_REST_API_TOKEN": true,
+            "UPSTASH_REDIS_REST_URL": false,
+            "UPSTASH_REDIS_REST_TOKEN": false
+          }
+        }
+      ]
+    },
+    {
+      "baseUrl": "http://localhost:3001",
+      "allowWrite": false,
+      "env": {
+        "node": "v20.18.3",
+        "auditAllowWrite": false,
+        "auditAdminKeyProvided": true
+      },
+      "tests": [
+        {
+          "name": "T1 public GET /api/debug",
+          "ok": false,
+          "ms": 4,
+          "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:13502:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async fetchText (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:72:15)\n    at async file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:206:32\n    at async record (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:171:17)\n    at async runForBase (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:205:3)\n    at async main (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:578:15)"
+        },
+        {
+          "name": "T2 public POST /api/config/mesas",
+          "ok": false,
+          "ms": 3,
+          "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:13502:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async fetchText (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:72:15)\n    at async file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:223:34\n    at async record (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:171:17)\n    at async runForBase (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:222:5)\n    at async main (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:578:15)"
+        },
+        {
+          "name": "T2 public POST /api/config/buses",
+          "ok": false,
+          "ms": 2,
+          "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:13502:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async fetchText (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:72:15)\n    at async file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:223:34\n    at async record (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:171:17)\n    at async runForBase (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:222:5)\n    at async main (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:578:15)"
+        },
+        {
+          "name": "Prep admin login (optional)",
+          "ok": false,
+          "ms": 5,
+          "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:13502:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async fetchText (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:72:15)\n    at async file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:246:32\n    at async record (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:171:17)\n    at async runForBase (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:242:3)\n    at async main (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:578:15)"
+        },
+        {
+          "name": "Prep create test grupo (optional; localhost only by default)",
+          "ok": true,
+          "ms": 0,
+          "skipped": true,
+          "reason": "Writes disabled (set AUDIT_ALLOW_WRITE=1)"
+        },
+        {
+          "name": "T3a public GET /api/invitados?token=... (RSVP read)",
+          "ok": false,
+          "ms": 2,
+          "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:13502:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async fetchText (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:72:15)\n    at async file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:299:32\n    at async record (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:171:17)\n    at async runForBase (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:298:3)\n    at async main (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:578:15)"
+        },
+        {
+          "name": "T3b public POST /api/invitados (RSVP write attempt; should fail)",
+          "ok": false,
+          "ms": 3,
+          "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:13502:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async fetchText (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:72:15)\n    at async file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:320:32\n    at async record (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:171:17)\n    at async runForBase (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:315:3)\n    at async main (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:578:15)"
+        },
+        {
+          "name": "T3c PATCH /api/rsvp without token (should 400)",
+          "ok": false,
+          "ms": 2,
+          "error": "TypeError: fetch failed\n    at node:internal/deps/undici/undici:13502:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async fetchText (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:72:15)\n    at async file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:338:32\n    at async record (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:171:17)\n    at async runForBase (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:337:3)\n    at async main (file:///E:/CODE_feliz/boda/forever-forms-site/tools/audit-api.mjs:578:15)"
+        },
+        {
+          "name": "T3d PATCH /api/rsvp with token (optional)",
+          "ok": true,
+          "ms": 0,
+          "skipped": true,
+          "reason": "Writes disabled (localhost only)"
+        },
+        {
+          "name": "T4 lost-update simulation (optional)",
+          "ok": true,
+          "ms": 0,
           "skipped": true,
           "reason": "Writes disabled"
         },

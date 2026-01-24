@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, Hand, Calendar, MapPin, ArrowRight, Clock } from "lucide-react";
@@ -43,6 +43,34 @@ const RSVP = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const alergiasPrincipalInitRef = useRef(false);
+  const allowedAcompananteIdsRef = useRef<Set<string>>(new Set());
+
+  const normalizedToken = useMemo(() => token?.trim() || "", [token]);
+
+  const patchRsvp = async (payload: unknown): Promise<GrupoInvitados> => {
+    if (!normalizedToken) {
+      throw new Error("Token requerido");
+    }
+
+    const response = await fetch(`/api/rsvp?token=${encodeURIComponent(normalizedToken)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let message = `Error ${response.status}`;
+      try {
+        const data = await response.json();
+        if (data?.error) message = data.error;
+      } catch {
+        // ignore parse errors
+      }
+      throw new Error(message);
+    }
+
+    return response.json();
+  };
 
   // Detectar iOS
   useEffect(() => {
@@ -221,6 +249,7 @@ const RSVP = () => {
         }
 
         setGrupo(grupoData);
+        allowedAcompananteIdsRef.current = new Set((grupoData.acompanantes || []).map((ac) => ac.id));
         
         // Cargar configuración de buses
         const busesConfig = await dbService.getConfiguracionBuses();
@@ -258,6 +287,13 @@ const RSVP = () => {
 
   const addAcompanante = (tipo: 'pareja' | 'hijo') => {
     if (!grupo) return;
+    // Seguridad: el endpoint RSVP NO permite crear acompañantes nuevos.
+    toast({
+      title: "No permitido",
+      description: "No se pueden añadir acompañantes desde este formulario. Contacta con los organizadores.",
+      variant: "destructive",
+    });
+    return;
     const nuevoAcompanante: Acompanante = {
       id: Date.now().toString(),
       nombre: '',
@@ -275,6 +311,13 @@ const RSVP = () => {
 
   const removeAcompanante = (id: string) => {
     if (!grupo) return;
+    // Seguridad: el endpoint RSVP NO permite eliminar acompañantes.
+    toast({
+      title: "No permitido",
+      description: "No se pueden eliminar acompañantes desde este formulario. Contacta con los organizadores.",
+      variant: "destructive",
+    });
+    return;
     setGrupo({
       ...grupo,
       acompanantes: grupo.acompanantes.filter(ac => ac.id !== id),
@@ -362,9 +405,38 @@ const RSVP = () => {
           : (grupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
       };
 
-      await dbService.saveGrupo(grupoActualizado);
-      // Solo reflejar cambios locales si el servidor confirmó persistencia.
-      setGrupo(grupoActualizado);
+      const payload = {
+        asistencia: grupoActualizado.asistencia,
+        confirmacion_bus: grupoActualizado.confirmacion_bus,
+        ubicacion_bus: grupoActualizado.ubicacion_bus,
+        invitadoPrincipal: {
+          asistencia: grupoActualizado.invitadoPrincipal.asistencia,
+          alergias: grupoActualizado.invitadoPrincipal.alergias,
+        },
+        acompanantes: grupoActualizado.acompanantes
+          .filter((ac) => allowedAcompananteIdsRef.current.has(ac.id))
+          .map((ac) => ({
+            id: ac.id,
+            asistencia: ac.asistencia,
+            alergias: ac.alergias,
+          })),
+      };
+
+      const serverGrupo = await patchRsvp(payload);
+      // Refrescar estado local sin “perder” token/email originales.
+      setGrupo((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ...serverGrupo,
+          token: prev.token,
+          invitadoPrincipal: {
+            ...prev.invitadoPrincipal,
+            ...serverGrupo.invitadoPrincipal,
+            email: prev.invitadoPrincipal.email,
+          },
+        };
+      });
       setIsEditing(false);
       
       toast({
@@ -456,9 +528,37 @@ const RSVP = () => {
           : (grupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
       };
 
-      await dbService.saveGrupo(grupoActualizado);
-      // Solo reflejar cambios locales si el servidor confirmó persistencia.
-      setGrupo(grupoActualizado);
+      const payload = {
+        asistencia: grupoActualizado.asistencia,
+        confirmacion_bus: grupoActualizado.confirmacion_bus,
+        ubicacion_bus: grupoActualizado.ubicacion_bus,
+        invitadoPrincipal: {
+          asistencia: grupoActualizado.invitadoPrincipal.asistencia,
+          alergias: grupoActualizado.invitadoPrincipal.alergias,
+        },
+        acompanantes: grupoActualizado.acompanantes
+          .filter((ac) => allowedAcompananteIdsRef.current.has(ac.id))
+          .map((ac) => ({
+            id: ac.id,
+            asistencia: ac.asistencia,
+            alergias: ac.alergias,
+          })),
+      };
+
+      const serverGrupo = await patchRsvp(payload);
+      setGrupo((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ...serverGrupo,
+          token: prev.token,
+          invitadoPrincipal: {
+            ...prev.invitadoPrincipal,
+            ...serverGrupo.invitadoPrincipal,
+            email: prev.invitadoPrincipal.email,
+          },
+        };
+      });
       
       toast({
         title: "¡Invitación guardada!",
@@ -539,7 +639,37 @@ const RSVP = () => {
           : (grupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
       };
 
-      await dbService.saveGrupo(grupoActualizado);
+      const payload = {
+        asistencia: grupoActualizado.asistencia,
+        confirmacion_bus: grupoActualizado.confirmacion_bus,
+        ubicacion_bus: grupoActualizado.ubicacion_bus,
+        invitadoPrincipal: {
+          asistencia: grupoActualizado.invitadoPrincipal.asistencia,
+          alergias: grupoActualizado.invitadoPrincipal.alergias,
+        },
+        acompanantes: grupoActualizado.acompanantes
+          .filter((ac) => allowedAcompananteIdsRef.current.has(ac.id))
+          .map((ac) => ({
+            id: ac.id,
+            asistencia: ac.asistencia,
+            alergias: ac.alergias,
+          })),
+      };
+
+      const serverGrupo = await patchRsvp(payload);
+      setGrupo((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ...serverGrupo,
+          token: prev.token,
+          invitadoPrincipal: {
+            ...prev.invitadoPrincipal,
+            ...serverGrupo.invitadoPrincipal,
+            email: prev.invitadoPrincipal.email,
+          },
+        };
+      });
       
       setSubmitted(true);
       toast({

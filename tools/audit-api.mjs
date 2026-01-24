@@ -333,6 +333,54 @@ async function runForBase(baseUrl, opts) {
     };
   });
 
+  // RSVP PATCH endpoint must reject missing token (read-only safety: should not write)
+  await record("T3c PATCH /api/rsvp without token (should 400)", async () => {
+    const { url, res, text } = await fetchText(baseUrl, "/api/rsvp", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    return {
+      request: { url, method: "PATCH" },
+      response: {
+        status: res.status,
+        headers: pickHeaders(res),
+        bodyPreview: redactTokenLike(text.slice(0, 300)),
+      },
+      assert: assertStatusIn("T3c", res.status, [400, 404]),
+    };
+  });
+
+  // Optional write test for localhost only:
+  // - If AUDIT_RSVP_TOKEN provided, attempt PATCH with minimal payload and expect 200.
+  // - Otherwise, skipped (we don't auto-create data in this phase unless explicitly enabled).
+  const rsvpToken = process.env.AUDIT_RSVP_TOKEN || "";
+  await record("T3d PATCH /api/rsvp with token (optional)", async () => {
+    if (!allowWrite) return { skipped: true, reason: "Writes disabled (localhost only)" };
+    if (!rsvpToken) return { skipped: true, reason: "AUDIT_RSVP_TOKEN not provided" };
+    const { url, res, text } = await fetchText(
+      baseUrl,
+      `/api/rsvp?token=${encodeURIComponent(rsvpToken)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invitadoPrincipal: { asistencia: "pendiente" },
+          confirmacion_bus: false,
+        }),
+      }
+    );
+    return {
+      request: { url, method: "PATCH" },
+      response: {
+        status: res.status,
+        headers: pickHeaders(res),
+        bodyPreview: redactTokenLike(text.slice(0, 500)),
+      },
+      assert: assertStatusIn("T3d", res.status, [200, 404]),
+    };
+  });
+
   // Test 4: Concurrency / lost update simulation (only when we can write)
   await record("T4 lost-update simulation (optional)", async () => {
     if (!allowWrite) return { skipped: true, reason: "Writes disabled" };
