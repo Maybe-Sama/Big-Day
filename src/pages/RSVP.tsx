@@ -1242,8 +1242,8 @@ const RSVP = () => {
                     </span>
                     ,
                   </span>
-                  <span className="block">por favor, completa tu información</span>
-                  <span className="block">para confirmar tu asistencia</span>
+                  <span className="block">Esperamos que puedas venir</span>
+                  <span className="block">¿Nos acompañas?</span>
                 </p>
               </div>
             </div>
