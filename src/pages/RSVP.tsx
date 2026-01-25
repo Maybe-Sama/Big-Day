@@ -1232,8 +1232,8 @@ const RSVP = () => {
             className="relative w-full mb-8 sm:mb-10"
           >
             <div 
-              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: 'url(/confirmar.png)' }}
+              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] bg-center bg-no-repeat"
+              style={{ backgroundImage: 'url(/confirmar.png)', backgroundSize: '85%' }}
             >
               {/* Contenedor para el texto centrado en el área negra */}
               <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24">
