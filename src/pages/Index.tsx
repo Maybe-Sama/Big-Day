@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Calendar, MapPin, ArrowRight, Clock } from "lucide-react";
+import { Calendar, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Countdown from "@/components/Countdown";
@@ -8,6 +8,8 @@ import PageHeader from "@/components/common/PageHeader";
 import heroImage from "@/assets/hero-wedding.jpg";
 import heroImageDesktop from "@/assets/hero-wedding-h.png";
 import { activities } from "@/data/activities";
+import Lottie from "lottie-react";
+import scrollDownAnimation from "@/assets/scroll-down.json";
 
 const Index = () => {
   return (
@@ -30,18 +32,23 @@ const Index = () => {
             <MapPin className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" />
             <span className="text-center">Hacienda Las Yeguas<br />Fuentes de Andalucía, Sevilla</span>
           </div>
+
+          {/* Indicador "scroll down" */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
+            className="flex justify-center pt-40 sm:pt-2 pointer-events-none"
+          >
+            <div className="w-10 h-10 md:w-12 md:h-12">
+              <Lottie
+                animationData={scrollDownAnimation}
+                loop={true}
+                className="w-full h-full"
+              />
+            </div>
+          </motion.div>
         </div>
-        
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 1 }}
-          className="absolute left-1/2 transform -translate-x-1/2 hidden sm:block bottom-[-2rem] lg:bottom-[-4rem]"
-        >
-          <div className="animate-bounce">
-            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white rotate-90" />
-          </div>
-        </motion.div>
       </PageHeader>
 
       {/* Countdown Section */}
