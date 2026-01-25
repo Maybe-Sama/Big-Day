@@ -1229,10 +1229,10 @@ const RSVP = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative w-full mb-8 sm:mb-10"
+            className="relative isolate z-40 w-full mb-8 sm:mb-10"
           >
             <div 
-              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] bg-center bg-no-repeat z-index-10"
+              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] bg-center bg-no-repeat"
               style={{ backgroundImage: 'url(/confirmar.png)', backgroundSize: '85%' }}
             >
               {/* Contenedor para el texto centrado en el área negra */}
