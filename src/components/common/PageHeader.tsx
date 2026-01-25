@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { CSSProperties, ReactNode } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +7,11 @@ export interface PageHeaderProps {
   description?: string;
   variant?: "default" | "hero" | "simple";
   backgroundImage?: string;
+  /**
+   * Imagen alternativa SOLO para desktop (>= 1024px).
+   * Si no se proporciona, se reutiliza `backgroundImage`.
+   */
+  backgroundImageDesktop?: string;
   children?: ReactNode;
   className?: string;
 }
@@ -34,6 +39,7 @@ const PageHeader = ({
   description,
   variant = "default",
   backgroundImage,
+  backgroundImageDesktop,
   children,
   className,
 }: PageHeaderProps) => {
@@ -44,14 +50,20 @@ const PageHeader = ({
   };
 
   if (variant === "hero") {
+    const heroStyle =
+      backgroundImage
+        ? ({
+            ["--hero-image-mobile" as any]: `url(${backgroundImage})`,
+            ["--hero-image-desktop" as any]: `url(${backgroundImageDesktop ?? backgroundImage})`,
+          } as CSSProperties)
+        : undefined;
+
     return (
       <section className={cn(variants.hero, className)}>
         {backgroundImage && (
           <div
-            className="absolute inset-0 bg-cover bg-center hero-bg-position"
-            style={{
-              backgroundImage: `url(${backgroundImage})`,
-            }}
+            className="absolute inset-0 bg-cover bg-center hero-bg-position hero-bg-image"
+            style={heroStyle}
           >
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent via-70% to-background" />
           </div>

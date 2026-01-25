@@ -6,6 +6,7 @@ import Countdown from "@/components/Countdown";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
 import heroImage from "@/assets/hero-wedding.jpg";
+import heroImageDesktop from "@/assets/hero-wedding-h.png";
 import { activities } from "@/data/activities";
 
 const Index = () => {
@@ -17,6 +18,7 @@ const Index = () => {
         description="Nos casamos y queremos celebrarlo contigo"
         variant="hero"
         backgroundImage={heroImage}
+          backgroundImageDesktop={heroImageDesktop}
       >
         <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg lg:text-xl">
@@ -34,8 +36,7 @@ const Index = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 1 }}
-          className="absolute left-1/2 transform -translate-x-1/2 hidden sm:block"
-          style={{ bottom: '-2rem' }}
+          className="absolute left-1/2 transform -translate-x-1/2 hidden sm:block bottom-[-2rem] lg:bottom-[-4rem]"
         >
           <div className="animate-bounce">
             <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white rotate-90" />

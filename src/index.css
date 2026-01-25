@@ -144,6 +144,17 @@ All colors MUST be HSL.
     background-position: center;
   }
   
+  /* Imagen hero móvil vs desktop (>=1024px) vía CSS variables */
+  .hero-bg-image {
+    background-image: var(--hero-image-mobile);
+  }
+
+  @media (min-width: 1024px) {
+    .hero-bg-image {
+      background-image: var(--hero-image-desktop);
+    }
+  }
+
   @media (min-width: 768px) {
     .hero-bg-position {
       background-position: center 30%;

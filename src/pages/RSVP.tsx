@@ -19,6 +19,7 @@ import ErrorState from "@/components/common/ErrorState";
 import LoadingState from "@/components/common/LoadingState";
 import Countdown from "@/components/Countdown";
 import heroImage from "@/assets/hero-wedding.jpg";
+import heroImageDesktop from "@/assets/hero-wedding-h.png";
 import { activities } from "@/data/activities";
 import Lottie from "lottie-react";
 import scrollDownAnimation from "@/assets/scroll-down.json";
@@ -989,9 +990,10 @@ const RSVP = () => {
       <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <div
-          className="absolute inset-0 bg-cover bg-center hero-bg-position"
+          className="absolute inset-0 bg-cover bg-center hero-bg-position hero-bg-image"
           style={{
-            backgroundImage: `url(${heroImage})`,
+            ["--hero-image-mobile" as any]: `url(${heroImage})`,
+            ["--hero-image-desktop" as any]: `url(${heroImageDesktop})`,
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent via-70% to-background" />
@@ -1045,10 +1047,7 @@ const RSVP = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 1 }}
-          className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-30"
-          style={{ 
-            bottom: '5%',
-          }}
+          className="absolute left-1/2 -translate-x-1/2 pointer-events-none z-30 bottom-[5%] lg:bottom-[1%]"
         >
           <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
             <Lottie 
