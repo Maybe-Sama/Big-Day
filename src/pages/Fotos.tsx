@@ -268,7 +268,7 @@ const Fotos = () => {
         <div className="container mx-auto max-w-3xl">
           <PageHeader
             title="Comparte tus Recuerdos 💖"
-            description="¡Ayúdanos a revivir el día! Escribe tu nombre y sube todas las fotos que tengas de la boda."
+            description="Pon tu nombre y sube todas las fotos de la boda o de la odisea previa. ¡Cuántas más mejor!"
             variant="simple"
           />
 

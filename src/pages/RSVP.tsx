@@ -1222,14 +1222,14 @@ const RSVP = () => {
       </section>
 
       {/* RSVP Section */}
-      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-8">
+      <section className="pt-16 sm:pt-20 md:pt-24 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
         <div className="container mx-auto max-w-6xl">
           {/* Marco decorativo con título y subtítulo */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative isolate z-40 w-full mb-8 sm:mb-10"
+            className="relative isolate z-40 w-full mb-12 sm:mb-14"
           >
             <div 
               className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px]"
