@@ -1232,11 +1232,18 @@ const RSVP = () => {
             className="relative isolate z-40 w-full mb-8 sm:mb-10"
           >
             <div 
-              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px] bg-center bg-no-repeat"
-              style={{ backgroundImage: 'url(/confirmar.png)', backgroundSize: '85%' }}
+              className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[21/10] lg:aspect-[24/10] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[360px]"
             >
+              <img
+                src="/confirmar.png"
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-contain scale-[0.85] pointer-events-none select-none"
+                loading="eager"
+                decoding="async"
+              />
               {/* Contenedor para el texto centrado en el área negra */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24">
                 <h2 className="font-playfair text-2xl sm:text-3xl md:text-4xl font-bold text-black text-center mb-2 sm:mb-3 leading-tight">
                   Confirma tu Asistencia
                 </h2>
