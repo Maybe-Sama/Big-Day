@@ -48,6 +48,13 @@ const RSVP = () => {
 
   const normalizedToken = useMemo(() => token?.trim() || "", [token]);
 
+  // Normalización defensiva: config de buses puede venir con shape inválido desde KV
+  // (legacy/backup). Nunca asumir que `configBuses.buses` existe o es array.
+  const busesArr = useMemo(
+    () => (Array.isArray(configBuses?.buses) ? configBuses.buses : []),
+    [configBuses]
+  );
+
   const patchRsvp = async (payload: unknown, attempt: 0 | 1 = 0): Promise<GrupoInvitados> => {
     if (!normalizedToken) {
       throw new Error("Token requerido");
@@ -393,7 +400,7 @@ const RSVP = () => {
 
       // Obtener información del bus si está seleccionado
       const busIdSeleccionado = grupo.ubicacion_bus;
-      const busInfo = configBuses?.buses.find(b => 
+      const busInfo = busesArr.find(b => 
         b.id === busIdSeleccionado || 
         b.nombre === busIdSeleccionado ||
         `Bus #${b.numero}` === busIdSeleccionado
@@ -516,7 +523,7 @@ const RSVP = () => {
 
       // Obtener información del bus si está seleccionado
       const busIdSeleccionado = grupo.ubicacion_bus;
-      const busInfo = configBuses?.buses.find(b => 
+      const busInfo = busesArr.find(b => 
         b.id === busIdSeleccionado || 
         b.nombre === busIdSeleccionado ||
         `Bus #${b.numero}` === busIdSeleccionado
@@ -627,7 +634,7 @@ const RSVP = () => {
 
       // Obtener información del bus si está seleccionado
       const busIdSeleccionado = grupo.ubicacion_bus;
-      const busInfo = configBuses?.buses.find(b => 
+      const busInfo = busesArr.find(b => 
         b.id === busIdSeleccionado || 
         b.nombre === busIdSeleccionado ||
         `Bus #${b.numero}` === busIdSeleccionado
@@ -966,7 +973,7 @@ const RSVP = () => {
   }
 
   // Buscar el bus seleccionado (puede estar guardado como ID, nombre o "Bus #X")
-  const busActual = configBuses?.buses.find(b => {
+  const busActual = busesArr.find(b => {
     if (!grupo.ubicacion_bus) return false;
     return (
       b.id === grupo.ubicacion_bus || 
@@ -1612,7 +1619,7 @@ const RSVP = () => {
                 
                 {grupo.confirmacion_bus && (
                   <div className="space-y-3 sm:space-y-4 pt-2 border-t">
-                    {!configBuses || configBuses.buses.length === 0 ? (
+                    {busesArr.length === 0 ? (
                       <div className="bg-muted/50 rounded-lg p-4 text-center">
                         <p className="text-xs sm:text-sm text-muted-foreground">
                           No hay buses configurados. Contacta con los novios para más información.
@@ -1625,7 +1632,7 @@ const RSVP = () => {
                           <Select
                             value={busSeleccionadoId}
                             onValueChange={(value) => {
-                              const busSeleccionado = configBuses.buses.find(b => b.id === value);
+                              const busSeleccionado = busesArr.find(b => b.id === value);
                               if (busSeleccionado) {
                                 setGrupo({
                                   ...grupo,
@@ -1638,7 +1645,7 @@ const RSVP = () => {
                               <SelectValue placeholder="Selecciona un bus" />
                             </SelectTrigger>
                             <SelectContent>
-                              {configBuses.buses.map((bus) => (
+                              {busesArr.map((bus) => (
                                 <SelectItem key={bus.id} value={bus.id}>
                                   {bus.nombre ? `${bus.nombre} (Bus #${bus.numero})` : `Bus #${bus.numero}`}
                                 </SelectItem>

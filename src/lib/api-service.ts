@@ -5,6 +5,66 @@ import { CarreraFotos } from '@/types/carrera-fotos';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+function toIsoNow() {
+  return new Date().toISOString();
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeConfiguracionBuses(raw: unknown): ConfiguracionBuses | null {
+  if (raw == null) return null;
+
+  const fechaActualizacion = toIsoNow();
+
+  // Legacy: stored as array of buses in KV
+  if (Array.isArray(raw)) {
+    return {
+      id: 'config-buses',
+      buses: raw as unknown as ConfiguracionBuses['buses'],
+      fechaActualizacion,
+    };
+  }
+
+  if (!isPlainObject(raw)) return null;
+
+  const buses = raw['buses'];
+  if (!Array.isArray(buses)) return null;
+
+  return {
+    id: 'config-buses',
+    buses: buses as unknown as ConfiguracionBuses['buses'],
+    fechaActualizacion: typeof raw['fechaActualizacion'] === 'string' ? raw['fechaActualizacion'] : fechaActualizacion,
+  };
+}
+
+function normalizeConfiguracionMesas(raw: unknown): ConfiguracionMesas | null {
+  if (raw == null) return null;
+
+  const fechaActualizacion = toIsoNow();
+
+  // Legacy: stored as array of mesas in KV
+  if (Array.isArray(raw)) {
+    return {
+      id: 'config-mesas',
+      mesas: raw as unknown as ConfiguracionMesas['mesas'],
+      fechaActualizacion,
+    };
+  }
+
+  if (!isPlainObject(raw)) return null;
+
+  const mesas = raw['mesas'];
+  if (!Array.isArray(mesas)) return null;
+
+  return {
+    id: 'config-mesas',
+    mesas: mesas as unknown as ConfiguracionMesas['mesas'],
+    fechaActualizacion: typeof raw['fechaActualizacion'] === 'string' ? raw['fechaActualizacion'] : fechaActualizacion,
+  };
+}
+
 class ApiService {
   private async fetchApi<T>(endpoint: string, options?: RequestInit, requireAuth: boolean = false): Promise<T> {
     try {
@@ -134,7 +194,8 @@ class ApiService {
 
   async getConfiguracionBuses(): Promise<ConfiguracionBuses | null> {
     try {
-      return await this.fetchApi<ConfiguracionBuses>('/config?kind=buses');
+      const raw = await this.fetchApi<unknown>('/config?kind=buses');
+      return normalizeConfiguracionBuses(raw);
     } catch (error: any) {
       if (error.message.includes('404')) {
         return null;
@@ -155,7 +216,8 @@ class ApiService {
 
   async getConfiguracionMesas(): Promise<ConfiguracionMesas | null> {
     try {
-      return await this.fetchApi<ConfiguracionMesas>('/config?kind=mesas');
+      const raw = await this.fetchApi<unknown>('/config?kind=mesas');
+      return normalizeConfiguracionMesas(raw);
     } catch (error: any) {
       if (error.message.includes('404')) {
         return null;

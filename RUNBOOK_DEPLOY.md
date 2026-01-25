@@ -76,7 +76,20 @@ curl -i "https://big-day-five.vercel.app/api/config?kind=carreras"
 
 **Esperado**:
 - **HTTP 200**
-- Body JSON válido (puede ser `null`/`[]` si no hay datos).
+- Body JSON válido:
+  - `kind=carreras`: puede ser `[]` si no hay datos (array por defecto).
+  - `kind=buses|mesas`: debe ser `null` (sin datos) **o** un **objeto** canónico:
+    - buses: `{ "id":"config-buses", "buses":[...], "fechaActualizacion":"..." }`
+    - mesas: `{ "id":"config-mesas", "mesas":[...], "fechaActualizacion":"..." }`
+  - **No** debe ser un array “pelado” (`[]`) para buses/mesas: eso indica dato legacy/corrupto en KV (debería normalizarse).
+
+### Remediación (si el dato en KV estaba corrupto)
+- **Recomendado**: entrar al panel admin y guardar la configuración (esto sobrescribe con shape canónico).
+- **Alternativa** (solo admin, con cookie `admin_session`; no pegar cookies en logs/tickets):
+  - POST `"/api/config?kind=buses"` con body:
+    - `{ "id":"config-buses", "buses":[], "fechaActualizacion":"<ISO>" }`
+  - POST `"/api/config?kind=mesas"` con body:
+    - `{ "id":"config-mesas", "mesas":[], "fechaActualizacion":"<ISO>" }`
 
 ### Test 4 — Auditor automatizado (read-only)
 

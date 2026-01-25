@@ -35,6 +35,10 @@ function getKeyForKind(kind: Kind) {
   return CARRERAS_KEY;
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(req, res);
   res.setHeader('Content-Type', 'application/json');
@@ -59,6 +63,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'GET') {
       const value = await redis.get(key as any);
       if (kind === 'carreras') return res.status(200).json(value || []);
+
+      // Defense-in-depth: normalize/validate to prevent clients crashing on legacy/corrupt KV shapes.
+      if (kind === 'buses') {
+        if (value == null) return res.status(200).json(null);
+        if (Array.isArray(value)) {
+          // Legacy: KV stored as BusConfig[]
+          return res.status(200).json({
+            id: 'config-buses',
+            buses: value,
+            fechaActualizacion: new Date().toISOString(),
+          });
+        }
+        if (isPlainObject(value) && Array.isArray(value['buses'])) {
+          return res.status(200).json({
+            id: 'config-buses',
+            buses: value['buses'],
+            fechaActualizacion:
+              typeof value['fechaActualizacion'] === 'string'
+                ? value['fechaActualizacion']
+                : new Date().toISOString(),
+          });
+        }
+        return res.status(200).json(null);
+      }
+
+      if (kind === 'mesas') {
+        if (value == null) return res.status(200).json(null);
+        if (Array.isArray(value)) {
+          // Legacy: KV stored as MesaConfig[]
+          return res.status(200).json({
+            id: 'config-mesas',
+            mesas: value,
+            fechaActualizacion: new Date().toISOString(),
+          });
+        }
+        if (isPlainObject(value) && Array.isArray(value['mesas'])) {
+          return res.status(200).json({
+            id: 'config-mesas',
+            mesas: value['mesas'],
+            fechaActualizacion:
+              typeof value['fechaActualizacion'] === 'string'
+                ? value['fechaActualizacion']
+                : new Date().toISOString(),
+          });
+        }
+        return res.status(200).json(null);
+      }
+
       return res.status(200).json(value ?? null);
     }
 

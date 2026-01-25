@@ -365,6 +365,75 @@ async function runForBase(baseUrl, opts) {
     };
   });
 
+  // Test 3 config shape (read-only): buses/mesas must be null or canonical object, never HTML/SPA fallback.
+  await record("T3f public GET /api/config?kind=buses (shape)", async () => {
+    const { url, res, text } = await fetchText(baseUrl, "/api/config?kind=buses", { method: "GET" });
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const looksHtml = text.toLowerCase().includes("<!doctype html") || ct.includes("text/html");
+
+    let parsed = null;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      parsed = null;
+    }
+
+    const okShape =
+      parsed === null ||
+      (parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed) &&
+        Array.isArray(parsed.buses));
+
+    return {
+      request: { url, method: "GET" },
+      response: {
+        status: res.status,
+        headers: pickHeaders(res),
+        bodyPreview: redactTokenLike(text.slice(0, 500)),
+      },
+      assert: {
+        pass: res.status === 200 && !looksHtml && okShape,
+        expected: "T3f: 200 JSON and (null OR {buses: []})",
+        actual: `status=${res.status}, content-type=${ct || "none"}, looksHtml=${String(looksHtml)}, shape=${Array.isArray(parsed) ? "array" : parsed === null ? "null" : typeof parsed}`,
+      },
+    };
+  });
+
+  await record("T3g public GET /api/config?kind=mesas (shape)", async () => {
+    const { url, res, text } = await fetchText(baseUrl, "/api/config?kind=mesas", { method: "GET" });
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const looksHtml = text.toLowerCase().includes("<!doctype html") || ct.includes("text/html");
+
+    let parsed = null;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      parsed = null;
+    }
+
+    const okShape =
+      parsed === null ||
+      (parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed) &&
+        Array.isArray(parsed.mesas));
+
+    return {
+      request: { url, method: "GET" },
+      response: {
+        status: res.status,
+        headers: pickHeaders(res),
+        bodyPreview: redactTokenLike(text.slice(0, 500)),
+      },
+      assert: {
+        pass: res.status === 200 && !looksHtml && okShape,
+        expected: "T3g: 200 JSON and (null OR {mesas: []})",
+        actual: `status=${res.status}, content-type=${ct || "none"}, looksHtml=${String(looksHtml)}, shape=${Array.isArray(parsed) ? "array" : parsed === null ? "null" : typeof parsed}`,
+      },
+    };
+  });
+
   await record("T3b public POST /api/invitados (RSVP write attempt; should fail)", async () => {
     const grupo = createdGrupo || mkAuditGrupo({ id: testId, token: testToken });
     grupo.notas = "audit-rsvp-write-attempt";
