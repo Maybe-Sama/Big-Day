@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { motion } from "framer-motion";
 import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, Eye, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload } from "lucide-react";
 import PageLayout from "@/components/layouts/PageLayout";
@@ -73,6 +73,11 @@ const AdminOculto = () => {
   const [backupConfirmText, setBackupConfirmText] = useState('');
   const [isBackupBusy, setIsBackupBusy] = useState(false);
   const [backupLastSnapshotKey, setBackupLastSnapshotKey] = useState<string | null>(null);
+
+  // Drag-and-drop reorder
+  const [draggedGrupoId, setDraggedGrupoId] = useState<string | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   // Verificar sesión al cargar
   useEffect(() => {
@@ -506,6 +511,65 @@ const AdminOculto = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleDragStart = (e: React.DragEvent, grupoId: string) => {
+    setDraggedGrupoId(grupoId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", grupoId);
+    e.dataTransfer.setData("application/json", JSON.stringify({ grupoId }));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (draggedGrupoId) setDropIndex(index);
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropIdx: number) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    if (!id || !draggedGrupoId) return;
+
+    const fromIndex = grupos.findIndex((g) => g.id === draggedGrupoId);
+    const targetGrupo = filteredGrupos[dropIdx];
+    let toIndex = targetGrupo ? grupos.findIndex((g) => g.id === targetGrupo.id) : grupos.length;
+
+    if (fromIndex === -1 || fromIndex === toIndex) {
+      setDraggedGrupoId(null);
+      setDropIndex(null);
+      return;
+    }
+    if (fromIndex < toIndex) toIndex -= 1;
+
+    const newGrupos = [...grupos];
+    const [removed] = newGrupos.splice(fromIndex, 1);
+    newGrupos.splice(toIndex, 0, removed);
+
+    setGrupos(newGrupos);
+    setDraggedGrupoId(null);
+    setDropIndex(null);
+
+    try {
+      setIsReordering(true);
+      await dbService.reorderGrupos(newGrupos);
+      toast({ title: "Orden actualizado", description: "La lista se ha reordenado correctamente." });
+    } catch (err) {
+      console.error("Error reordering:", err);
+      await loadGrupos();
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el nuevo orden. Se ha restaurado la lista.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedGrupoId(null);
+    setDropIndex(null);
   };
 
   const handleViewGrupo = async (grupo: GrupoInvitados) => {
@@ -1025,14 +1089,27 @@ const AdminOculto = () => {
                 )}
               </div>
             ) : (
-              filteredGrupos.map((grupo) => {
+              <>
+              {filteredGrupos.map((grupo, index) => {
               const totalPersonas = 1 + grupo.acompanantes.length;
               return (
+                <div key={grupo.id} className="contents">
+                  {dropIndex === index && (
+                    <div
+                      className="h-1.5 rounded-full bg-blue-500 flex-shrink-0 transition-opacity"
+                      onDragOver={(e) => { e.preventDefault(); setDropIndex(index); }}
+                      onDrop={(e) => handleDrop(e, index)}
+                    />
+                  )}
                 <motion.div
-                  key={grupo.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-lg shadow-soft p-3"
+                  className={`bg-card rounded-lg shadow-soft p-3 cursor-grab active:cursor-grabbing select-none ${draggedGrupoId === grupo.id ? "opacity-50" : ""} ${isReordering ? "pointer-events-none" : ""}`}
+                  draggable={!isReordering}
+                  onDragStart={(e) => handleDragStart(e, grupo.id)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
@@ -1177,8 +1254,19 @@ const AdminOculto = () => {
                     </div>
                   </div>
                 </motion.div>
+                </div>
               );
-            })
+            })}
+              {filteredGrupos.length > 0 && (
+                <div
+                  className="min-h-4 flex items-center"
+                  onDragOver={(e) => { e.preventDefault(); setDropIndex(filteredGrupos.length); }}
+                  onDrop={(e) => handleDrop(e, filteredGrupos.length)}
+                >
+                  {dropIndex === filteredGrupos.length && <div className="h-1.5 w-full rounded-full bg-blue-500" />}
+                </div>
+              )}
+            </>
             )}
           </div>
 
@@ -1217,11 +1305,27 @@ const AdminOculto = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredGrupos.map((grupo) => {
+                    <>
+                    {filteredGrupos.map((grupo, index) => {
                       const totalPersonas = 1 + grupo.acompanantes.length;
                       
                       return (
-                        <TableRow key={grupo.id}>
+                        <Fragment key={grupo.id}>
+                        {dropIndex === index && (
+                          <TableRow className="h-0 p-0 border-0 hover:bg-transparent">
+                            <TableCell colSpan={8} className="p-0 h-0 border-0 align-middle">
+                              <div className="h-1.5 rounded-full bg-blue-500 mx-2" />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        <TableRow
+                          className={`cursor-grab active:cursor-grabbing select-none ${draggedGrupoId === grupo.id ? "opacity-50" : ""} ${isReordering ? "pointer-events-none" : ""}`}
+                          draggable={!isReordering}
+                          onDragStart={(e) => handleDragStart(e, grupo.id)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDrop={(e) => handleDrop(e, index)}
+                          onDragEnd={handleDragEnd}
+                        >
                         <TableCell className="text-sm">
                           <div>
                             <div className="font-medium">
@@ -1389,8 +1493,21 @@ const AdminOculto = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    );
-                  })
+                        </Fragment>
+                      );
+                    })}
+                    {filteredGrupos.length > 0 && (
+                      <TableRow
+                        className="h-3 border-0 hover:bg-transparent"
+                        onDragOver={(e) => { e.preventDefault(); setDropIndex(filteredGrupos.length); }}
+                        onDrop={(e) => handleDrop(e, filteredGrupos.length)}
+                      >
+                        <TableCell colSpan={8} className="p-0 border-0 align-middle">
+                          {dropIndex === filteredGrupos.length && <div className="h-1.5 rounded-full bg-blue-500 mx-2" />}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </>
                   )}
                 </TableBody>
               </TableComponent>

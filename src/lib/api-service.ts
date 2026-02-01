@@ -280,6 +280,13 @@ class ApiService {
     return this.getAllGrupos();
   }
 
+  async reorderGrupos(grupos: GrupoInvitados[]): Promise<void> {
+    await this.fetchApi('/admin?action=reorder-grupos', {
+      method: 'POST',
+      body: JSON.stringify({ grupos }),
+    }, true);
+  }
+
   async importData(data: GrupoInvitados[]): Promise<void> {
     // Limpiar datos existentes y importar nuevos
     const grupos = await this.getAllGrupos();

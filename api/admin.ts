@@ -16,6 +16,7 @@ import {
   listGrupos,
   normalizeToken,
   tokenKey,
+  writeLegacyGrupos,
 } from '../serverlib/storage.js';
 
 const redis = new Redis({
@@ -494,6 +495,29 @@ async function handleMigrate(req: VercelRequest, res: VercelResponse) {
   return res.status(200).json({ success: true, mode, snapshotKey: snapKey, report });
 }
 
+async function handleReorderGrupos(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+  if (!(await requireAdmin(req, res))) return;
+
+  const body = parseBody(req);
+  if (!body || !Array.isArray((body as any).grupos)) {
+    return res.status(400).json({ error: 'Body inválido: se requiere { grupos: GrupoInvitados[] }' });
+  }
+
+  const grupos = (body as { grupos: GrupoInvitadosEntity[] }).grupos;
+  if (grupos.length === 0) return res.status(200).json({ success: true, totalGrupos: 0 });
+
+  if (STORAGE_MODE === 'entity') {
+    const idsNew = grupos.map((g) => String(g?.id || '').trim()).filter(Boolean);
+    await redis.set(IDS_KEY, idsNew);
+    await writeLegacyGrupos(grupos);
+  } else {
+    await redis.set(LEGACY_GRUPOS_KEY, grupos);
+  }
+
+  return res.status(200).json({ success: true, totalGrupos: grupos.length });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(req, res);
 
@@ -517,6 +541,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (action === 'backup-export') return await handleBackupExport(req, res);
     if (action === 'backup-import') return await handleBackupImport(req, res);
     if (action === 'migrate') return await handleMigrate(req, res);
+    if (action === 'reorder-grupos') return await handleReorderGrupos(req, res);
 
     return res.status(400).json({ error: 'Action inválido' });
   } catch (error: any) {

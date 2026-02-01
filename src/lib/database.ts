@@ -29,6 +29,10 @@ class DatabaseService {
     await apiService.deleteGrupo(id);
   }
 
+  async reorderGrupos(grupos: GrupoInvitados[]): Promise<void> {
+    await apiService.reorderGrupos(grupos);
+  }
+
   async getStats(): Promise<InvitadoStats> {
     const grupos = await this.getAllGrupos();
     
