@@ -86,6 +86,7 @@ const AcompananteSchema = z
     edad: z.number().optional(),
     asistencia: AsistenciaSchema,
     alergias: z.string().optional(),
+    confirmacion_bus: z.boolean().optional(),
   })
   .strict();
 
@@ -96,6 +97,7 @@ const InvitadoPrincipalSchema = z
     email: z.string(), // puede ser "" en datos existentes
     asistencia: AsistenciaSchema,
     alergias: z.string().optional(),
+    confirmacion_bus: z.boolean().optional(),
   })
   .strict();
 

@@ -32,6 +32,7 @@ export interface GrupoInvitadosEntity {
     email: string;
     asistencia: Asistencia;
     alergias?: string;
+    confirmacion_bus?: boolean;
   };
   acompanantes: Array<{
     id: string;
@@ -41,6 +42,7 @@ export interface GrupoInvitadosEntity {
     edad?: number;
     asistencia: Asistencia;
     alergias?: string;
+    confirmacion_bus?: boolean;
   }>;
   notas?: string;
   confirmacion_bus: boolean;

@@ -542,7 +542,7 @@ const AdminOculto = () => {
     setEditingGrupo({ ...editingGrupo, [field]: value });
   };
 
-  const updateInvitadoPrincipal = (field: keyof GrupoInvitados['invitadoPrincipal'], value: string | 'pendiente' | 'confirmado' | 'rechazado') => {
+  const updateInvitadoPrincipal = (field: keyof GrupoInvitados['invitadoPrincipal'], value: string | boolean | 'pendiente' | 'confirmado' | 'rechazado') => {
     if (!editingGrupo) return;
     setEditingGrupo({
       ...editingGrupo,
@@ -578,7 +578,7 @@ const AdminOculto = () => {
     });
   };
 
-  const updateAcompananteEdit = (id: string, field: keyof Acompanante, value: string | number | 'pendiente' | 'confirmado' | 'rechazado' | undefined) => {
+  const updateAcompananteEdit = (id: string, field: keyof Acompanante, value: string | number | boolean | 'pendiente' | 'confirmado' | 'rechazado' | undefined) => {
     if (!editingGrupo) return;
     setEditingGrupo({
       ...editingGrupo,
@@ -619,18 +619,11 @@ const AdminOculto = () => {
         return;
       }
 
-      // Calcular estado del grupo
-      const todasAsistencias = [
-        editingGrupo.invitadoPrincipal.asistencia,
-        ...acompanantesValidos.map(ac => ac.asistencia)
-      ];
-
-      let estadoGrupo: 'pendiente' | 'confirmado' | 'rechazado' = 'pendiente';
-      if (todasAsistencias.some(a => a === 'confirmado')) {
-        estadoGrupo = 'confirmado';
-      } else if (todasAsistencias.every(a => a === 'rechazado')) {
-        estadoGrupo = 'rechazado';
-      }
+      // Confirmación bus: true si algún miembro usa bus
+      const algunoUsaBus =
+        editingGrupo.invitadoPrincipal.confirmacion_bus === true ||
+        acompanantesValidos.some(ac => ac.confirmacion_bus === true) ||
+        editingGrupo.confirmacion_bus;
 
       // Obtener información del bus si está seleccionado
       const busIdSeleccionado = editingGrupo.ubicacion_bus;
@@ -650,12 +643,13 @@ const AdminOculto = () => {
           ...ac,
           alergias: ac.alergias?.trim() || undefined,
         })),
-        asistencia: estadoGrupo,
+        asistencia: editingGrupo.asistencia,
+        confirmacion_bus: algunoUsaBus,
         fechaActualizacion: new Date().toISOString(),
         notas: editingGrupo.notas?.trim() || undefined,
-        ubicacion_bus: editingGrupo.confirmacion_bus && busInfo?.nombre 
+        ubicacion_bus: algunoUsaBus && busInfo?.nombre 
           ? busInfo.nombre 
-          : (editingGrupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
+          : (algunoUsaBus && busInfo ? `Bus #${busInfo.numero}` : undefined),
       };
 
       await dbService.saveGrupo(grupoActualizado);
@@ -1054,6 +1048,26 @@ const AdminOculto = () => {
                         >
                           Grupo: {grupo.asistencia}
                         </Badge>
+                        {(() => {
+                          const busConfirmado = grupo.confirmacion_bus === true;
+                          const busPendiente = grupo.asistencia === 'pendiente';
+                          const busEstado = busConfirmado ? 'confirmado' : busPendiente ? 'pendiente' : 'denegado';
+                          return (
+                            <Badge
+                              variant={
+                                busEstado === "confirmado"
+                                  ? "default"
+                                  : busEstado === "denegado"
+                                  ? "destructive"
+                                  : "secondary"
+                              }
+                              className="text-[10px] px-1.5 py-0"
+                            >
+                              <Bus className="w-2.5 h-2.5 mr-0.5 inline" />
+                              {busEstado}
+                            </Badge>
+                          );
+                        })()}
                         {grupo.mesa && (() => {
                           const mesaConfig = configMesas?.mesas.find(m => m.id === grupo.mesa);
                           if (mesaConfig) {
@@ -1167,6 +1181,7 @@ const AdminOculto = () => {
                     <TableHead className="text-sm">Acompañantes</TableHead>
                     <TableHead className="text-sm">Total Personas</TableHead>
                     <TableHead className="text-sm">Asistencia</TableHead>
+                    <TableHead className="text-sm">Bus</TableHead>
                     <TableHead className="text-sm">Mesa</TableHead>
                     <TableHead className="text-sm">Token</TableHead>
                     <TableHead className="text-right text-sm">Acciones</TableHead>
@@ -1175,7 +1190,7 @@ const AdminOculto = () => {
                 <TableBody>
                   {filteredGrupos.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                        <TableCell colSpan={8} className="text-center py-8">
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
                           <Users className="w-12 h-12 mb-4 opacity-50" />
                           <p className="text-sm">No hay grupos de invitados</p>
@@ -1269,6 +1284,28 @@ const AdminOculto = () => {
                           >
                             {grupo.asistencia}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {(() => {
+                            const busConfirmado = grupo.confirmacion_bus === true;
+                            const busPendiente = grupo.asistencia === 'pendiente';
+                            const busEstado = busConfirmado ? 'confirmado' : busPendiente ? 'pendiente' : 'denegado';
+                            return (
+                              <Badge
+                                variant={
+                                  busEstado === "confirmado"
+                                    ? "default"
+                                    : busEstado === "denegado"
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                                className="text-xs"
+                              >
+                                <Bus className="w-3 h-3 mr-1 inline" />
+                                {busEstado}
+                              </Badge>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-sm">
                           {grupo.mesa ? (
@@ -1790,6 +1827,17 @@ const AdminOculto = () => {
                         className="mt-1 text-sm h-9 sm:h-10"
                       />
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-bus-principal"
+                        checked={editingGrupo.invitadoPrincipal.confirmacion_bus ?? editingGrupo.confirmacion_bus ?? false}
+                        onCheckedChange={(checked) => updateInvitadoPrincipal('confirmacion_bus', checked === true)}
+                      />
+                      <Label htmlFor="edit-bus-principal" className="text-sm cursor-pointer flex items-center gap-1.5">
+                        <Bus className="w-4 h-4" />
+                        Usa el bus
+                      </Label>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1911,10 +1959,46 @@ const AdminOculto = () => {
                                 className="mt-1 text-sm h-9 sm:h-10"
                               />
                             </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`edit-bus-acompanante-${acompanante.id}`}
+                                checked={acompanante.confirmacion_bus ?? editingGrupo.confirmacion_bus ?? false}
+                                onCheckedChange={(checked) => updateAcompananteEdit(acompanante.id, 'confirmacion_bus', checked === true)}
+                              />
+                              <Label htmlFor={`edit-bus-acompanante-${acompanante.id}`} className="text-sm cursor-pointer flex items-center gap-1.5">
+                                <Bus className="w-4 h-4" />
+                                Usa el bus
+                              </Label>
+                            </div>
                           </div>
                         ))}
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                {/* Estado del Grupo - Edición */}
+                <Card>
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg">Estado del Grupo</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+                    <div>
+                      <Label htmlFor="edit-asistencia-grupo" className="text-sm">Asistencia del grupo</Label>
+                      <Select
+                        value={editingGrupo.asistencia}
+                        onValueChange={(value: 'pendiente' | 'confirmado' | 'rechazado') => updateEditingGrupo('asistencia', value)}
+                      >
+                        <SelectTrigger id="edit-asistencia-grupo" className="mt-1 text-sm h-9 sm:h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pendiente">Pendiente</SelectItem>
+                          <SelectItem value="confirmado">Confirmado</SelectItem>
+                          <SelectItem value="rechazado">Rechazado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1930,20 +2014,33 @@ const AdminOculto = () => {
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="edit-confirmacion-bus"
-                        checked={editingGrupo.confirmacion_bus}
+                        checked={
+                          editingGrupo.invitadoPrincipal.confirmacion_bus === true ||
+                          editingGrupo.acompanantes.some(ac => ac.confirmacion_bus === true) ||
+                          (editingGrupo.invitadoPrincipal.confirmacion_bus === undefined &&
+                            editingGrupo.acompanantes.every(ac => ac.confirmacion_bus === undefined) &&
+                            editingGrupo.confirmacion_bus)
+                        }
                         onCheckedChange={(checked) => {
-                          updateEditingGrupo('confirmacion_bus', checked === true);
-                          if (!checked) {
-                            updateEditingGrupo('ubicacion_bus', undefined);
-                          }
+                          const val = checked === true;
+                          if (!editingGrupo) return;
+                          setEditingGrupo({
+                            ...editingGrupo,
+                            invitadoPrincipal: { ...editingGrupo.invitadoPrincipal, confirmacion_bus: val },
+                            acompanantes: editingGrupo.acompanantes.map(ac => ({ ...ac, confirmacion_bus: val })),
+                            confirmacion_bus: val,
+                            ubicacion_bus: val ? editingGrupo.ubicacion_bus : undefined,
+                          });
                         }}
                       />
                       <Label htmlFor="edit-confirmacion-bus" className="text-sm cursor-pointer">
-                        El grupo utilizará el servicio de transporte en bus
+                        Marcar/desmarcar bus para todo el grupo
                       </Label>
                     </div>
                     
-                    {editingGrupo.confirmacion_bus && (
+                    {(editingGrupo.invitadoPrincipal.confirmacion_bus === true ||
+                      editingGrupo.acompanantes.some(ac => ac.confirmacion_bus === true) ||
+                      editingGrupo.confirmacion_bus) && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -2169,6 +2266,16 @@ const AdminOculto = () => {
                           {selectedGrupo.invitadoPrincipal.asistencia}
                         </Badge>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm sm:text-base">Bus:</span>
+                        <Badge
+                          variant={(selectedGrupo.invitadoPrincipal.confirmacion_bus ?? selectedGrupo.confirmacion_bus) ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          <Bus className="w-3 h-3 mr-1 inline" />
+                          {(selectedGrupo.invitadoPrincipal.confirmacion_bus ?? selectedGrupo.confirmacion_bus) ? "Sí" : "No"}
+                        </Badge>
+                      </div>
                       {selectedGrupo.invitadoPrincipal.alergias && (
                         <div>
                           <span className="font-medium text-sm sm:text-base">Alergias:</span>
@@ -2226,6 +2333,16 @@ const AdminOculto = () => {
                                   className="text-xs"
                                 >
                                   {acompanante.asistencia}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs sm:text-sm font-medium">Bus:</span>
+                                <Badge
+                                  variant={(acompanante.confirmacion_bus ?? selectedGrupo.confirmacion_bus) ? "default" : "secondary"}
+                                  className="text-xs"
+                                >
+                                  <Bus className="w-3 h-3 mr-1 inline" />
+                                  {(acompanante.confirmacion_bus ?? selectedGrupo.confirmacion_bus) ? "Sí" : "No"}
                                 </Badge>
                               </div>
                               {acompanante.alergias && (

@@ -6,6 +6,7 @@ export interface Acompanante {
   edad?: number; // Solo para hijos
   asistencia: 'pendiente' | 'confirmado' | 'rechazado';
   alergias?: string; // Alergias del acompañante
+  confirmacion_bus?: boolean; // Si este acompañante usa el bus
 }
 
 export interface GrupoInvitados {
@@ -16,6 +17,7 @@ export interface GrupoInvitados {
     email: string;
     asistencia: 'pendiente' | 'confirmado' | 'rechazado';
     alergias?: string; // Alergias del invitado principal
+    confirmacion_bus?: boolean; // Si el invitado principal usa el bus
   };
   acompanantes: Acompanante[];
   token: string;
