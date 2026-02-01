@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, Eye, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload } from "lucide-react";
 import PageLayout from "@/components/layouts/PageLayout";
@@ -30,6 +30,7 @@ import { dbService } from "@/lib/database";
 import { migrateOldData } from "@/lib/migration";
 import { GrupoInvitados, InvitadoStats, Acompanante } from "@/types/invitados";
 import { ConfiguracionBuses } from "@/types/bus";
+import { contarPasajerosBus } from "@/lib/bus-utils";
 import { ConfiguracionMesas } from "@/types/mesas";
 import { CarreraFotos, TODAS_LAS_MISIONES } from "@/types/carrera-fotos";
 
@@ -685,6 +686,11 @@ const AdminOculto = () => {
     return matchesSearch && matchesAsistencia;
   });
 
+  const pasajerosPorBus = useMemo(() => {
+    const buses = configBuses?.buses ?? [];
+    return buses.map(bus => ({ bus, count: contarPasajerosBus(grupos, bus) }));
+  }, [grupos, configBuses]);
+
   // Pantalla de carga mientras verifica sesión
   if (isCheckingSession) {
     return (
@@ -787,9 +793,19 @@ const AdminOculto = () => {
             </div>
             
             <div className="bg-card rounded-lg shadow-soft p-2.5 sm:p-3 md:p-4 lg:p-6 text-center">
-              <Heart className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-pink-500 mx-auto mb-0.5 sm:mb-1" />
-              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-pink-600 leading-tight">{stats.parejas}</div>
-              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Parejas</div>
+              <Bus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-primary mx-auto mb-0.5 sm:mb-1" />
+              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Pasajeros por bus</div>
+              <div className="space-y-0.5 mt-1 text-xs sm:text-sm font-medium leading-tight min-h-[1.5em]">
+                {pasajerosPorBus.length === 0 ? (
+                  <span className="text-muted-foreground">Sin buses</span>
+                ) : (
+                  pasajerosPorBus.map(({ bus, count }) => (
+                    <div key={bus.id} className="truncate">
+                      {bus.nombre ? `${bus.nombre}: ` : `Bus #${bus.numero}: `}{count}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
             
             <div className="bg-gradient-gold rounded-lg shadow-gold p-2.5 sm:p-3 md:p-4 lg:p-6 text-center text-white">

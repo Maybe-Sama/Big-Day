@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Bus, Trash2 } from 'lucide-react';
+import { Plus, Bus, Trash2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AppModal } from '@/components/common';
 import { ConfiguracionBuses, BusConfig } from '@/types/bus';
+import { GrupoInvitados } from '@/types/invitados';
+import { contarPasajerosBus } from '@/lib/bus-utils';
 import { dbService } from '@/lib/database';
 
 interface ConfigBusesModalProps {
@@ -15,10 +17,11 @@ interface ConfigBusesModalProps {
 
 const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
   const [buses, setBuses] = useState<BusConfig[]>([]);
+  const [grupos, setGrupos] = useState<GrupoInvitados[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Cargar configuración al abrir el modal
+  // Cargar configuración y grupos al abrir el modal
   useEffect(() => {
     if (isOpen) {
       loadConfig();
@@ -28,20 +31,29 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
   const loadConfig = async () => {
     try {
       setLoading(true);
-      const config = await dbService.getConfiguracionBuses();
+      const [config, gruposData] = await Promise.all([
+        dbService.getConfiguracionBuses(),
+        dbService.getAllGrupos(),
+      ]);
       if (config) {
         setBuses(config.buses);
       } else {
-        // Configuración por defecto: 1 bus sin paradas
         setBuses([]);
       }
+      setGrupos(gruposData);
     } catch (error) {
       console.error('Error cargando configuración de buses:', error);
       setBuses([]);
+      setGrupos([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const pasajerosPorBus = useMemo(
+    () => buses.map(bus => contarPasajerosBus(grupos, bus)),
+    [buses, grupos]
+  );
 
   const handleSave = async () => {
     try {
@@ -133,7 +145,7 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
             </div>
           ) : (
             <div className="space-y-4">
-              {buses.map((bus) => (
+              {buses.map((bus, index) => (
                 <motion.div
                   key={bus.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -162,7 +174,12 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
+                    <Users className="w-4 h-4" />
+                    <span>
+                      {pasajerosPorBus[index]} pasajero{pasajerosPorBus[index] !== 1 ? 's' : ''} confirmado{pasajerosPorBus[index] !== 1 ? 's' : ''}
+                    </span>
+                  </div>
                 </motion.div>
               ))}
             </div>
