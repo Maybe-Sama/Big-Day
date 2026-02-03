@@ -305,22 +305,16 @@ const RSVP = () => {
 
   const addAcompanante = (tipo: 'pareja' | 'hijo') => {
     if (!grupo) return;
-    // Seguridad: el endpoint RSVP NO permite crear acompañantes nuevos.
-    toast({
-      title: "No permitido",
-      description: "No se pueden añadir acompañantes desde este formulario. Contacta con los organizadores.",
-      variant: "destructive",
-    });
-    return;
     const nuevoAcompanante: Acompanante = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       nombre: '',
       apellidos: '',
       tipo,
       asistencia: 'pendiente',
       alergias: '',
-      ...(tipo === 'hijo' && { edad: 0 }),
+      ...(tipo === 'hijo' && { edad: undefined }),
     };
+    allowedAcompananteIdsRef.current.add(nuevoAcompanante.id);
     setGrupo({
       ...grupo,
       acompanantes: [...grupo.acompanantes, nuevoAcompanante],
@@ -329,13 +323,7 @@ const RSVP = () => {
 
   const removeAcompanante = (id: string) => {
     if (!grupo) return;
-    // Seguridad: el endpoint RSVP NO permite eliminar acompañantes.
-    toast({
-      title: "No permitido",
-      description: "No se pueden eliminar acompañantes desde este formulario. Contacta con los organizadores.",
-      variant: "destructive",
-    });
-    return;
+    allowedAcompananteIdsRef.current.delete(id);
     setGrupo({
       ...grupo,
       acompanantes: grupo.acompanantes.filter(ac => ac.id !== id),
@@ -365,15 +353,16 @@ const RSVP = () => {
       return;
     }
 
-    // Validar acompañantes: si tienen nombre, deben tener apellidos
-    const acompanantesInvalidos = grupo.acompanantes.filter(ac => 
-      (ac.nombre && !ac.apellidos) || (!ac.nombre && ac.apellidos)
-    );
-    
+    // Validar acompañantes: si tienen nombre, deben tener apellidos (y viceversa)
+    const acompanantesInvalidos = grupo.acompanantes.filter(ac => {
+      const hasNombre = (ac.nombre ?? '').trim().length > 0;
+      const hasApellidos = (ac.apellidos ?? '').trim().length > 0;
+      return (hasNombre && !hasApellidos) || (!hasNombre && hasApellidos);
+    });
     if (acompanantesInvalidos.length > 0) {
       toast({
         title: "Error",
-        description: "Los acompañantes deben tener nombre y apellidos completos",
+        description: "Los acompañantes deben tener nombre y apellidos completos (o ambos vacíos)",
         variant: "destructive",
       });
       return;
@@ -382,13 +371,9 @@ const RSVP = () => {
     try {
       setSaving(true);
 
-      // Filtrar acompañantes válidos (con nombre y apellidos)
-      const acompanantesValidos = grupo.acompanantes.filter(ac => ac.nombre && ac.apellidos);
-
-      // Calcular estado del grupo basado en asistencias
       const todasAsistencias = [
         grupo.invitadoPrincipal.asistencia,
-        ...acompanantesValidos.map(ac => ac.asistencia)
+        ...grupo.acompanantes.map(ac => ac.asistencia)
       ];
 
       let estadoGrupo: 'pendiente' | 'confirmado' | 'rechazado' = 'pendiente';
@@ -412,8 +397,10 @@ const RSVP = () => {
           ...grupo.invitadoPrincipal,
           alergias: grupo.invitadoPrincipal.alergias?.trim() || undefined,
         },
-        acompanantes: acompanantesValidos.map(ac => ({
+        acompanantes: grupo.acompanantes.map(ac => ({
           ...ac,
+          nombre: (ac.nombre ?? '').trim(),
+          apellidos: (ac.apellidos ?? '').trim(),
           alergias: ac.alergias?.trim() || undefined,
         })),
         asistencia: estadoGrupo,
@@ -435,6 +422,10 @@ const RSVP = () => {
           .filter((ac) => allowedAcompananteIdsRef.current.has(ac.id))
           .map((ac) => ({
             id: ac.id,
+            nombre: ac.nombre,
+            apellidos: ac.apellidos,
+            tipo: ac.tipo,
+            edad: ac.edad,
             asistencia: ac.asistencia,
             alergias: ac.alergias,
           })),
@@ -453,8 +444,12 @@ const RSVP = () => {
             ...serverGrupo.invitadoPrincipal,
             email: prev.invitadoPrincipal.email,
           },
+          acompanantes: Array.isArray(serverGrupo.acompanantes) ? serverGrupo.acompanantes : prev.acompanantes,
         };
       });
+      if (Array.isArray(serverGrupo.acompanantes)) {
+        allowedAcompananteIdsRef.current = new Set(serverGrupo.acompanantes.map((ac: Acompanante) => ac.id));
+      }
       setIsEditing(false);
       
       toast({
@@ -488,15 +483,16 @@ const RSVP = () => {
       return;
     }
 
-    // Validar acompañantes: si tienen nombre, deben tener apellidos
-    const acompanantesInvalidos = grupo.acompanantes.filter(ac => 
-      (ac.nombre && !ac.apellidos) || (!ac.nombre && ac.apellidos)
-    );
-    
+    // Validar acompañantes: si tienen nombre, deben tener apellidos (y viceversa)
+    const acompanantesInvalidos = grupo.acompanantes.filter(ac => {
+      const hasNombre = (ac.nombre ?? '').trim().length > 0;
+      const hasApellidos = (ac.apellidos ?? '').trim().length > 0;
+      return (hasNombre && !hasApellidos) || (!hasNombre && hasApellidos);
+    });
     if (acompanantesInvalidos.length > 0) {
       toast({
         title: "Error",
-        description: "Los acompañantes deben tener nombre y apellidos completos",
+        description: "Los acompañantes deben tener nombre y apellidos completos (o ambos vacíos)",
         variant: "destructive",
       });
       return;
@@ -505,13 +501,9 @@ const RSVP = () => {
     try {
       setSaving(true);
 
-      // Filtrar acompañantes válidos
-      const acompanantesValidos = grupo.acompanantes.filter(ac => ac.nombre && ac.apellidos);
-
-      // Calcular estado del grupo basado en asistencias actuales
       const todasAsistencias = [
         grupo.invitadoPrincipal.asistencia,
-        ...acompanantesValidos.map(ac => ac.asistencia)
+        ...grupo.acompanantes.map(ac => ac.asistencia)
       ];
 
       let estadoGrupo: 'pendiente' | 'confirmado' | 'rechazado' = 'pendiente';
@@ -535,8 +527,10 @@ const RSVP = () => {
           ...grupo.invitadoPrincipal,
           alergias: grupo.invitadoPrincipal.alergias?.trim() || undefined,
         },
-        acompanantes: acompanantesValidos.map(ac => ({
+        acompanantes: grupo.acompanantes.map(ac => ({
           ...ac,
+          nombre: (ac.nombre ?? '').trim(),
+          apellidos: (ac.apellidos ?? '').trim(),
           alergias: ac.alergias?.trim() || undefined,
         })),
         asistencia: estadoGrupo,
@@ -558,6 +552,10 @@ const RSVP = () => {
           .filter((ac) => allowedAcompananteIdsRef.current.has(ac.id))
           .map((ac) => ({
             id: ac.id,
+            nombre: ac.nombre,
+            apellidos: ac.apellidos,
+            tipo: ac.tipo,
+            edad: ac.edad,
             asistencia: ac.asistencia,
             alergias: ac.alergias,
           })),
@@ -575,8 +573,12 @@ const RSVP = () => {
             ...serverGrupo.invitadoPrincipal,
             email: prev.invitadoPrincipal.email,
           },
+          acompanantes: Array.isArray(serverGrupo.acompanantes) ? serverGrupo.acompanantes : prev.acompanantes,
         };
       });
+      if (Array.isArray(serverGrupo.acompanantes)) {
+        allowedAcompananteIdsRef.current = new Set(serverGrupo.acompanantes.map((ac: Acompanante) => ac.id));
+      }
       
       toast({
         title: "¡Invitación guardada!",
@@ -621,10 +623,6 @@ const RSVP = () => {
     try {
       setSaving(true);
 
-      // Filtrar acompañantes válidos
-      const acompanantesValidos = grupo.acompanantes.filter(ac => ac.nombre && ac.apellidos);
-
-      // Calcular estado del grupo basado en asistencias
       let estadoGrupo: 'pendiente' | 'confirmado' | 'rechazado' = 'pendiente';
       if (todasAsistencias.some(a => a === 'confirmado')) {
         estadoGrupo = 'confirmado';
@@ -632,7 +630,6 @@ const RSVP = () => {
         estadoGrupo = 'rechazado';
       }
 
-      // Obtener información del bus si está seleccionado
       const busIdSeleccionado = grupo.ubicacion_bus;
       const busInfo = busesArr.find(b => 
         b.id === busIdSeleccionado || 
@@ -646,8 +643,10 @@ const RSVP = () => {
           ...grupo.invitadoPrincipal,
           alergias: grupo.invitadoPrincipal.alergias?.trim() || undefined,
         },
-        acompanantes: acompanantesValidos.map(ac => ({
+        acompanantes: grupo.acompanantes.map(ac => ({
           ...ac,
+          nombre: (ac.nombre ?? '').trim(),
+          apellidos: (ac.apellidos ?? '').trim(),
           alergias: ac.alergias?.trim() || undefined,
         })),
         asistencia: estadoGrupo,
@@ -669,6 +668,10 @@ const RSVP = () => {
           .filter((ac) => allowedAcompananteIdsRef.current.has(ac.id))
           .map((ac) => ({
             id: ac.id,
+            nombre: ac.nombre,
+            apellidos: ac.apellidos,
+            tipo: ac.tipo,
+            edad: ac.edad,
             asistencia: ac.asistencia,
             alergias: ac.alergias,
           })),
@@ -686,8 +689,12 @@ const RSVP = () => {
             ...serverGrupo.invitadoPrincipal,
             email: prev.invitadoPrincipal.email,
           },
+          acompanantes: Array.isArray(serverGrupo.acompanantes) ? serverGrupo.acompanantes : prev.acompanantes,
         };
       });
+      if (Array.isArray(serverGrupo.acompanantes)) {
+        allowedAcompananteIdsRef.current = new Set(serverGrupo.acompanantes.map((ac: Acompanante) => ac.id));
+      }
       
       setSubmitted(true);
       toast({

@@ -37,8 +37,12 @@ const RsvpPatchSchema = z
         z
           .object({
             id: z.string().min(1).max(100),
+            nombre: z.string().trim().max(200).optional(),
+            apellidos: z.string().trim().max(200).optional(),
+            tipo: z.enum(['pareja', 'hijo']).optional(),
+            edad: z.number().int().min(0).max(120).optional(),
             asistencia: AsistenciaSchema.optional(),
-            alergias: z.string().trim().min(1).max(500).optional(),
+            alergias: z.string().trim().max(500).optional(),
           })
           .strict(),
       )
@@ -167,19 +171,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updated.invitadoPrincipal.alergias = patch.invitadoPrincipal.alergias || undefined;
         }
         if (patch.acompanantes) {
-          if (!Array.isArray(updated.acompanantes)) return res.status(400).json({ error: 'Acompañantes inválidos' });
+          if (!Array.isArray(updated.acompanantes)) updated.acompanantes = [];
           const existingIds = new Set<string>(updated.acompanantes.map((ac: any) => String(ac?.id || '')));
-          for (const acPatch of patch.acompanantes) {
-            if (!existingIds.has(acPatch.id)) return res.status(400).json({ error: 'Acompañante no permitido' });
+          const existingMap = new Map(updated.acompanantes.map((ac: any) => [String(ac?.id || ''), ac]));
+          const result: any[] = [];
+          for (const p of patch.acompanantes) {
+            const id = String(p.id || '');
+            if (existingMap.has(id)) {
+              const ac = existingMap.get(id);
+              const next = { ...ac };
+              if (typeof p.nombre !== 'undefined') next.nombre = p.nombre;
+              if (typeof p.apellidos !== 'undefined') next.apellidos = p.apellidos;
+              if (typeof p.tipo !== 'undefined') next.tipo = p.tipo;
+              if (typeof p.edad !== 'undefined') next.edad = p.edad;
+              if (typeof p.asistencia !== 'undefined') next.asistencia = p.asistencia;
+              if (typeof p.alergias !== 'undefined') next.alergias = p.alergias || undefined;
+              result.push(next);
+            } else {
+              result.push({
+                id: p.id,
+                nombre: p.nombre ?? '',
+                apellidos: p.apellidos ?? '',
+                tipo: p.tipo ?? 'pareja',
+                edad: p.edad,
+                asistencia: p.asistencia ?? 'pendiente',
+                alergias: p.alergias,
+              });
+            }
           }
-          updated.acompanantes = updated.acompanantes.map((ac: any) => {
-            const p = patch.acompanantes?.find((x) => x.id === String(ac?.id || ''));
-            if (!p) return ac;
-            const next = { ...ac };
-            if (typeof p.asistencia !== 'undefined') next.asistencia = p.asistencia;
-            if (typeof p.alergias !== 'undefined') next.alergias = p.alergias || undefined;
-            return next;
-          });
+          updated.acompanantes = result;
         }
         updated.fechaActualizacion = new Date().toISOString();
 
@@ -243,28 +263,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updated.invitadoPrincipal.alergias = patch.invitadoPrincipal.alergias || undefined;
       }
 
-      // Acompañantes: solo actualizar existentes (no permitir crear)
+      // Acompañantes: actualizar existentes y permitir añadir nuevos
       if (patch.acompanantes) {
-        if (!Array.isArray(updated.acompanantes)) {
-          return res.status(400).json({ error: 'Acompañantes inválidos' });
-        }
-        const existingIds = new Set<string>(
-          updated.acompanantes.map((ac: any) => String(ac?.id || '')),
-        );
-        for (const acPatch of patch.acompanantes) {
-          if (!existingIds.has(acPatch.id)) {
-            return res.status(400).json({ error: 'Acompañante no permitido' });
+        if (!Array.isArray(updated.acompanantes)) updated.acompanantes = [];
+        const existingMap = new Map(updated.acompanantes.map((ac: any) => [String(ac?.id || ''), ac]));
+        const result: any[] = [];
+        for (const p of patch.acompanantes) {
+          const id = String(p.id || '');
+          if (existingMap.has(id)) {
+            const ac = existingMap.get(id);
+            const next = { ...ac };
+            if (typeof p.nombre !== 'undefined') next.nombre = p.nombre;
+            if (typeof p.apellidos !== 'undefined') next.apellidos = p.apellidos;
+            if (typeof p.tipo !== 'undefined') next.tipo = p.tipo;
+            if (typeof p.edad !== 'undefined') next.edad = p.edad;
+            if (typeof p.asistencia !== 'undefined') next.asistencia = p.asistencia;
+            if (typeof p.alergias !== 'undefined') next.alergias = p.alergias || undefined;
+            result.push(next);
+          } else {
+            result.push({
+              id: p.id,
+              nombre: p.nombre ?? '',
+              apellidos: p.apellidos ?? '',
+              tipo: p.tipo ?? 'pareja',
+              edad: p.edad,
+              asistencia: p.asistencia ?? 'pendiente',
+              alergias: p.alergias,
+            });
           }
         }
-        updated.acompanantes = updated.acompanantes.map((ac: any) => {
-          const id = String(ac?.id || '');
-          const p = patch.acompanantes?.find((x) => x.id === id);
-          if (!p) return ac;
-          const next = { ...ac };
-          if (typeof p.asistencia !== 'undefined') next.asistencia = p.asistencia;
-          if (typeof p.alergias !== 'undefined') next.alergias = p.alergias || undefined;
-          return next;
-        });
+        updated.acompanantes = result;
       }
 
       updated.fechaActualizacion = new Date().toISOString();

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import { motion } from "framer-motion";
-import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, Eye, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload } from "lucide-react";
+import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, RefreshCw, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload } from "lucide-react";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
 import { AppModal } from "@/components/common";
@@ -667,27 +667,26 @@ const AdminOculto = () => {
         return;
       }
 
-      // Filtrar acompañantes válidos
-      const acompanantesValidos = editingGrupo.acompanantes.filter(ac => ac.nombre && ac.apellidos);
+      // Validar acompañantes: si tienen nombre, deben tener apellidos (y viceversa)
+      const acompanantesInvalidos = editingGrupo.acompanantes.filter(ac => {
+        const hasNombre = (ac.nombre ?? '').trim().length > 0;
+        const hasApellidos = (ac.apellidos ?? '').trim().length > 0;
+        return (hasNombre && !hasApellidos) || (!hasNombre && hasApellidos);
+      });
 
-      // Validar acompañantes: si tienen nombre, deben tener apellidos
-      const acompanantesInvalidos = acompanantesValidos.filter(ac => 
-        (ac.nombre && !ac.apellidos) || (!ac.nombre && ac.apellidos)
-      );
-      
       if (acompanantesInvalidos.length > 0) {
         toast({
           title: "Error",
-          description: "Los acompañantes deben tener nombre y apellidos completos",
+          description: "Los acompañantes deben tener nombre y apellidos completos (o ambos vacíos para completar después)",
           variant: "destructive",
         });
         return;
       }
 
-      // Confirmación bus: true si algún miembro usa bus
+      // Confirmación bus: true si algún miembro usa bus (considerar todos los acompañantes)
       const algunoUsaBus =
         editingGrupo.invitadoPrincipal.confirmacion_bus === true ||
-        acompanantesValidos.some(ac => ac.confirmacion_bus === true) ||
+        editingGrupo.acompanantes.some(ac => ac.confirmacion_bus === true) ||
         editingGrupo.confirmacion_bus;
 
       // Obtener información del bus si está seleccionado
@@ -704,8 +703,10 @@ const AdminOculto = () => {
           ...editingGrupo.invitadoPrincipal,
           alergias: editingGrupo.invitadoPrincipal.alergias?.trim() || undefined,
         },
-        acompanantes: acompanantesValidos.map(ac => ({
+        acompanantes: editingGrupo.acompanantes.map(ac => ({
           ...ac,
+          nombre: (ac.nombre ?? '').trim(),
+          apellidos: (ac.apellidos ?? '').trim(),
           alergias: ac.alergias?.trim() || undefined,
         })),
         asistencia: editingGrupo.asistencia,
@@ -1220,16 +1221,18 @@ const AdminOculto = () => {
                         variant="ghost"
                         onClick={() => handleViewGrupo(grupo)}
                         className="h-7 w-7 p-0"
+                        title="Ver detalles"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Edit className="w-3.5 h-3.5" />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => handleGenerateToken(grupo.id)}
                         className="h-7 w-7 p-0"
+                        title="Generar nuevo token"
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        <RefreshCw className="w-3.5 h-3.5" />
                       </Button>
                       <Button
                         size="sm"
@@ -1458,7 +1461,7 @@ const AdminOculto = () => {
                               onClick={() => handleViewGrupo(grupo)}
                               title="Ver detalles"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Edit className="w-4 h-4" />
                             </Button>
                             <Button
                               size="sm"
@@ -1466,7 +1469,7 @@ const AdminOculto = () => {
                               onClick={() => handleGenerateToken(grupo.id)}
                               title="Generar nuevo token"
                             >
-                              <Edit className="w-4 h-4" />
+                              <RefreshCw className="w-4 h-4" />
                             </Button>
                             <Button
                               size="sm"
