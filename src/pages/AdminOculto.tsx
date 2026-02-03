@@ -658,26 +658,26 @@ const AdminOculto = () => {
 
     try {
       // Validar datos
-      if (!editingGrupo.invitadoPrincipal.nombre || !editingGrupo.invitadoPrincipal.apellidos) {
+      if (!editingGrupo.invitadoPrincipal.nombre?.trim()) {
         toast({
           title: "Error",
-          description: "El nombre y apellidos del invitado principal son obligatorios",
+          description: "El nombre del invitado principal es obligatorio",
           variant: "destructive",
         });
         return;
       }
 
-      // Validar acompañantes: si tienen nombre, deben tener apellidos (y viceversa)
+      // Validar acompañantes: si tienen apellidos, deben tener nombre (el apellido solo no es válido)
       const acompanantesInvalidos = editingGrupo.acompanantes.filter(ac => {
         const hasNombre = (ac.nombre ?? '').trim().length > 0;
         const hasApellidos = (ac.apellidos ?? '').trim().length > 0;
-        return (hasNombre && !hasApellidos) || (!hasNombre && hasApellidos);
+        return hasApellidos && !hasNombre;
       });
 
       if (acompanantesInvalidos.length > 0) {
         toast({
           title: "Error",
-          description: "Los acompañantes deben tener nombre y apellidos completos (o ambos vacíos para completar después)",
+          description: "Si indicas apellidos en un acompañante, el nombre es obligatorio",
           variant: "destructive",
         });
         return;
@@ -1928,7 +1928,7 @@ const AdminOculto = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="edit-apellidos-principal" className="text-sm">Apellidos *</Label>
+                        <Label htmlFor="edit-apellidos-principal" className="text-sm">Apellidos</Label>
                         <Input
                           id="edit-apellidos-principal"
                           value={editingGrupo.invitadoPrincipal.apellidos}
@@ -2049,7 +2049,7 @@ const AdminOculto = () => {
                                 />
                               </div>
                               <div>
-                                <Label className="text-sm">Apellidos *</Label>
+                                <Label className="text-sm">Apellidos</Label>
                                 <Input
                                   value={acompanante.apellidos}
                                   onChange={(e) => updateAcompananteEdit(acompanante.id, 'apellidos', e.target.value)}

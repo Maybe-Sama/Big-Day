@@ -343,26 +343,26 @@ const RSVP = () => {
   const handleSaveMember = async () => {
     if (!grupo) return;
 
-    // Validar que al menos el invitado principal tenga nombre y apellidos
-    if (!grupo.invitadoPrincipal.nombre || !grupo.invitadoPrincipal.apellidos) {
+    // Validar que el invitado principal tenga al menos nombre (apellidos opcional)
+    if (!grupo.invitadoPrincipal.nombre?.trim()) {
       toast({
         title: "Error",
-        description: "Por favor, completa al menos el nombre y apellidos del invitado principal",
+        description: "Por favor, indica al menos el nombre del invitado principal",
         variant: "destructive",
       });
       return;
     }
 
-    // Validar acompañantes: si tienen nombre, deben tener apellidos (y viceversa)
+    // Validar acompañantes: si tienen apellidos, deben tener nombre
     const acompanantesInvalidos = grupo.acompanantes.filter(ac => {
       const hasNombre = (ac.nombre ?? '').trim().length > 0;
       const hasApellidos = (ac.apellidos ?? '').trim().length > 0;
-      return (hasNombre && !hasApellidos) || (!hasNombre && hasApellidos);
+      return hasApellidos && !hasNombre;
     });
     if (acompanantesInvalidos.length > 0) {
       toast({
         title: "Error",
-        description: "Los acompañantes deben tener nombre y apellidos completos (o ambos vacíos)",
+        description: "Si indicas apellidos en un acompañante, el nombre es obligatorio",
         variant: "destructive",
       });
       return;
@@ -473,26 +473,26 @@ const RSVP = () => {
   const handleSaveInvitation = async () => {
     if (!grupo) return;
 
-    // Validar que al menos el invitado principal tenga nombre y apellidos
-    if (!grupo.invitadoPrincipal.nombre || !grupo.invitadoPrincipal.apellidos) {
+    // Validar que el invitado principal tenga al menos nombre (apellidos opcional)
+    if (!grupo.invitadoPrincipal.nombre?.trim()) {
       toast({
         title: "Error",
-        description: "Por favor, completa al menos el nombre y apellidos del invitado principal",
+        description: "Por favor, indica al menos el nombre del invitado principal",
         variant: "destructive",
       });
       return;
     }
 
-    // Validar acompañantes: si tienen nombre, deben tener apellidos (y viceversa)
+    // Validar acompañantes: si tienen apellidos, deben tener nombre
     const acompanantesInvalidos = grupo.acompanantes.filter(ac => {
       const hasNombre = (ac.nombre ?? '').trim().length > 0;
       const hasApellidos = (ac.apellidos ?? '').trim().length > 0;
-      return (hasNombre && !hasApellidos) || (!hasNombre && hasApellidos);
+      return hasApellidos && !hasNombre;
     });
     if (acompanantesInvalidos.length > 0) {
       toast({
         title: "Error",
-        description: "Los acompañantes deben tener nombre y apellidos completos (o ambos vacíos)",
+        description: "Si indicas apellidos en un acompañante, el nombre es obligatorio",
         variant: "destructive",
       });
       return;
@@ -1324,7 +1324,7 @@ const RSVP = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="apellidos-principal" className="text-sm">Apellidos *</Label>
+                        <Label htmlFor="apellidos-principal" className="text-sm">Apellidos</Label>
                         <Input
                           id="apellidos-principal"
                           value={grupo.invitadoPrincipal.apellidos}

@@ -52,24 +52,22 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
   };
 
   const handleSave = () => {
-    if (!invitadoPrincipal.nombre || !invitadoPrincipal.apellidos) {
+    if (!invitadoPrincipal.nombre?.trim()) {
       return;
     }
 
-    // Filtrar acompañantes válidos (con nombre y apellidos, o vacíos para que se completen en RSVP)
     const acompanantesValidos = acompanantes.map(ac => ({
       ...ac,
-      nombre: ac.nombre.trim(),
-      apellidos: ac.apellidos.trim(),
+      nombre: (ac.nombre ?? '').trim(),
+      apellidos: (ac.apellidos ?? '').trim(),
       alergias: ac.alergias?.trim() || undefined,
     }));
 
-    // Crear grupo con invitado principal y acompañantes pre-llenados
     const grupo: GrupoInvitados = {
       id: Date.now().toString(),
       invitadoPrincipal: {
         nombre: invitadoPrincipal.nombre.trim(),
-        apellidos: invitadoPrincipal.apellidos.trim(),
+        apellidos: (invitadoPrincipal.apellidos ?? '').trim(),
         // No pedimos correo al crear el grupo desde el panel
         // (se mantiene como string para no romper búsquedas/tabla existentes).
         email: '',
@@ -114,7 +112,7 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
     onClose();
   };
 
-  const isFormValid = invitadoPrincipal.nombre && invitadoPrincipal.apellidos;
+  const isFormValid = Boolean(invitadoPrincipal.nombre?.trim());
 
   return (
       <AppModal
@@ -161,7 +159,7 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
                 />
               </div>
               <div>
-                <Label htmlFor="apellidos" className="text-sm">Apellidos *</Label>
+                <Label htmlFor="apellidos" className="text-sm">Apellidos</Label>
                 <Input
                   id="apellidos"
                   value={invitadoPrincipal.apellidos}
