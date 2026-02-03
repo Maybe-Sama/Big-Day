@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, Hand, Calendar, MapPin, ArrowRight, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, Hand, Calendar, MapPin, ArrowRight, Clock, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { dbService } from "@/lib/database";
 import { GrupoInvitados, Acompanante } from "@/types/invitados";
@@ -39,6 +49,7 @@ const RSVP = () => {
   const [showVideo, setShowVideo] = useState(true);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [showRechazarModal, setShowRechazarModal] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -470,85 +481,31 @@ const RSVP = () => {
     }
   };
 
-  const handleSaveInvitation = async () => {
+  /** Devuelve la invitación al estado inicial: todos con asistencia "pendiente" y guarda en el servidor. */
+  const handleRechazarInvitacion = async () => {
     if (!grupo) return;
-
-    // Validar que el invitado principal tenga al menos nombre (apellidos opcional)
-    if (!grupo.invitadoPrincipal.nombre?.trim()) {
-      toast({
-        title: "Error",
-        description: "Por favor, indica al menos el nombre del invitado principal",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validar acompañantes: si tienen apellidos, deben tener nombre
-    const acompanantesInvalidos = grupo.acompanantes.filter(ac => {
-      const hasNombre = (ac.nombre ?? '').trim().length > 0;
-      const hasApellidos = (ac.apellidos ?? '').trim().length > 0;
-      return hasApellidos && !hasNombre;
-    });
-    if (acompanantesInvalidos.length > 0) {
-      toast({
-        title: "Error",
-        description: "Si indicas apellidos en un acompañante, el nombre es obligatorio",
-        variant: "destructive",
-      });
-      return;
-    }
+    setShowRechazarModal(false);
 
     try {
       setSaving(true);
 
-      const todasAsistencias = [
-        grupo.invitadoPrincipal.asistencia,
-        ...grupo.acompanantes.map(ac => ac.asistencia)
-      ];
-
-      let estadoGrupo: 'pendiente' | 'confirmado' | 'rechazado' = 'pendiente';
-      if (todasAsistencias.some(a => a === 'confirmado')) {
-        estadoGrupo = 'confirmado';
-      } else if (todasAsistencias.every(a => a === 'rechazado')) {
-        estadoGrupo = 'rechazado';
-      }
-
-      // Obtener información del bus si está seleccionado
-      const busIdSeleccionado = grupo.ubicacion_bus;
-      const busInfo = busesArr.find(b => 
-        b.id === busIdSeleccionado || 
-        b.nombre === busIdSeleccionado ||
-        `Bus #${b.numero}` === busIdSeleccionado
-      );
-
-      const grupoActualizado: GrupoInvitados = {
+      const grupoConAsistenciaPendiente: GrupoInvitados = {
         ...grupo,
-        invitadoPrincipal: {
-          ...grupo.invitadoPrincipal,
-          alergias: grupo.invitadoPrincipal.alergias?.trim() || undefined,
-        },
-        acompanantes: grupo.acompanantes.map(ac => ({
-          ...ac,
-          nombre: (ac.nombre ?? '').trim(),
-          apellidos: (ac.apellidos ?? '').trim(),
-          alergias: ac.alergias?.trim() || undefined,
-        })),
-        asistencia: estadoGrupo,
+        invitadoPrincipal: { ...grupo.invitadoPrincipal, asistencia: 'pendiente' },
+        acompanantes: grupo.acompanantes.map(ac => ({ ...ac, asistencia: 'pendiente' })),
+        asistencia: 'pendiente',
         fechaActualizacion: new Date().toISOString(),
-        ubicacion_bus: grupo.confirmacion_bus && busInfo?.nombre 
-          ? busInfo.nombre 
-          : (grupo.confirmacion_bus && busInfo ? `Bus #${busInfo.numero}` : undefined),
       };
 
       const payload = {
-        asistencia: grupoActualizado.asistencia,
-        confirmacion_bus: grupoActualizado.confirmacion_bus,
-        ubicacion_bus: grupoActualizado.ubicacion_bus,
+        asistencia: 'pendiente',
+        confirmacion_bus: grupoConAsistenciaPendiente.confirmacion_bus,
+        ubicacion_bus: grupoConAsistenciaPendiente.ubicacion_bus,
         invitadoPrincipal: {
-          asistencia: grupoActualizado.invitadoPrincipal.asistencia,
-          alergias: grupoActualizado.invitadoPrincipal.alergias,
+          asistencia: 'pendiente',
+          alergias: grupoConAsistenciaPendiente.invitadoPrincipal.alergias,
         },
-        acompanantes: grupoActualizado.acompanantes
+        acompanantes: grupoConAsistenciaPendiente.acompanantes
           .filter((ac) => allowedAcompananteIdsRef.current.has(ac.id))
           .map((ac) => ({
             id: ac.id,
@@ -556,7 +513,7 @@ const RSVP = () => {
             apellidos: ac.apellidos,
             tipo: ac.tipo,
             edad: ac.edad,
-            asistencia: ac.asistencia,
+            asistencia: 'pendiente' as const,
             alergias: ac.alergias,
           })),
       };
@@ -579,18 +536,16 @@ const RSVP = () => {
       if (Array.isArray(serverGrupo.acompanantes)) {
         allowedAcompananteIdsRef.current = new Set(serverGrupo.acompanantes.map((ac: Acompanante) => ac.id));
       }
-      
+
       toast({
-        title: "¡Invitación guardada!",
-        description: "Los datos se han guardado exitosamente. Puedes continuar completando la información más tarde.",
+        title: "Invitación devuelta",
+        description: "Se ha dejado la asistencia sin confirmar. Puedes volver a confirmar cuando quieras.",
       });
     } catch (error: any) {
-      console.error("Error saving grupo:", error);
+      console.error("Error al devolver invitación:", error);
       toast({
         title: "Error",
-        description: error?.message
-          ? `No se pudo guardar: ${error.message}`
-          : "No se pudo guardar la información. Por favor, intenta de nuevo.",
+        description: error?.message ?? "No se pudo devolver la invitación. Inténtalo de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -1675,44 +1630,34 @@ const RSVP = () => {
             </Card>
 
             {/* Botones de envío */}
-            <div className="flex flex-col sm:flex-row justify-end gap-3">
-              {/* Botón para guardar datos en cualquier momento */}
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={handleSaveInvitation}
-                disabled={saving}
-                className="w-full sm:w-auto text-base sm:text-lg h-12 sm:h-14"
-              >
-                {saving ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span>
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    Enviar Invitación
-                  </>
-                )}
-              </Button>
+            {(() => {
+              const todasAsistencias = [
+                grupo.invitadoPrincipal.asistencia,
+                ...grupo.acompanantes.map(ac => ac.asistencia),
+              ];
+              const todosHanRespondido = todasAsistencias.every(a => a === 'confirmado' || a === 'rechazado');
+              return (
+                <div className="flex flex-col sm:flex-row justify-end gap-3">
+                  {/* Rechazar invitación: devuelve la asistencia a "sin confirmar" */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setShowRechazarModal(true)}
+                    disabled={saving}
+                    className="w-full sm:w-auto text-base sm:text-lg h-12 sm:h-14"
+                  >
+                    <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                    Rechazar invitación
+                  </Button>
 
-              {/* Botón para enviar respuesta final (solo cuando todos han respondido) */}
-              {(() => {
-                // Verificar si todos los miembros han confirmado o rechazado
-                const todasAsistencias = [
-                  grupo.invitadoPrincipal.asistencia,
-                  ...grupo.acompanantes.map(ac => ac.asistencia)
-                ];
-                const todosHanRespondido = todasAsistencias.every(a => a === 'confirmado' || a === 'rechazado');
-                
-                return todosHanRespondido ? (
+                  {/* Enviar respuesta: activo solo cuando todos han confirmado o rechazado */}
                   <Button
                     type="submit"
                     size="lg"
                     className="shadow-gold w-full sm:w-auto text-base sm:text-lg h-12 sm:h-14"
-                    disabled={saving}
+                    disabled={saving || !todosHanRespondido}
+                    title={!todosHanRespondido ? "Confirma o rechaza la asistencia de todos los miembros para poder enviar" : undefined}
                   >
                     {saving ? (
                       <>
@@ -1726,9 +1671,33 @@ const RSVP = () => {
                       </>
                     )}
                   </Button>
-                ) : null;
-              })()}
-            </div>
+                </div>
+              );
+            })()}
+
+            {/* Modal: Rechazar invitación (devolver asistencia a sin confirmar) */}
+            <AlertDialog open={showRechazarModal} onOpenChange={setShowRechazarModal}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Devolver la invitación?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Se dejará la asistencia sin confirmar para ti y tus acompañantes. No se borrarán nombres ni datos; solo se desmarcará la confirmación de asistencia. Podrás volver a confirmar cuando quieras.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleRechazarInvitacion();
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Devolver invitación
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </motion.form>
         </div>
       </section>
