@@ -1,8 +1,45 @@
+/** Tipos de familiar que puede ser un acompañante */
+export type TipoAcompanante =
+  | 'pareja'
+  | 'hijo'
+  | 'madre'
+  | 'padre'
+  | 'hermano'
+  | 'hermana'
+  | 'abuelo'
+  | 'abuela'
+  | 'tio'
+  | 'tia'
+  | 'primo'
+  | 'prima'
+  | 'otro';
+
+/** Opciones para el dropdown de tipo de acompañante (orden para la UI) */
+export const TIPOS_ACOMPANANTE: { value: TipoAcompanante; label: string }[] = [
+  { value: 'pareja', label: 'Pareja' },
+  { value: 'hijo', label: 'Hijo/a' },
+  { value: 'madre', label: 'Madre' },
+  { value: 'padre', label: 'Padre' },
+  { value: 'hermano', label: 'Hermano' },
+  { value: 'hermana', label: 'Hermana' },
+  { value: 'abuelo', label: 'Abuelo' },
+  { value: 'abuela', label: 'Abuela' },
+  { value: 'tio', label: 'Tío' },
+  { value: 'tia', label: 'Tía' },
+  { value: 'primo', label: 'Primo' },
+  { value: 'prima', label: 'Prima' },
+  { value: 'otro', label: 'Otro familiar' },
+];
+
+export function getTipoAcompananteLabel(tipo: string): string {
+  return TIPOS_ACOMPANANTE.find((t) => t.value === tipo)?.label ?? tipo;
+}
+
 export interface Acompanante {
   id: string;
   nombre: string;
   apellidos: string;
-  tipo: 'pareja' | 'hijo';
+  tipo: TipoAcompanante;
   edad?: number; // Solo para hijos
   asistencia: 'pendiente' | 'confirmado' | 'rechazado';
   alergias?: string; // Alergias del acompañante

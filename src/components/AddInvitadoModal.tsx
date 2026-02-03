@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { User, Plus, Heart, Baby, Minus } from 'lucide-react';
+import { User, Plus, Heart, Baby, Minus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GrupoInvitados, Acompanante } from '@/types/invitados';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GrupoInvitados, Acompanante, TIPOS_ACOMPANANTE, type TipoAcompanante } from '@/types/invitados';
 import { generateToken } from '@/lib/tokens';
 import { AppModal } from '@/components/common';
 import { motion } from 'framer-motion';
@@ -28,7 +29,9 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
   // Acompañantes que los novios pueden pre-llenar
   const [acompanantes, setAcompanantes] = useState<Acompanante[]>([]);
 
-  const addAcompanante = (tipo: 'pareja' | 'hijo') => {
+  const [addTipoValue, setAddTipoValue] = useState<string>('');
+
+  const addAcompanante = (tipo: TipoAcompanante) => {
     const nuevoAcompanante: Acompanante = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       nombre: '',
@@ -39,6 +42,7 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
       ...(tipo === 'hijo' && { edad: undefined }),
     };
     setAcompanantes([...acompanantes, nuevoAcompanante]);
+    setAddTipoValue('');
   };
 
   const removeAcompanante = (id: string) => {
@@ -177,30 +181,22 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
           <CardHeader className="p-4 sm:p-5 md:p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                 Acompañantes
               </CardTitle>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => addAcompanante('pareja')}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
-                >
-                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                  Añadir Pareja
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => addAcompanante('hijo')}
-                  className="flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
-                >
-                  <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                  Añadir Hijo
-                </Button>
+              <div className="w-full sm:w-[280px]">
+                <Select value={addTipoValue} onValueChange={(val) => val && addAcompanante(val as TipoAcompanante)}>
+                  <SelectTrigger className="text-sm h-9 sm:h-10">
+                    <SelectValue placeholder="Añadir familiar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_ACOMPANANTE.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardHeader>
@@ -209,7 +205,7 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
               <div className="text-center py-6 sm:py-8 text-muted-foreground">
                 <Heart className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
                 <p className="text-sm sm:text-base">No hay acompañantes añadidos</p>
-                <p className="text-xs sm:text-sm mt-1">Usa los botones de arriba para añadir pareja o hijos</p>
+                <p className="text-xs sm:text-sm mt-1">Elige el tipo de familiar en el desplegable para añadir acompañantes</p>
                 <p className="text-xs text-muted-foreground mt-2">Puedes dejar los campos vacíos para que los invitados los completen</p>
               </div>
             ) : (
@@ -221,17 +217,22 @@ const AddInvitadoModal = ({ isOpen, onClose, onSave }: AddInvitadoModalProps) =>
                     animate={{ opacity: 1, y: 0 }}
                     className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {acompanante.tipo === 'pareja' ? (
-                          <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-pink-500" />
-                        ) : (
-                          <Baby className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                        )}
-                        <Badge variant={acompanante.tipo === 'pareja' ? 'default' : 'secondary'} className="text-xs">
-                          {acompanante.tipo === 'pareja' ? 'Pareja' : 'Hijo'}
-                        </Badge>
-                      </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Select
+                        value={acompanante.tipo}
+                        onValueChange={(val) => updateAcompanante(acompanante.id, 'tipo', val as TipoAcompanante)}
+                      >
+                        <SelectTrigger className="w-[180px] sm:w-[200px] h-8 text-xs">
+                          <SelectValue placeholder="Tipo de familiar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_ACOMPANANTE.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Button
                         type="button"
                         size="sm"

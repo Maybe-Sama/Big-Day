@@ -28,7 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateToken } from "@/lib/tokens";
 import { dbService } from "@/lib/database";
 import { migrateOldData } from "@/lib/migration";
-import { GrupoInvitados, InvitadoStats, Acompanante } from "@/types/invitados";
+import { GrupoInvitados, InvitadoStats, Acompanante, TIPOS_ACOMPANANTE, getTipoAcompananteLabel, type TipoAcompanante } from "@/types/invitados";
 import { ConfiguracionBuses } from "@/types/bus";
 import { contarPasajerosBus } from "@/lib/bus-utils";
 import { ConfiguracionMesas } from "@/types/mesas";
@@ -78,6 +78,7 @@ const AdminOculto = () => {
   const [draggedGrupoId, setDraggedGrupoId] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [isReordering, setIsReordering] = useState(false);
+  const [addAcompananteTipo, setAddAcompananteTipo] = useState<string>('');
 
   // Verificar sesión al cargar
   useEffect(() => {
@@ -618,7 +619,7 @@ const AdminOculto = () => {
     });
   };
 
-  const addAcompananteEdit = (tipo: 'pareja' | 'hijo') => {
+  const addAcompananteEdit = (tipo: TipoAcompanante) => {
     if (!editingGrupo) return;
     const nuevoAcompanante: Acompanante = {
       id: Date.now().toString(),
@@ -633,6 +634,7 @@ const AdminOculto = () => {
       ...editingGrupo,
       acompanantes: [...editingGrupo.acompanantes, nuevoAcompanante],
     });
+    setAddAcompananteTipo('');
   };
 
   const removeAcompananteEdit = (id: string) => {
@@ -1189,10 +1191,12 @@ const AdminOculto = () => {
                           <div className="flex items-center gap-1 min-w-0 flex-1">
                             {acompanante.tipo === 'pareja' ? (
                               <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-pink-500 flex-shrink-0" />
-                            ) : (
+                            ) : acompanante.tipo === 'hijo' ? (
                               <Baby className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-blue-500 flex-shrink-0" />
+                            ) : (
+                              <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-muted-foreground flex-shrink-0" />
                             )}
-                            <span className="truncate">{acompanante.nombre} {acompanante.apellidos}</span>
+                            <span className="truncate">{getTipoAcompananteLabel(acompanante.tipo)}: {acompanante.nombre} {acompanante.apellidos}</span>
                           </div>
                           <Badge
                             variant={
@@ -1365,11 +1369,13 @@ const AdminOculto = () => {
                                   <div className="flex items-center gap-1">
                                     {acompanante.tipo === 'pareja' ? (
                                       <Heart className="w-3 h-3 text-pink-500" />
-                                    ) : (
+                                    ) : acompanante.tipo === 'hijo' ? (
                                       <Baby className="w-3 h-3 text-blue-500" />
+                                    ) : (
+                                      <User className="w-3 h-3 text-muted-foreground" />
                                     )}
                                     <span className="text-xs font-medium">
-                                      {acompanante.nombre} {acompanante.apellidos}
+                                      {getTipoAcompananteLabel(acompanante.tipo)} — {acompanante.nombre} {acompanante.apellidos}
                                     </span>
                                   </div>
                                   <Badge
@@ -1985,27 +1991,19 @@ const AdminOculto = () => {
                         <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                         Acompañantes
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addAcompananteEdit('pareja')}
-                          className="text-xs h-8"
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Pareja
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addAcompananteEdit('hijo')}
-                          className="text-xs h-8"
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Hijo
-                        </Button>
+                      <div className="w-full sm:w-[240px]">
+                        <Select value={addAcompananteTipo || undefined} onValueChange={(val) => { if (val) addAcompananteEdit(val as TipoAcompanante); }}>
+                          <SelectTrigger className="text-xs h-8">
+                            <SelectValue placeholder="Añadir familiar..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIPOS_ACOMPANANTE.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </CardTitle>
                   </CardHeader>
@@ -2018,17 +2016,22 @@ const AdminOculto = () => {
                       <div className="space-y-4">
                         {editingGrupo.acompanantes.map((acompanante) => (
                           <div key={acompanante.id} className="border rounded-lg p-4 space-y-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                {acompanante.tipo === 'pareja' ? (
-                                  <Heart className="w-4 h-4 text-pink-500" />
-                                ) : (
-                                  <Baby className="w-4 h-4 text-blue-500" />
-                                )}
-                                <Badge variant={acompanante.tipo === 'pareja' ? 'default' : 'secondary'} className="text-xs">
-                                  {acompanante.tipo === 'pareja' ? 'Pareja' : 'Hijo'}
-                                </Badge>
-                              </div>
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <Select
+                                value={acompanante.tipo}
+                                onValueChange={(val) => updateAcompananteEdit(acompanante.id, 'tipo', val as TipoAcompanante)}
+                              >
+                                <SelectTrigger className="w-[180px] h-8 text-xs">
+                                  <SelectValue placeholder="Tipo de familiar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TIPOS_ACOMPANANTE.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                                      {opt.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -2041,7 +2044,7 @@ const AdminOculto = () => {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div>
-                                <Label className="text-sm">Nombre *</Label>
+                                <Label className="text-sm">Nombre</Label>
                                 <Input
                                   value={acompanante.nombre}
                                   onChange={(e) => updateAcompananteEdit(acompanante.id, 'nombre', e.target.value)}
@@ -2440,11 +2443,13 @@ const AdminOculto = () => {
                             <div className="flex items-center gap-2 mb-2">
                               {acompanante.tipo === 'pareja' ? (
                                 <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-pink-500" />
-                              ) : (
+                              ) : acompanante.tipo === 'hijo' ? (
                                 <Baby className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
+                              ) : (
+                                <User className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
                               )}
-                              <Badge variant={acompanante.tipo === 'pareja' ? 'default' : 'secondary'} className="text-xs">
-                                {acompanante.tipo === 'pareja' ? 'Pareja' : 'Hijo'}
+                              <Badge variant="secondary" className="text-xs">
+                                {getTipoAcompananteLabel(acompanante.tipo)}
                               </Badge>
                             </div>
                             <div className="space-y-1">

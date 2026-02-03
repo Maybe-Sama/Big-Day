@@ -38,7 +38,7 @@ export interface GrupoInvitadosEntity {
     id: string;
     nombre: string;
     apellidos: string;
-    tipo: 'pareja' | 'hijo';
+    tipo: string; // TipoAcompanante: pareja, hijo, madre, padre, etc.
     edad?: number;
     asistencia: Asistencia;
     alergias?: string;

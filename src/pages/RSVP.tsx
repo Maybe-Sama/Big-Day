@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { dbService } from "@/lib/database";
-import { GrupoInvitados, Acompanante } from "@/types/invitados";
+import { GrupoInvitados, Acompanante, TIPOS_ACOMPANANTE, getTipoAcompananteLabel, type TipoAcompanante } from "@/types/invitados";
 import { ConfiguracionBuses } from "@/types/bus";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
@@ -314,7 +314,9 @@ const RSVP = () => {
     });
   };
 
-  const addAcompanante = (tipo: 'pareja' | 'hijo') => {
+  const [addAcompananteTipo, setAddAcompananteTipo] = useState<string>('');
+
+  const addAcompanante = (tipo: TipoAcompanante) => {
     if (!grupo) return;
     const nuevoAcompanante: Acompanante = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -330,6 +332,7 @@ const RSVP = () => {
       ...grupo,
       acompanantes: [...grupo.acompanantes, nuevoAcompanante],
     });
+    setAddAcompananteTipo('');
   };
 
   const removeAcompanante = (id: string) => {
@@ -1422,27 +1425,19 @@ const RSVP = () => {
                     <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                     Acompañantes
                   </CardTitle>
-                  <div className="flex gap-2 w-full sm:w-auto">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => addAcompanante('pareja')}
-                      className="flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
-                    >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                      Añadir Pareja
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => addAcompanante('hijo')}
-                      className="flex-1 sm:flex-none text-xs sm:text-sm h-8 sm:h-9"
-                    >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                      Añadir Hijo
-                    </Button>
+                  <div className="w-full sm:w-[260px]">
+                    <Select value={addAcompananteTipo || undefined} onValueChange={(val) => { if (val) addAcompanante(val as TipoAcompanante); }}>
+                      <SelectTrigger className="text-sm h-8 sm:h-9">
+                        <SelectValue placeholder="Añadir familiar..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPOS_ACOMPANANTE.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardHeader>
@@ -1451,7 +1446,7 @@ const RSVP = () => {
                   <div className="text-center py-6 sm:py-8 text-muted-foreground">
                     <Heart className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
                     <p className="text-sm sm:text-base">No hay acompañantes añadidos</p>
-                    <p className="text-xs sm:text-sm mt-1">Usa los botones de arriba para añadir pareja o hijos</p>
+                    <p className="text-xs sm:text-sm mt-1">Elige el tipo de familiar en el desplegable para añadir acompañantes</p>
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
@@ -1462,17 +1457,22 @@ const RSVP = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {acompanante.tipo === 'pareja' ? (
-                              <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-pink-500" />
-                            ) : (
-                              <Baby className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                            )}
-                            <Badge variant={acompanante.tipo === 'pareja' ? 'default' : 'secondary'} className="text-xs">
-                              {acompanante.tipo === 'pareja' ? 'Pareja' : 'Hijo'}
-                            </Badge>
-                          </div>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <Select
+                            value={acompanante.tipo}
+                            onValueChange={(val) => updateAcompanante(acompanante.id, 'tipo', val as TipoAcompanante)}
+                          >
+                            <SelectTrigger className="w-[180px] sm:w-[200px] h-8 text-xs">
+                              <SelectValue placeholder="Tipo de familiar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {TIPOS_ACOMPANANTE.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Button
                             type="button"
                             size="sm"

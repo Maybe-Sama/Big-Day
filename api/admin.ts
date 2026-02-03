@@ -83,7 +83,7 @@ const AcompananteSchema = z
     id: z.string().min(1).max(100),
     nombre: z.string(),
     apellidos: z.string(),
-    tipo: z.enum(['pareja', 'hijo']),
+    tipo: z.enum(['pareja', 'hijo', 'madre', 'padre', 'hermano', 'hermana', 'abuelo', 'abuela', 'tio', 'tia', 'primo', 'prima', 'otro']),
     edad: z.number().optional(),
     asistencia: AsistenciaSchema,
     alergias: z.string().optional(),
