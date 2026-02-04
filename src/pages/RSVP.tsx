@@ -124,7 +124,7 @@ const RSVP = () => {
     const playAudio = async () => {
       if (audioRef.current) {
         try {
-          audioRef.current.volume = 0.5; // Ajustar volumen al 50%
+          audioRef.current.volume = 0.7; // 70%
           await audioRef.current.play();
           console.log("Música de fondo iniciada");
         } catch (error) {
