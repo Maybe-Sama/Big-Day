@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, Hand, Calendar, MapPin, ArrowRight, Clock, RotateCcw } from "lucide-react";
+import { CheckCircle, XCircle, Plus, Minus, User, Heart, Baby, Bus, Save, Edit, Hand, Calendar, MapPin, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,16 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { dbService } from "@/lib/database";
 import { GrupoInvitados, Acompanante, TIPOS_ACOMPANANTE, getTipoAcompananteLabel, type TipoAcompanante } from "@/types/invitados";
@@ -49,7 +39,6 @@ const RSVP = () => {
   const [showVideo, setShowVideo] = useState(true);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
-  const [showRechazarModal, setShowRechazarModal] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -477,78 +466,6 @@ const RSVP = () => {
         description: error?.message
           ? `No se pudo guardar: ${error.message}`
           : "No se pudo guardar la información. Por favor, intenta de nuevo.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  /** Devuelve la invitación al estado inicial: todos con asistencia "pendiente" y guarda en el servidor. */
-  const handleRechazarInvitacion = async () => {
-    if (!grupo) return;
-    setShowRechazarModal(false);
-
-    try {
-      setSaving(true);
-
-      const grupoConAsistenciaPendiente: GrupoInvitados = {
-        ...grupo,
-        invitadoPrincipal: { ...grupo.invitadoPrincipal, asistencia: 'pendiente' },
-        acompanantes: grupo.acompanantes.map(ac => ({ ...ac, asistencia: 'pendiente' })),
-        asistencia: 'pendiente',
-        fechaActualizacion: new Date().toISOString(),
-      };
-
-      const payload = {
-        asistencia: 'pendiente',
-        confirmacion_bus: grupoConAsistenciaPendiente.confirmacion_bus,
-        ubicacion_bus: grupoConAsistenciaPendiente.ubicacion_bus,
-        invitadoPrincipal: {
-          asistencia: 'pendiente',
-          alergias: grupoConAsistenciaPendiente.invitadoPrincipal.alergias,
-        },
-        acompanantes: grupoConAsistenciaPendiente.acompanantes
-          .filter((ac) => allowedAcompananteIdsRef.current.has(ac.id))
-          .map((ac) => ({
-            id: ac.id,
-            nombre: ac.nombre,
-            apellidos: ac.apellidos,
-            tipo: ac.tipo,
-            edad: ac.edad,
-            asistencia: 'pendiente' as const,
-            alergias: ac.alergias,
-          })),
-      };
-
-      const serverGrupo = await patchRsvp(payload);
-      setGrupo((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          ...serverGrupo,
-          token: prev.token,
-          invitadoPrincipal: {
-            ...prev.invitadoPrincipal,
-            ...serverGrupo.invitadoPrincipal,
-            email: prev.invitadoPrincipal.email,
-          },
-          acompanantes: Array.isArray(serverGrupo.acompanantes) ? serverGrupo.acompanantes : prev.acompanantes,
-        };
-      });
-      if (Array.isArray(serverGrupo.acompanantes)) {
-        allowedAcompananteIdsRef.current = new Set(serverGrupo.acompanantes.map((ac: Acompanante) => ac.id));
-      }
-
-      toast({
-        title: "Invitación devuelta",
-        description: "Se ha dejado la asistencia sin confirmar. Puedes volver a confirmar cuando quieras.",
-      });
-    } catch (error: any) {
-      console.error("Error al devolver invitación:", error);
-      toast({
-        title: "Error",
-        description: error?.message ?? "No se pudo devolver la invitación. Inténtalo de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -1638,20 +1555,6 @@ const RSVP = () => {
               const todosHanRespondido = todasAsistencias.every(a => a === 'confirmado' || a === 'rechazado');
               return (
                 <div className="flex flex-col sm:flex-row justify-end gap-3">
-                  {/* Rechazar invitación: devuelve la asistencia a "sin confirmar" */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="lg"
-                    onClick={() => setShowRechazarModal(true)}
-                    disabled={saving}
-                    className="w-full sm:w-auto text-base sm:text-lg h-12 sm:h-14"
-                  >
-                    <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    Rechazar invitación
-                  </Button>
-
-                  {/* Enviar respuesta: activo solo cuando todos han confirmado o rechazado */}
                   <Button
                     type="submit"
                     size="lg"
@@ -1674,30 +1577,6 @@ const RSVP = () => {
                 </div>
               );
             })()}
-
-            {/* Modal: Rechazar invitación (devolver asistencia a sin confirmar) */}
-            <AlertDialog open={showRechazarModal} onOpenChange={setShowRechazarModal}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Devolver la invitación?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Se dejará la asistencia sin confirmar para ti y tus acompañantes. No se borrarán nombres ni datos; solo se desmarcará la confirmación de asistencia. Podrás volver a confirmar cuando quieras.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleRechazarInvitacion();
-                    }}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Devolver invitación
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </motion.form>
         </div>
       </section>
