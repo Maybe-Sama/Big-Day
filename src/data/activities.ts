@@ -36,7 +36,7 @@ export const activities = [
   {
     time: "03:00",
     title: "Recena",
-    description: "Surtido de comida, bedidas y dulces",
+    description: "Surtido de comida, bebidas y dulces",
   },
 ];
 
