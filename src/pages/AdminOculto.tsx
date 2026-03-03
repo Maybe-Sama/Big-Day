@@ -111,7 +111,18 @@ const AdminOculto = () => {
 
   const loadAllData = async () => {
     loadGrupos();
-    
+
+    // Cargar configuración de buses
+    const loadBusesConfig = async () => {
+      try {
+        const busesConfig = await dbService.getConfiguracionBuses();
+        setConfigBuses(busesConfig);
+      } catch (error) {
+        console.error('Error cargando configuración de buses:', error);
+      }
+    };
+    loadBusesConfig();
+
     // Cargar configuración de mesas
     const loadMesasConfig = async () => {
       try {
@@ -903,7 +914,7 @@ const AdminOculto = () => {
               <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Rechazados</div>
             </div>
             
-            <div className="bg-card rounded-lg shadow-soft p-2.5 sm:p-3 md:p-4 lg:p-6 text-center">
+            <div className="bg-card rounded-lg shadow-soft p-2.5 sm:p-3 md:p-4 lg:p-6 text-center min-w-0">
               <Bus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-primary mx-auto mb-0.5 sm:mb-1" />
               <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Pasajeros por bus</div>
               <div className="space-y-0.5 mt-1 text-xs sm:text-sm font-medium leading-tight min-h-[1.5em]">
