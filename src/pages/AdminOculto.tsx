@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import { motion } from "framer-motion";
-import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, RefreshCw, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload } from "lucide-react";
+import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, RefreshCw, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload, ClipboardList } from "lucide-react";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
 import { AppModal } from "@/components/common";
@@ -53,6 +53,7 @@ const AdminOculto = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showConfigBusesModal, setShowConfigBusesModal] = useState(false);
   const [showConfigMesasModal, setShowConfigMesasModal] = useState(false);
+  const [showAlergiasModal, setShowAlergiasModal] = useState(false);
   const [selectedGrupo, setSelectedGrupo] = useState<GrupoInvitados | null>(null);
   const [editingGrupo, setEditingGrupo] = useState<GrupoInvitados | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -758,6 +759,49 @@ const AdminOculto = () => {
     return buses.map(bus => ({ bus, count: contarPasajerosBus(grupos, bus) }));
   }, [grupos, configBuses]);
 
+  /** Invitados individuales (no grupos) que tienen alergias especificadas */
+  const invitadosConAlergias = useMemo(() => {
+    const list: { nombreCompleto: string; alergias: string; tipo: string }[] = [];
+    grupos.forEach(grupo => {
+      const principal = grupo.invitadoPrincipal;
+      if (principal.alergias?.trim()) {
+        list.push({
+          nombreCompleto: `${principal.nombre} ${principal.apellidos}`.trim(),
+          alergias: principal.alergias.trim(),
+          tipo: "Invitado principal",
+        });
+      }
+      (grupo.acompanantes ?? []).forEach(ac => {
+        if (ac.alergias?.trim()) {
+          list.push({
+            nombreCompleto: `${ac.nombre} ${ac.apellidos}`.trim(),
+            alergias: ac.alergias.trim(),
+            tipo: getTipoAcompananteLabel(ac.tipo),
+          });
+        }
+      });
+    });
+    return list;
+  }, [grupos]);
+
+  /** Números globales por persona (invitados individuales) para confirmados, pendientes y rechazados */
+  const statsPorPersona = useMemo(() => {
+    let confirmados = 0;
+    let pendientes = 0;
+    let rechazados = 0;
+    grupos.forEach(grupo => {
+      if (grupo.invitadoPrincipal.asistencia === "confirmado") confirmados++;
+      else if (grupo.invitadoPrincipal.asistencia === "pendiente") pendientes++;
+      else rechazados++;
+      (grupo.acompanantes ?? []).forEach(ac => {
+        if (ac.asistencia === "confirmado") confirmados++;
+        else if (ac.asistencia === "pendiente") pendientes++;
+        else rechazados++;
+      });
+    });
+    return { confirmados, pendientes, rechazados };
+  }, [grupos]);
+
   // Pantalla de carga mientras verifica sesión
   if (isCheckingSession) {
     return (
@@ -845,17 +889,17 @@ const AdminOculto = () => {
             </div>
             
             <div className="bg-card rounded-lg shadow-soft p-2.5 sm:p-3 md:p-4 lg:p-6 text-center">
-              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-green-600 leading-tight">{stats.confirmados}</div>
+              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-green-600 leading-tight">{statsPorPersona.confirmados}</div>
               <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Confirmados</div>
             </div>
             
             <div className="bg-card rounded-lg shadow-soft p-2.5 sm:p-3 md:p-4 lg:p-6 text-center">
-              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600 leading-tight">{stats.pendientes}</div>
+              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-yellow-600 leading-tight">{statsPorPersona.pendientes}</div>
               <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Pendientes</div>
             </div>
             
             <div className="bg-card rounded-lg shadow-soft p-2.5 sm:p-3 md:p-4 lg:p-6 text-center">
-              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-red-600 leading-tight">{stats.rechazados}</div>
+              <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-red-600 leading-tight">{statsPorPersona.rechazados}</div>
               <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Rechazados</div>
             </div>
             
@@ -944,21 +988,12 @@ const AdminOculto = () => {
               </Button>
               <Button 
                 variant="outline" 
-                onClick={async () => {
-                  const gruposData = await dbService.getAllGrupos();
-                  console.log("=== VERIFICACIÓN DE BASE DE DATOS ===");
-                  console.log(`Total grupos: ${gruposData.length}`);
-                  console.log("Grupos:", gruposData);
-                  toast({
-                    title: "Información de Base de Datos",
-                    description: `Se encontraron ${gruposData.length} grupo(s) en la base de datos. Revisa la consola para más detalles.`,
-                  });
-                }}
+                onClick={() => setShowAlergiasModal(true)}
                 className="w-full sm:flex-1 text-sm h-9 sm:h-10"
                 size="sm"
               >
-                <Users className="mr-2 w-4 h-4" />
-                Verificar BD
+                <ClipboardList className="mr-2 w-4 h-4" />
+                Ver alergias
               </Button>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -1539,19 +1574,19 @@ const AdminOculto = () => {
                     <div className="flex justify-between items-center text-sm">
                       <span>Confirmados</span>
                       <span className="font-bold text-green-600">
-                        {stats.totalGrupos > 0 ? ((stats.confirmados / stats.totalGrupos) * 100).toFixed(1) : 0}%
+                        {stats.totalPersonas > 0 ? ((statsPorPersona.confirmados / stats.totalPersonas) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span>Pendientes</span>
                       <span className="font-bold text-yellow-600">
-                        {stats.totalGrupos > 0 ? ((stats.pendientes / stats.totalGrupos) * 100).toFixed(1) : 0}%
+                        {stats.totalPersonas > 0 ? ((statsPorPersona.pendientes / stats.totalPersonas) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span>Rechazados</span>
                       <span className="font-bold text-red-600">
-                        {stats.totalGrupos > 0 ? ((stats.rechazados / stats.totalGrupos) * 100).toFixed(1) : 0}%
+                        {stats.totalPersonas > 0 ? ((statsPorPersona.rechazados / stats.totalPersonas) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                   </div>
@@ -1865,6 +1900,35 @@ const AdminOculto = () => {
           }
         }}
       />
+
+      <AppModal
+        isOpen={showAlergiasModal}
+        onClose={() => setShowAlergiasModal(false)}
+        title="Invitados con alergias"
+        description="Invitados individuales que han indicado alergias o especificaciones alimentarias."
+        maxWidth="2xl"
+        footer={
+          <Button variant="outline" onClick={() => setShowAlergiasModal(false)}>
+            Cerrar
+          </Button>
+        }
+      >
+        <div className="max-h-[60vh] overflow-y-auto">
+          {invitadosConAlergias.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">Ningún invitado ha indicado alergias todavía.</p>
+          ) : (
+            <ul className="space-y-3">
+              {invitadosConAlergias.map((inv, i) => (
+                <li key={i} className="flex flex-col gap-1 p-3 rounded-lg bg-muted/50 border border-border">
+                  <div className="font-medium text-sm">{inv.nombreCompleto}</div>
+                  <div className="text-xs text-muted-foreground">{inv.tipo}</div>
+                  <div className="text-sm mt-1">{inv.alergias}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </AppModal>
 
       {/* Grupo Details Modal */}
       <AppModal
