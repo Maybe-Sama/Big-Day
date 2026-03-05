@@ -23,6 +23,11 @@ import heroImageDesktop from "@/assets/hero-wedding-h.png";
 import { activities } from "@/data/activities";
 import Lottie from "lottie-react";
 import scrollDownAnimation from "@/assets/scroll-down.json";
+import {
+  countConfirmadosSafe,
+  getAcompananteIdsFromServer,
+  mergeGrupoFromPatchResponse,
+} from "./rsvp-guards";
 
 const RSVP = () => {
   const [searchParams] = useSearchParams();
@@ -55,7 +60,7 @@ const RSVP = () => {
     [configBuses]
   );
 
-  const patchRsvp = async (payload: unknown, attempt: 0 | 1 = 0): Promise<GrupoInvitados> => {
+  const patchRsvp = async (payload: unknown, attempt: 0 | 1 = 0): Promise<unknown> => {
     if (!normalizedToken) {
       throw new Error("Token requerido");
     }
@@ -435,23 +440,14 @@ const RSVP = () => {
       };
 
       const serverGrupo = await patchRsvp(payload);
-      // Refrescar estado local sin “perder” token/email originales.
       setGrupo((prev) => {
         if (!prev) return prev;
-        return {
-          ...prev,
-          ...serverGrupo,
-          token: prev.token,
-          invitadoPrincipal: {
-            ...prev.invitadoPrincipal,
-            ...serverGrupo.invitadoPrincipal,
-            email: prev.invitadoPrincipal.email,
-          },
-          acompanantes: Array.isArray(serverGrupo.acompanantes) ? serverGrupo.acompanantes : prev.acompanantes,
-        };
+        return mergeGrupoFromPatchResponse(prev, serverGrupo);
       });
-      if (Array.isArray(serverGrupo.acompanantes)) {
-        allowedAcompananteIdsRef.current = new Set(serverGrupo.acompanantes.map((ac: Acompanante) => ac.id));
+
+      const serverAcompananteIds = getAcompananteIdsFromServer(serverGrupo);
+      if (serverAcompananteIds.length > 0) {
+        allowedAcompananteIdsRef.current = new Set(serverAcompananteIds);
       }
       setIsEditing(false);
       
@@ -555,20 +551,12 @@ const RSVP = () => {
       const serverGrupo = await patchRsvp(payload);
       setGrupo((prev) => {
         if (!prev) return prev;
-        return {
-          ...prev,
-          ...serverGrupo,
-          token: prev.token,
-          invitadoPrincipal: {
-            ...prev.invitadoPrincipal,
-            ...serverGrupo.invitadoPrincipal,
-            email: prev.invitadoPrincipal.email,
-          },
-          acompanantes: Array.isArray(serverGrupo.acompanantes) ? serverGrupo.acompanantes : prev.acompanantes,
-        };
+        return mergeGrupoFromPatchResponse(prev, serverGrupo);
       });
-      if (Array.isArray(serverGrupo.acompanantes)) {
-        allowedAcompananteIdsRef.current = new Set(serverGrupo.acompanantes.map((ac: Acompanante) => ac.id));
+
+      const serverAcompananteIds = getAcompananteIdsFromServer(serverGrupo);
+      if (serverAcompananteIds.length > 0) {
+        allowedAcompananteIdsRef.current = new Set(serverAcompananteIds);
       }
       
       setSubmitted(true);
@@ -815,10 +803,7 @@ const RSVP = () => {
   }
 
   if (submitted) {
-    const totalConfirmados = [
-      grupo.invitadoPrincipal,
-      ...grupo.acompanantes
-    ].filter(p => p.asistencia === 'confirmado').length;
+    const totalConfirmados = countConfirmadosSafe(grupo);
 
     return (
       <PageLayout>
