@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Invitados — Boda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --ink-soft: #4a4a4a;
+      --accent: #8b7355;
+      --accent-light: #c4a77d;
+      --paper: #faf9f7;
+      --confirmed: #2d5a3d;
+      --pending: #8b6914;
+      --rejected: #8b3a3a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @media print {
+      body { background: white !important; }
+      .page-break { page-break-before: always; }
+      .no-print { display: none !important; }
+    }
+
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.5;
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .print-hint {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: var(--accent);
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+    .print-hint kbd {
+      background: rgba(255,255,255,0.2);
+      padding: 0.2em 0.5em;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid rgba(139, 115, 85, 0.3);
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.25rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: var(--ink-soft);
+      margin-top: 0.5rem;
+      font-weight: 300;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+    }
+    .stats span { font-weight: 500; }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin: 2.5rem 0 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    .group {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border-left: 4px solid var(--accent-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .group.confirmed { border-left-color: var(--confirmed); }
+    .group.pending { border-left-color: var(--pending); }
+    .group.rejected { border-left-color: var(--rejected); }
+
+    .page-break { page-break-before: always; }
+
+    .group-num {
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 0.35rem;
+    }
+
+    .group-main {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+
+    .group-members {
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+      margin-top: 0.35rem;
+    }
+    .group-members span {
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+    .group-members span::after {
+      content: " · ";
+      color: #bbb;
+    }
+    .group-members span:last-child::after { content: ""; }
+
+    .group-status {
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.25em 0.6em;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .group-status.confirmed {
+      background: rgba(45, 90, 61, 0.12);
+      color: var(--confirmed);
+    }
+    .group-status.pending {
+      background: rgba(139, 105, 20, 0.12);
+      color: var(--pending);
+    }
+    .group-status.rejected {
+      background: rgba(139, 58, 58, 0.12);
+      color: var(--rejected);
+    }
+
+    .member-rejected {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+
+    .totales-section {
+      margin-top: 2.5rem;
+      padding: 1.5rem 1.75rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid rgba(139, 115, 85, 0.2);
+    }
+
+    .totales-section h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+      letter-spacing: 0.04em;
+    }
+
+    .totales-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem 2rem;
+    }
+
+    .totales-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .totales-item .label {
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .totales-item .value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(139, 115, 85, 0.2);
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+    }
+  </style>
+</head>
+<body>
+  <div class="print-hint no-print">💡 <kbd>Ctrl</kbd>+<kbd>P</kbd> para guardar como PDF</div>
+
+  <header>
+    <h1>Lista de Invitados</h1>
+    <p class="subtitle">Invitados agrupados con sus acompañantes</p>
+    <div class="stats">
+      <span id="total-groups">—</span> grupos ·
+      <span id="total-confirmed">—</span> confirmados ·
+      <span id="total-pending">—</span> pendientes
+    </div>
+  </header>
+
+  <section id="novia">
+    <h2 class="section-title">Familia Novia</h2>
+    <div id="novia-groups"></div>
+  </section>
+
+  <section id="novio" class="page-break">
+    <h2 class="section-title">Familia Novio</h2>
+    <div id="novio-groups"></div>
+  </section>
+
+  <section id="totales" class="totales-section page-break">
+    <h2>Totales</h2>
+    <div id="totales-content" class="totales-grid"></div>
+  </section>
+
+  <footer>
+    Generado para la boda · Lista completa de invitados y acompañantes
+  </footer>
+
+  <script>
+    const guestGroups = [
+      { main: "NOVIA Fernández", members: [], status: "Confirmado" },
+      { main: "Mamá", members: [], status: "Confirmado" },
+      { main: "Toni Ruiz", members: [], status: "Confirmado" },
+      { main: "Hermano Fernández Caro", members: [], status: "Confirmado" },
+      { main: "Papá", members: [], status: "Confirmado" },
+      { main: "Mónica Arcas", members: [], status: "Confirmado" },
+      { main: "Hermana Fernández Arcas", members: [], status: "Confirmado" },
+      { main: "Patricia Gabella Arcas", members: [{ name: "Nico", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Abuela González Fernández", members: [], status: "Confirmado" },
+      { main: "Abuelo Caro Jiménez", members: [], status: "Confirmado" },
+      { main: "Abuelo Fernández Llamas", members: [], status: "Confirmado" },
+      { main: "Tita Esperanza Caro", members: [
+        { name: "Tito Pedro Arjona", rel: "Pareja" },
+        { name: "Pedro Arjona Caro", rel: "Hijo" },
+        { name: "Raúl Arjona Caro", rel: "Hijo" },
+        { name: "Laura", rel: "Pareja Raúl" }
+      ], status: "Confirmado" },
+      { main: "Tito Jose Antonio Caro González", members: [
+        { name: "Tita Silvia Marín", rel: "Pareja" },
+        { name: "Román Caro Marín", rel: "Hijo" },
+        { name: "Cayetano Caro Marín", rel: "Hijo" },
+        { name: "Martín Caro Marín", rel: "Hijo" }
+      ], status: "Confirmado" },
+      { main: "Tito Jose María Fernández Utrilla", members: [{ name: "(Pareja)", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Tita Ani Flores", members: [
+        { name: "Tito Francisco Fernández Utrilla", rel: "Pareja" },
+        { name: "Adrián Fernández Flores", rel: "Hijo" },
+        { name: "Mayra Fernández Flores", rel: "Hija" }
+      ], status: "Confirmado" },
+      { main: "Tita Elena Fernández Utrilla", members: [{ name: "Tito Francis Uber", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Ezequiel Uber Fernández", members: [], status: "Confirmado" },
+      { main: "Francisco Javier Uber Fernández", members: [{ name: "Alexandra Alvira", rel: "Pareja" }], status: "Confirmado" },
+      { main: "María Elena Uber Fernández", members: [], status: "Pendiente" },
+      { main: "Tito Salva Fernández Utrilla", members: [
+        { name: "Tita Mónica Pérez Hernández", rel: "Pareja" },
+        { name: "Salvador Fernández", rel: "Hijo" },
+        { name: "Leire Fernández", rel: "Hija" }
+      ], status: "Confirmado" },
+      { main: "Tita Laura Fernández Utrilla", members: [{ name: "Mateo", rel: "Hijo" }], status: "Pendiente" },
+      { main: "Primo Jesús Jiménez", members: [{ name: "María del Carmen", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Primo Jose Mari Jiménez", members: [{ name: "María", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Benita López", members: [{ name: "Antonio Ruiz", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Carmen Ruiz Lopez", members: [
+        { name: "William", rel: "Pareja" },
+        { name: "William (Hijo)", rel: "Hijo", status: "Rechazado" },
+        { name: "Carmen (Hija)", rel: "Hija", status: "Rechazado" }
+      ], status: "Confirmado" },
+      { main: "Angelines Ruiz Lopez", members: [
+        { name: "Andreas", rel: "Pareja" },
+        { name: "Daniel", rel: "Hijo" },
+        { name: "Laura", rel: "Hija" }
+      ], status: "Pendiente" },
+      { main: "Diego Carrasco", members: [], status: "Pendiente" },
+      { main: "Dolores", members: [], status: "Pendiente" },
+      { main: "Manuel Arcas", members: [{ name: "Loli Uber Molina", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Puri Arcas", members: [], status: "Confirmado" },
+      { main: "Isabel Caro", members: [{ name: "Rosendo", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Benita Caro", members: [{ name: "Nicolás Hans", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Kika Caro", members: [], status: "Pendiente" },
+      { main: "Juani Caro", members: [], status: "Pendiente" },
+      { main: "Maria Isabel Hans", members: [{ name: "Gabriel", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Estefanía Arjona Hans", members: [
+        { name: "Paco", rel: "Pareja" },
+        { name: "Manuela", rel: "Hija" }
+      ], status: "Pendiente" },
+      { main: "Roberto", members: [{ name: "Pilar", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Óscar Rabadán", members: [{ name: "Loli", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Manuel Caro", members: [{ name: "Loli", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Eva Arcas", members: [{ name: "Juan", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Fernando Gil", members: [{ name: "Loli", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Dámaso Gil", members: [{ name: "Alicia", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Fernando Gil (2)", members: [{ name: "María José", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Juan", members: [{ name: "Claudia", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Cristina Jiménez", members: [{ name: "Fede", rel: "Pareja" }], status: "Pendiente" },
+      { main: "María Luisa Gil", members: [], status: "Pendiente" },
+      { main: "Marta Gil", members: [{ name: "Pedro", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Patricia Rodríguez", members: [{ name: "Javier", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Censi Pavón", members: [{ name: "Jose Manuel", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Ana Alfaro", members: [{ name: "David", rel: "Pareja" }], status: "Pendiente" },
+      { main: "María Elena Valderrama", members: [], status: "Pendiente" },
+      { main: "Ainhoa Jiménez", members: [], status: "Pendiente" },
+      { main: "Cristina Moral", members: [{ name: "David", rel: "Pareja" }], status: "Pendiente" },
+      { main: "María Bermudo", members: [{ name: "Paco", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Sara Ruiz", members: [{ name: "Pablo", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Cristina Ruiz", members: [{ name: "Jorge", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Javier Rodríguez", members: [{ name: "Bea", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Jose María Orejuela", members: [{ name: "Silvia", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Rafael Aguilar", members: [{ name: "Mari Carmen", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Alberto García", members: [{ name: "Serena", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Ángel Cadenas", members: [{ name: "Virginia", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Manuel Aguilar", members: [{ name: "María José", rel: "Pareja" }], status: "Pendiente" },
+      { main: "María de los Ángeles Arroyo", members: [{ name: "Jesús", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Sara Salgado", members: [], status: "Pendiente" },
+      { main: "Ana Sánchez", members: [], status: "Pendiente" },
+      { main: "Alicia Sha", members: [], status: "Pendiente" },
+      { main: "Rocío Martínez", members: [], status: "Pendiente" },
+      { main: "Carmen Martínez", members: [], status: "Pendiente" },
+      { main: "Carmen Viera", members: [], status: "Pendiente" },
+      { main: "María de los Ángeles Sotillo", members: [], status: "Pendiente" },
+      { main: "Helena Sánchez", members: [], status: "Pendiente" },
+      { main: "Isabel Chamizo", members: [], status: "Pendiente" },
+      { main: "Lucía Gómez", members: [], status: "Pendiente" },
+      { main: "Katheryn Trujillo", members: [], status: "Pendiente" },
+      { main: "María del Mar Adame", members: [], status: "Pendiente" },
+      { main: "NOVIO Díaz", members: [], status: "Confirmado" },
+      { main: "Mamá (Novio)", members: [], status: "Confirmado" },
+      { main: "Papá (Novio)", members: [], status: "Confirmado" },
+      { main: "Abuela (Novio)", members: [], status: "Confirmado" },
+      { main: "Tito Miguel Ángel Díaz García", members: [{ name: "María José Sánchez Bueno", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Tita María José Sánchez Bueno", members: [], status: "Pendiente" },
+      { main: "Ángel Díaz Sánchez", members: [{ name: "Alexandra Lara Ruiz", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Paula Díaz Sánchez", members: [{ name: "Rafa Montero Arroyo", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Pedro Sánchez Bueno", members: [{ name: "Ana", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Tita Laura Martínez Perdigones", members: [
+        { name: "Antonio Pavón López", rel: "Pareja" },
+        { name: "Iván Pavón Martínez", rel: "Hijo" },
+        { name: "Miriam Perez Fernandez", rel: "Pareja Iván" },
+        { name: "Laura Pavón Martínez", rel: "Hija" }
+      ], status: "Confirmado" },
+      { main: "Tito Antonio Martínez Perdigones", members: [
+        { name: "Tita Mercedes Postigo Almán", rel: "Pareja" },
+        { name: "Antonio Martínez Postigo", rel: "Hijo" },
+        { name: "María Rodríguez Carvajal", rel: "Pareja Antonio M. Postigo" }
+      ], status: "Confirmado" },
+      { main: "Encarnación Díaz Muñoz", members: [], status: "Confirmado" },
+      { main: "María José Sánchez Díaz", members: [
+        { name: "Antonio Gil", rel: "Pareja" },
+        { name: "Adrián Gil Sánchez", rel: "Hijo" },
+        { name: "Macarena", rel: "Pareja Adrián" }
+      ], status: "Confirmado" },
+      { main: "Cristina Gil Sánchez", members: [], status: "Pendiente" },
+      { main: "Enrique García Rojas", members: [{ name: "Isabel Galera", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Emilio García Galera", members: [], status: "Pendiente" },
+      { main: "Miriam García", members: [
+        { name: "Aderra Baahmed", rel: "Pareja" },
+        { name: "Yasmina Baahmed Garcia", rel: "Hija" }
+      ], status: "Confirmado" },
+      { main: "Sofía García Galera", members: [
+        { name: "Abraham Torquemada", rel: "Pareja" },
+        { name: "Sofía", rel: "Hija" },
+        { name: "Juan Manuel", rel: "Pareja" }
+      ], status: "Confirmado" },
+      { main: "Isabel Torquemada García", members: [{ name: "Ramón Muñoz León", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Sofía Torquemada García", members: [{ name: "Juanma", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Daniel García García", members: [
+        { name: "Carolina Morales", rel: "Pareja" },
+        { name: "Daniel García", rel: "Hijo" }
+      ], status: "Pendiente" },
+      { main: "María del Mar Ruiz García", members: [
+        { name: "Luis Fuentes", rel: "Pareja" },
+        { name: "Cándida García Rojas", rel: "Madre" },
+        { name: "Ainhoa Fuentes Ruiz", rel: "Hija" },
+        { name: "Rafael Pérez", rel: "Pareja Ainhoa" },
+        { name: "David Fuentes Ruiz", rel: "Hijo" }
+      ], status: "Confirmado" },
+      { main: "Montserrat Ruiz García", members: [
+        { name: "Juan Carrera", rel: "Pareja" },
+        { name: "Yeray Carrera Ruiz", rel: "Hijo" }
+      ], status: "Confirmado" },
+      { main: "Samuel Carrera Ruiz", members: [], status: "Confirmado" },
+      { main: "Victoria García Rojas", members: [{ name: "Gonzalo Ruiz", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Irene Ruiz García", members: [{ name: "Noelia", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Gonzalo Ruiz García", members: [], status: "Confirmado" },
+      { main: "Laura Ruiz García", members: [
+        { name: "Jose Manuel Gutierrez Liñán", rel: "Pareja" },
+        { name: "Elio", rel: "Hijo" },
+        { name: "Abril", rel: "Hija" },
+        { name: "Adriano", rel: "Hijo" }
+      ], status: "Pendiente" },
+      { main: "Victoria Ruiz García", members: [{ name: "Antonio Rodríguez Delgado", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Antonio Rodríguez", members: [{ name: "Carmen Súñer Herrera", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Mariela Rodríguez", members: [{ name: "(Pareja Mariela)", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Luis Aibar Rodríguez", members: [{ name: "Ana Calderón García", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Pepa Limón", members: [{ name: "Juan Carlos Cerca", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Ester Martínez Perdigones", members: [
+        { name: "Raúl Méndez", rel: "Pareja" },
+        { name: "Raúl Méndez Martínez", rel: "Hijo" },
+        { name: "Paula Méndez Martínez", rel: "Hija" }
+      ], status: "Confirmado" },
+      { main: "Elisabeth Martínez Perdigones", members: [
+        { name: "Ricardo Álvarez López", rel: "Pareja" },
+        { name: "Marco", rel: "Hijo" },
+        { name: "Carmen", rel: "Hija" }
+      ], status: "Confirmado" },
+      { main: "Sara Carrasco Adame", members: [{ name: "Fernando Cañizares Romero", rel: "Pareja" }], status: "Pendiente" },
+      { main: "Ángel Cañizares Romero", members: [{ name: "Cristina Reina", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Jesús García Gómez", members: [], status: "Confirmado" },
+      { main: "María Pérez Ornedo", members: [{ name: "Joao", rel: "Pareja" }], status: "Pendiente" },
+      { main: "David Peña Garci", members: [{ name: "Amanda Izquierdo", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Alejandro Vidal Sánchez", members: [], status: "Confirmado" },
+      { main: "Álvaro Galo Tutor", members: [], status: "Confirmado" },
+      { main: "Manuel Durán", members: [{ name: "Elizabeth Neva", rel: "Pareja" }], status: "Confirmado" },
+      { main: "Jose Ángel Jiménez Montaño", members: [], status: "Pendiente" }
+    ];
+
+    const novioStartIdx = guestGroups.findIndex(g => g.main.includes('NOVIO Díaz'));
+    const novia = novioStartIdx >= 0 ? guestGroups.slice(0, novioStartIdx) : guestGroups;
+    const novio = novioStartIdx >= 0 ? guestGroups.slice(novioStartIdx) : [];
+
+    function countPersonsInGroup(g) {
+      const rejectedMembers = g.members.filter(m => m.status === 'Rechazado').length;
+      const totalInGroup = 1 + g.members.length;
+      const acceptedInGroup = totalInGroup - rejectedMembers;
+      return { total: totalInGroup, accepted: acceptedInGroup, rejected: rejectedMembers };
+    }
+
+    function renderGroup(g, num) {
+      const statusClass = g.status.toLowerCase().replace(' ', '-');
+      let membersHtml = '';
+      if (g.members.length) {
+        membersHtml = '<div class="group-members">' + g.members.map(m => {
+          const cls = m.status === 'Rechazado' ? 'member-rejected' : '';
+          return `<span class="${cls}">${m.name} <em>(${m.rel})</em></span>`;
+        }).join('') + '</div>';
+      }
+      return `<div class="group ${statusClass}">
+        <div>
+          <div class="group-main"><span class="group-num">${num}.</span>${g.main}</div>
+          ${membersHtml}
+        </div>
+        <span class="group-status ${statusClass}">${g.status}</span>
+      </div>`;
+    }
+
+    document.getElementById('novia-groups').innerHTML = novia.map((g, i) => renderGroup(g, i + 1)).join('');
+    document.getElementById('novio-groups').innerHTML = novio.map((g, i) => renderGroup(g, novia.length + i + 1)).join('');
+
+    const confirmed = guestGroups.filter(g => g.status === 'Confirmado').length;
+    const pending = guestGroups.filter(g => g.status === 'Pendiente').length;
+    document.getElementById('total-groups').textContent = guestGroups.length;
+    document.getElementById('total-confirmed').textContent = confirmed;
+    document.getElementById('total-pending').textContent = pending;
+
+    const noviaPersons = novia.reduce((acc, g) => acc + countPersonsInGroup(g).accepted, 0);
+    const novioPersons = novio.reduce((acc, g) => acc + countPersonsInGroup(g).accepted, 0);
+    const totalRejectedMembers = guestGroups.reduce((acc, g) => acc + g.members.filter(m => m.status === 'Rechazado').length, 0);
+    const totalPersons = noviaPersons + novioPersons + totalRejectedMembers;
+
+    const totalesHtml = `
+      <div class="totales-item">
+        <span class="label">Total grupos (invitados principales)</span>
+        <span class="value">${guestGroups.length}</span>
+      </div>
+      <div class="totales-item">
+        <span class="label">Total invitados (personas)</span>
+        <span class="value">${totalPersons}${totalRejectedMembers ? ' <small style="color:var(--ink-soft);font-weight:400">(incl. ' + totalRejectedMembers + ' rechazados)</small>' : ''}</span>
+      </div>
+      <div class="totales-item">
+        <span class="label">Familia Novia — grupos</span>
+        <span class="value">${novia.length}</span>
+      </div>
+      <div class="totales-item">
+        <span class="label">Familia Novia — personas</span>
+        <span class="value">${noviaPersons}</span>
+      </div>
+      <div class="totales-item">
+        <span class="label">Familia Novio — grupos</span>
+        <span class="value">${novio.length}</span>
+      </div>
+      <div class="totales-item">
+        <span class="label">Familia Novio — personas</span>
+        <span class="value">${novioPersons}</span>
+      </div>
+      <div class="totales-item">
+        <span class="label">Confirmados (grupos)</span>
+        <span class="value" style="color:var(--confirmed)">${confirmed}</span>
+      </div>
+      <div class="totales-item">
+        <span class="label">Pendientes (grupos)</span>
+        <span class="value" style="color:var(--pending)">${pending}</span>
+      </div>
+      ${totalRejectedMembers ? `<div class="totales-item">
+        <span class="label">Rechazados (personas)</span>
+        <span class="value" style="color:var(--rejected)">${totalRejectedMembers}</span>
+      </div>` : ''}
+    `;
+    document.getElementById('totales-content').innerHTML = totalesHtml;
+  </script>
+</body>
+</html>

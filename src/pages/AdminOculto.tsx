@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
 import { motion } from "framer-motion";
-import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, RefreshCw, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload, ClipboardList } from "lucide-react";
+import { Users, TrendingUp, Edit, Save, Plus, Copy, Check, Trash2, RefreshCw, Heart, Baby, X, User, Bus, Minus, Table, Crown, Trophy, Camera, CheckCircle2, Download, Upload, ClipboardList, FileText } from "lucide-react";
 import PageLayout from "@/components/layouts/PageLayout";
 import PageHeader from "@/components/common/PageHeader";
 import { AppModal } from "@/components/common";
@@ -33,6 +33,7 @@ import { ConfiguracionBuses } from "@/types/bus";
 import { contarPasajerosBus } from "@/lib/bus-utils";
 import { ConfiguracionMesas } from "@/types/mesas";
 import { CarreraFotos, TODAS_LAS_MISIONES } from "@/types/carrera-fotos";
+import { getListaInvitadosHtml } from "@/lib/lista-invitados-pdf";
 
 const AdminOculto = () => {
   const { toast } = useToast();
@@ -73,6 +74,7 @@ const AdminOculto = () => {
   const [backupDryRunResult, setBackupDryRunResult] = useState<any | null>(null);
   const [backupConfirmText, setBackupConfirmText] = useState('');
   const [isBackupBusy, setIsBackupBusy] = useState(false);
+  const [isPdfBusy, setIsPdfBusy] = useState(false);
   const [backupLastSnapshotKey, setBackupLastSnapshotKey] = useState<string | null>(null);
 
   // Drag-and-drop reorder
@@ -192,6 +194,59 @@ const AdminOculto = () => {
       });
     } finally {
       setIsBackupBusy(false);
+    }
+  };
+
+  /** Abre la lista de invitados en una ventana nueva para imprimir/guardar como PDF (Ctrl+P). */
+  const downloadBackupPdf = () => {
+    if (!grupos.length) {
+      toast({
+        title: "Sin datos",
+        description: "No hay invitados para generar el PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsPdfBusy(true);
+    try {
+      const html = getListaInvitadosHtml(grupos);
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, "_blank", "noopener,noreferrer,width=900,height=700");
+      if (w) {
+        let printed = false;
+        const doPrint = () => {
+          if (printed) return;
+          printed = true;
+          URL.revokeObjectURL(url);
+          try {
+            w.print();
+          } catch {
+            // Si el navegador bloquea print(), el usuario puede usar Ctrl+P en la ventana
+          }
+        };
+        w.addEventListener("load", doPrint);
+        if (w.document.readyState === "complete") doPrint();
+      } else {
+        URL.revokeObjectURL(url);
+        toast({
+          title: "Popup bloqueado",
+          description: "Permite ventanas emergentes para este sitio y vuelve a intentar.",
+          variant: "destructive",
+        });
+      }
+      toast({
+        title: "Lista para PDF",
+        description: "Usa Ctrl+P en la ventana abierta para guardar como PDF.",
+      });
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo generar la lista para PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPdfBusy(false);
     }
   };
 
@@ -1039,17 +1094,29 @@ const AdminOculto = () => {
                     Descargar backup
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 sm:p-5 pt-0">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Descarga un JSON con invitados + configuración (mesas, buses, carreras).
+                <CardContent className="p-4 sm:p-5 pt-0 space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Backup de invitados y configuración: JSON (datos) o PDF (lista para imprimir).
                   </p>
-                  <Button
-                    onClick={downloadBackup}
-                    disabled={isBackupBusy}
-                    className="w-full"
-                  >
-                    {isBackupBusy ? "Preparando..." : "Descargar backup"}
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      onClick={downloadBackup}
+                      disabled={isBackupBusy}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      {isBackupBusy ? "Preparando..." : "Descargar JSON"}
+                    </Button>
+                    <Button
+                      onClick={downloadBackupPdf}
+                      disabled={isPdfBusy || !grupos.length}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      {isPdfBusy ? "Abriendo..." : "Descargar PDF"}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
