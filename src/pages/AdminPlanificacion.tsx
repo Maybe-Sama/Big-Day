@@ -51,19 +51,16 @@ export default function AdminPlanificacion() {
       setTareas(Array.isArray(tareasData.tareas) ? tareasData.tareas : []);
       setCategorias(Array.isArray(presupuestoData.categorias) ? presupuestoData.categorias : []);
 
-      // Calculate confirmed attendees
+      // Calculate confirmed attendees (same logic as AdminOculto statsPorPersona)
       if (invitadosRes.ok) {
         const grupos = await invitadosRes.json();
         if (Array.isArray(grupos)) {
           let total = 0;
           grupos.forEach((grupo: any) => {
-            if (grupo.asistencia === 'confirmado') {
-              total += 1; // principal
-              const acompConfirmados = (grupo.acompanantes || []).filter(
-                (ac: any) => ac.asistencia === 'confirmado' && ac.nombre && ac.apellidos
-              );
-              total += acompConfirmados.length;
-            }
+            if (grupo.invitadoPrincipal?.asistencia === 'confirmado') total++;
+            (grupo.acompanantes || []).forEach((ac: any) => {
+              if (ac.asistencia === 'confirmado') total++;
+            });
           });
           setAsistentesConfirmados(total);
         }

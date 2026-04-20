@@ -119,6 +119,7 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
                   <th className="pb-3 font-medium">Categoría</th>
                   <th className="pb-3 font-medium text-right">Estimado</th>
                   <th className="pb-3 font-medium text-right">Pagado</th>
+                  <th className="pb-3 font-medium text-right">Falta</th>
                   <th className="pb-3 font-medium text-center">Estado</th>
                   <th className="pb-3 font-medium text-right">Último pago</th>
                   <th className="pb-3 font-medium text-right"></th>
@@ -145,6 +146,9 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
                       </td>
                       <td className="py-3 text-white/80 text-right font-mono">
                         {formatEuro(cat.cantidadPagada)}
+                      </td>
+                      <td className="py-3 text-red-300/80 text-right font-mono">
+                        {formatEuro(cat.costeEstimado - cat.cantidadPagada)}
                       </td>
                       <td className="py-3 text-center">
                         <Badge variant="outline" className={`text-xs ${estadoConfig.color}`}>
@@ -178,6 +182,7 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
                   <td className="pt-3 text-white">TOTAL</td>
                   <td className="pt-3 text-white text-right font-mono">{formatEuro(totales.estimado)}</td>
                   <td className="pt-3 text-white text-right font-mono">{formatEuro(totales.pagado)}</td>
+                  <td className="pt-3 text-red-300 text-right font-mono">{formatEuro(totales.pendiente)}</td>
                   <td colSpan={3}></td>
                 </tr>
               </tfoot>
@@ -185,7 +190,7 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
           </div>
 
           <div className="mt-4">
-            <Button onClick={handleAdd} variant="outline" size="sm" className="border-white/10 text-white/70">
+            <Button onClick={handleAdd} variant="outline" size="sm" className="border-white/10 text-black">
               <Plus className="w-4 h-4 mr-2" /> Añadir categoría
             </Button>
           </div>
