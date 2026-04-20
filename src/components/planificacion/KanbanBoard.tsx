@@ -52,7 +52,12 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
     setActiveId(event.active.id as string);
   }
 
-  function handleDragOver(event: DragOverEvent) {
+  function handleDragOver(_event: DragOverEvent) {
+    // Visual feedback only - actual move happens in handleDragEnd
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -70,34 +75,39 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
       return;
     }
 
-    if (activeTarea.columna !== targetColumn) {
-      const updated = tareas.map(t =>
-        t.id === active.id ? { ...t, columna: targetColumn, fechaActualizacion: new Date().toISOString() } : t
-      );
-      onTareasChange(updated);
+    // Move to new column if needed
+    let updated = tareas.map(t =>
+      t.id === active.id ? { ...t, columna: targetColumn, fechaActualizacion: new Date().toISOString() } : t
+    );
+
+    // Reorder within same column if dropping on another task
+    if (overTarea && overTarea.columna === targetColumn) {
+      const columnTareas = updated
+        .filter(t => t.columna === targetColumn)
+        .sort((a, b) => a.orden - b.orden);
+      const oldIndex = columnTareas.findIndex(t => t.id === active.id);
+      const newIndex = columnTareas.findIndex(t => t.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const reordered = arrayMove(columnTareas, oldIndex, newIndex);
+        updated = updated.map(t => {
+          const idx = reordered.findIndex(r => r.id === t.id);
+          if (idx !== -1) return { ...t, orden: idx };
+          return t;
+        });
+      }
     }
-  }
 
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveId(null);
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const activeTarea = tareas.find(t => t.id === active.id);
-    if (!activeTarea) return;
-
-    const columnTareas = tareasOrdenadas[activeTarea.columna];
-    const oldIndex = columnTareas.findIndex(t => t.id === active.id);
-    const newIndex = columnTareas.findIndex(t => t.id === over.id);
-
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    const reordered = arrayMove(columnTareas, oldIndex, newIndex);
-    const updated = tareas.map(t => {
-      const idx = reordered.findIndex(r => r.id === t.id);
+    // Assign final order for the target column
+    const finalColumnTareas = updated
+      .filter(t => t.columna === targetColumn)
+      .sort((a, b) => a.orden - b.orden);
+    updated = updated.map(t => {
+      const idx = finalColumnTareas.findIndex(r => r.id === t.id);
       if (idx !== -1) return { ...t, orden: idx };
       return t;
     });
+
     onTareasChange(updated);
   }
 
