@@ -14,10 +14,13 @@ interface KanbanColumnProps {
 
 export default function KanbanColumn({ columna, tareas, onAddTask, onEditTask, onDeleteTask }: KanbanColumnProps) {
   const config = COLUMNAS_CONFIG[columna];
-  const { setNodeRef } = useDroppable({ id: columna });
+  const { setNodeRef, isOver } = useDroppable({ id: columna });
 
   return (
-    <div className={`flex flex-col rounded-xl border p-3 min-h-[300px] ${config.color}`}>
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col rounded-xl border p-3 min-h-[300px] transition-colors ${config.color} ${isOver ? 'ring-2 ring-white/30' : ''}`}
+    >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-white/80">
           {config.label}
@@ -31,7 +34,7 @@ export default function KanbanColumn({ columna, tareas, onAddTask, onEditTask, o
         </button>
       </div>
 
-      <div ref={setNodeRef} className="flex-1 space-y-2">
+      <div className="flex-1 space-y-2 min-h-[200px]">
         <SortableContext items={tareas.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {tareas.map(tarea => (
             <KanbanCard
@@ -43,7 +46,7 @@ export default function KanbanColumn({ columna, tareas, onAddTask, onEditTask, o
           ))}
         </SortableContext>
         {tareas.length === 0 && (
-          <p className="text-xs text-white/30 text-center py-8">Sin tareas</p>
+          <p className="text-xs text-white/30 text-center py-8 pointer-events-none">Sin tareas</p>
         )}
       </div>
     </div>

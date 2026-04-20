@@ -7,7 +7,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
+  pointerWithin,
+  rectIntersection,
+  CollisionDetection,
   DragOverlay,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -32,6 +34,12 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
+
+  const collisionDetection: CollisionDetection = (args) => {
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) return pointerCollisions;
+    return rectIntersection(args);
+  };
 
   const tareasOrdenadas = useMemo(() => {
     const byColumn: Record<ColumnaKanban, Tarea[]> = { todo: [], in_progress: [], done: [] };
@@ -160,7 +168,7 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
     <>
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
