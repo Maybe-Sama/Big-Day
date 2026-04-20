@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 
-const novioImg = '/novio.jpg';
-const noviaImg = '/novia.jpg';
+const novioImg = '/icono-plan/novio.png';
+const noviaImg = '/icono-plan/novia.png';
 
 interface KanbanCardProps {
   tarea: Tarea;

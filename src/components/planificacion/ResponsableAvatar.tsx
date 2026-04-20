@@ -1,7 +1,7 @@
 import { TipoResponsable } from '@/types/planificacion';
 
-const novioImg = '/novio.jpg';
-const noviaImg = '/novia.jpg';
+const novioImg = '/icono-plan/novio.png';
+const noviaImg = '/icono-plan/novia.png';
 
 interface ResponsableAvatarProps {
   tipo?: TipoResponsable;

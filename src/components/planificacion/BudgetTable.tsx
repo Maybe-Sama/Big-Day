@@ -35,7 +35,11 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
     const incluidas = categoriasConCalculo.filter(c => !excluidas.has(c.id));
     const estimado = incluidas.reduce((sum, c) => sum + c.costeEstimado, 0);
     const pagado = incluidas.reduce((sum, c) => sum + c.cantidadPagada, 0);
-    return { estimado, pagado, pendiente: estimado - pagado };
+    const pendiente = incluidas.reduce(
+      (sum, c) => sum + (c.estadoPago === 'pagado_completo' ? 0 : Math.max(0, c.costeEstimado - c.cantidadPagada)),
+      0,
+    );
+    return { estimado, pagado, pendiente };
   }, [categoriasConCalculo, excluidas]);
 
   function toggleIncluida(id: string) {
@@ -168,7 +172,7 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
                         {formatEuro(cat.cantidadPagada)}
                       </td>
                       <td className="py-3 text-red-300/80 text-right font-mono">
-                        {formatEuro(cat.costeEstimado - cat.cantidadPagada)}
+                        {formatEuro(cat.estadoPago === 'pagado_completo' ? 0 : Math.max(0, cat.costeEstimado - cat.cantidadPagada))}
                       </td>
                       <td className="py-3 text-center">
                         <Badge variant="outline" className={`text-xs ${estadoConfig.color}`}>
