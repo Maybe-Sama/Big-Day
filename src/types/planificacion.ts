@@ -1,10 +1,13 @@
 export type ColumnaKanban = 'todo' | 'in_progress' | 'done';
 
+export type TipoResponsable = 'novio' | 'novia' | 'tercero';
+
 export interface Tarea {
   id: string;
   titulo: string;
   descripcion: string;
   responsable: string;
+  responsableTipo?: TipoResponsable;
   columna: ColumnaKanban;
   orden: number;
   fechaCreacion: string;
