@@ -1,7 +1,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
-import { Tarea, ColumnaKanban, COLUMNAS_CONFIG, TipoResponsable } from '@/types/planificacion';
+import { Tarea, ColumnaKanban, COLUMNAS_CONFIG, Responsable } from '@/types/planificacion';
 import KanbanCard from './KanbanCard';
 
 interface KanbanColumnProps {
@@ -10,7 +10,7 @@ interface KanbanColumnProps {
   onAddTask: (columna: ColumnaKanban) => void;
   onEditTask: (tarea: Tarea) => void;
   onDeleteTask: (id: string) => void;
-  onAssign: (id: string, tipo: TipoResponsable | null, nombre: string) => void;
+  onAssign: (id: string, responsables: Responsable[]) => void;
 }
 
 export default function KanbanColumn({ columna, tareas, onAddTask, onEditTask, onDeleteTask, onAssign }: KanbanColumnProps) {

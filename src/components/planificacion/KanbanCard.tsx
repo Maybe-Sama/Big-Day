@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2, Edit, UserPlus } from 'lucide-react';
-import { Tarea, TipoResponsable } from '@/types/planificacion';
-import ResponsableAvatar from './ResponsableAvatar';
+import { GripVertical, Trash2, Edit, UserPlus, Check } from 'lucide-react';
+import { Tarea, Responsable, getResponsables } from '@/types/planificacion';
+import ResponsablesList from './ResponsableAvatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,7 @@ interface KanbanCardProps {
   tarea: Tarea;
   onEdit: (tarea: Tarea) => void;
   onDelete: (id: string) => void;
-  onAssign: (id: string, tipo: TipoResponsable | null, nombre: string) => void;
+  onAssign: (id: string, responsables: Responsable[]) => void;
 }
 
 export default function KanbanCard({ tarea, onEdit, onDelete, onAssign }: KanbanCardProps) {
@@ -36,29 +36,38 @@ export default function KanbanCard({ tarea, onEdit, onDelete, onAssign }: Kanban
   const [otroOpen, setOtroOpen] = useState(false);
   const [otroValue, setOtroValue] = useState('');
 
+  const responsables = getResponsables(tarea);
+  const novioActive = responsables.some(r => r.tipo === 'novio');
+  const noviaActive = responsables.some(r => r.tipo === 'novia');
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
 
-  function asignarNovio() {
-    onAssign(tarea.id, 'novio', 'Novio');
+  function toggleTipo(tipo: 'novio' | 'novia') {
+    const exists = responsables.some(r => r.tipo === tipo);
+    const next = exists
+      ? responsables.filter(r => r.tipo !== tipo)
+      : [...responsables, { tipo, nombre: tipo === 'novio' ? 'Novio' : 'Novia' }];
+    onAssign(tarea.id, next);
   }
-  function asignarNovia() {
-    onAssign(tarea.id, 'novia', 'Novia');
-  }
-  function limpiar() {
-    onAssign(tarea.id, null, '');
-  }
-  function confirmarOtro() {
+
+  function addOtro() {
     const trimmed = otroValue.trim().slice(0, 50);
-    if (trimmed) {
-      onAssign(tarea.id, 'tercero', trimmed);
-      setOtroValue('');
-      setOtroOpen(false);
-    }
+    if (!trimmed) return;
+    const sinTercero = responsables.filter(r => r.tipo !== 'tercero');
+    onAssign(tarea.id, [...sinTercero, { tipo: 'tercero', nombre: trimmed }]);
+    setOtroValue('');
+    setOtroOpen(false);
   }
+
+  function limpiar() {
+    onAssign(tarea.id, []);
+  }
+
+  const terceroExistente = responsables.find(r => r.tipo === 'tercero');
 
   return (
     <div
@@ -79,9 +88,9 @@ export default function KanbanCard({ tarea, onEdit, onDelete, onAssign }: Kanban
           {tarea.descripcion && (
             <p className="text-xs text-white/50 mt-1 line-clamp-2">{tarea.descripcion}</p>
           )}
-          {tarea.responsable && (
+          {responsables.length > 0 && (
             <div className="mt-2">
-              <ResponsableAvatar tipo={tarea.responsableTipo} nombre={tarea.responsable} />
+              <ResponsablesList responsables={responsables} />
             </div>
           )}
         </div>
@@ -95,14 +104,22 @@ export default function KanbanCard({ tarea, onEdit, onDelete, onAssign }: Kanban
                 <UserPlus className="w-3.5 h-3.5" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={asignarNovio} className="gap-2 cursor-pointer">
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem
+                onSelect={e => { e.preventDefault(); toggleTipo('novio'); }}
+                className="gap-2 cursor-pointer"
+              >
                 <img src={novioImg} alt="Novio" className="w-6 h-6 rounded-full object-cover" />
-                Novio
+                <span className="flex-1">Novio</span>
+                {novioActive && <Check className="w-4 h-4 text-green-400" />}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={asignarNovia} className="gap-2 cursor-pointer">
+              <DropdownMenuItem
+                onSelect={e => { e.preventDefault(); toggleTipo('novia'); }}
+                className="gap-2 cursor-pointer"
+              >
                 <img src={noviaImg} alt="Novia" className="w-6 h-6 rounded-full object-cover" />
-                Novia
+                <span className="flex-1">Novia</span>
+                {noviaActive && <Check className="w-4 h-4 text-green-400" />}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {otroOpen ? (
@@ -113,7 +130,7 @@ export default function KanbanCard({ tarea, onEdit, onDelete, onAssign }: Kanban
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        confirmarOtro();
+                        addOtro();
                       } else if (e.key === 'Escape') {
                         setOtroOpen(false);
                         setOtroValue('');
@@ -127,19 +144,19 @@ export default function KanbanCard({ tarea, onEdit, onDelete, onAssign }: Kanban
                 </div>
               ) : (
                 <DropdownMenuItem
-                  onSelect={e => {
-                    e.preventDefault();
-                    setOtroOpen(true);
-                  }}
+                  onSelect={e => { e.preventDefault(); setOtroOpen(true); setOtroValue(terceroExistente?.nombre || ''); }}
                   className="cursor-pointer"
                 >
-                  Otro…
+                  {terceroExistente ? `Otro: ${terceroExistente.nombre}` : 'Añadir otro…'}
                 </DropdownMenuItem>
               )}
-              {tarea.responsable && (
+              {responsables.length > 0 && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={limpiar} className="cursor-pointer text-white/60">
+                  <DropdownMenuItem
+                    onSelect={e => { e.preventDefault(); limpiar(); }}
+                    className="cursor-pointer text-white/60"
+                  >
                     Sin asignar
                   </DropdownMenuItem>
                 </>

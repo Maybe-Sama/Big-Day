@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { nanoid } from 'nanoid';
-import { Tarea, ColumnaKanban, COLUMNAS_CONFIG, TipoResponsable } from '@/types/planificacion';
+import { Tarea, ColumnaKanban, COLUMNAS_CONFIG, Responsable, getResponsables } from '@/types/planificacion';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import TaskModal from './TaskModal';
@@ -50,7 +50,12 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
   }, [tareas]);
 
   const responsablesSugeridos = useMemo(() => {
-    const set = new Set(tareas.map(t => t.responsable).filter(Boolean));
+    const set = new Set<string>();
+    tareas.forEach(t => {
+      getResponsables(t).forEach(r => {
+        if (r.tipo === 'tercero' && r.nombre) set.add(r.nombre);
+      });
+    });
     return Array.from(set);
   }, [tareas]);
 
@@ -141,11 +146,11 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
     }
   }
 
-  function handleAssign(id: string, tipo: TipoResponsable | null, nombre: string) {
+  function handleAssign(id: string, responsables: Responsable[]) {
     const now = new Date().toISOString();
     onTareasChange(tareas.map(t =>
       t.id === id
-        ? { ...t, responsableTipo: tipo || undefined, responsable: nombre, fechaActualizacion: now }
+        ? { ...t, responsables, responsable: '', responsableTipo: undefined, fechaActualizacion: now }
         : t
     ));
   }
@@ -163,7 +168,7 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
         id: nanoid(10),
         titulo: data.titulo || '',
         descripcion: data.descripcion || '',
-        responsable: data.responsable || '',
+        responsables: data.responsables || [],
         columna: data.columna,
         orden: tareasOrdenadas[data.columna].length,
         fechaCreacion: now,
@@ -198,7 +203,7 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
         <DragOverlay>
           {activeTarea ? (
             <div className="opacity-80">
-              <KanbanCard tarea={activeTarea} onEdit={() => {}} onDelete={() => {}} onAssign={() => {}} />
+              <KanbanCard tarea={activeTarea} onEdit={() => {}} onDelete={() => {}} onAssign={() => []} />
             </div>
           ) : null}
         </DragOverlay>

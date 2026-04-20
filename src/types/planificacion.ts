@@ -2,16 +2,30 @@ export type ColumnaKanban = 'todo' | 'in_progress' | 'done';
 
 export type TipoResponsable = 'novio' | 'novia' | 'tercero';
 
+export interface Responsable {
+  tipo: TipoResponsable;
+  nombre: string;
+}
+
 export interface Tarea {
   id: string;
   titulo: string;
   descripcion: string;
-  responsable: string;
+  responsables?: Responsable[];
+  // Legacy fields (kept for backwards compatibility)
+  responsable?: string;
   responsableTipo?: TipoResponsable;
   columna: ColumnaKanban;
   orden: number;
   fechaCreacion: string;
   fechaActualizacion: string;
+}
+
+export function getResponsables(t: Tarea): Responsable[] {
+  if (t.responsables && t.responsables.length > 0) return t.responsables;
+  if (t.responsable && t.responsableTipo) return [{ tipo: t.responsableTipo, nombre: t.responsable }];
+  if (t.responsable) return [{ tipo: 'tercero', nombre: t.responsable }];
+  return [];
 }
 
 export type EstadoPago = 'sin_pagar' | 'senal_pagada' | 'pagado_completo';
