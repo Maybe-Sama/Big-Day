@@ -16,8 +16,9 @@ interface ResponsablesListProps {
 export default function ResponsablesList({ responsables, size = 'sm' }: ResponsablesListProps) {
   if (!responsables || responsables.length === 0) return null;
 
-  const sizeClass = size === 'sm' ? 'w-5 h-5' : 'w-7 h-7';
   const textClass = size === 'sm' ? 'text-xs' : 'text-sm';
+
+  const avatarSize = size === 'sm' ? 'w-6 h-6' : 'w-8 h-8';
 
   return (
     <div className="flex items-center gap-1 flex-wrap">
@@ -25,17 +26,13 @@ export default function ResponsablesList({ responsables, size = 'sm' }: Responsa
         if (r.tipo === 'novio' || r.tipo === 'novia') {
           const avatar = AVATARS[r.tipo];
           return (
-            <span
+            <img
               key={`${r.tipo}-${idx}`}
-              className="inline-flex items-center gap-1.5 bg-white/10 rounded-full pl-0.5 pr-2 py-0.5"
-            >
-              <img
-                src={avatar.src}
-                alt={avatar.label}
-                className={`${sizeClass} rounded-full object-cover ring-1 ring-white/20`}
-              />
-              <span className={`${textClass} text-white/80`}>{avatar.label}</span>
-            </span>
+              src={avatar.src}
+              alt={avatar.label}
+              title={avatar.label}
+              className={`${avatarSize} rounded-full object-cover ring-1 ring-white/20`}
+            />
           );
         }
         return (
