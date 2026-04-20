@@ -931,9 +931,14 @@ const AdminOculto = () => {
               variant="simple"
               className="pb-0"
             />
-            <Button variant="outline" onClick={handleLogout} className="ml-4">
-              Cerrar Sesión
-            </Button>
+            <div className="flex gap-2 ml-4">
+              <Button variant="outline" onClick={() => window.location.href = '/admin/planificacion'}>
+                Planificación
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
 
           {/* Stats */}

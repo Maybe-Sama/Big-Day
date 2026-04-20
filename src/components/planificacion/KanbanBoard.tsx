@@ -1,0 +1,189 @@
+import { useState, useMemo } from 'react';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+  DragOverlay,
+} from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
+import { nanoid } from 'nanoid';
+import { Tarea, ColumnaKanban, COLUMNAS_CONFIG } from '@/types/planificacion';
+import KanbanColumn from './KanbanColumn';
+import KanbanCard from './KanbanCard';
+import TaskModal from './TaskModal';
+
+interface KanbanBoardProps {
+  tareas: Tarea[];
+  onTareasChange: (tareas: Tarea[]) => void;
+}
+
+export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTarea, setEditingTarea] = useState<Tarea | null>(null);
+  const [activeColumn, setActiveColumn] = useState<ColumnaKanban>('todo');
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  const tareasOrdenadas = useMemo(() => {
+    const byColumn: Record<ColumnaKanban, Tarea[]> = { todo: [], in_progress: [], done: [] };
+    [...tareas].sort((a, b) => a.orden - b.orden).forEach(t => {
+      byColumn[t.columna].push(t);
+    });
+    return byColumn;
+  }, [tareas]);
+
+  const responsablesSugeridos = useMemo(() => {
+    const set = new Set(tareas.map(t => t.responsable).filter(Boolean));
+    return Array.from(set);
+  }, [tareas]);
+
+  const activeTarea = activeId ? tareas.find(t => t.id === activeId) : null;
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string);
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeTarea = tareas.find(t => t.id === active.id);
+    if (!activeTarea) return;
+
+    // Determine target column
+    let targetColumn: ColumnaKanban;
+    const overTarea = tareas.find(t => t.id === over.id);
+    if (overTarea) {
+      targetColumn = overTarea.columna;
+    } else if (over.id in COLUMNAS_CONFIG) {
+      targetColumn = over.id as ColumnaKanban;
+    } else {
+      return;
+    }
+
+    if (activeTarea.columna !== targetColumn) {
+      const updated = tareas.map(t =>
+        t.id === active.id ? { ...t, columna: targetColumn, fechaActualizacion: new Date().toISOString() } : t
+      );
+      onTareasChange(updated);
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeTarea = tareas.find(t => t.id === active.id);
+    if (!activeTarea) return;
+
+    const columnTareas = tareasOrdenadas[activeTarea.columna];
+    const oldIndex = columnTareas.findIndex(t => t.id === active.id);
+    const newIndex = columnTareas.findIndex(t => t.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(columnTareas, oldIndex, newIndex);
+    const updated = tareas.map(t => {
+      const idx = reordered.findIndex(r => r.id === t.id);
+      if (idx !== -1) return { ...t, orden: idx };
+      return t;
+    });
+    onTareasChange(updated);
+  }
+
+  function handleAddTask(columna: ColumnaKanban) {
+    setEditingTarea(null);
+    setActiveColumn(columna);
+    setModalOpen(true);
+  }
+
+  function handleEditTask(tarea: Tarea) {
+    setEditingTarea(tarea);
+    setActiveColumn(tarea.columna);
+    setModalOpen(true);
+  }
+
+  function handleDeleteTask(id: string) {
+    if (deleteConfirm === id) {
+      onTareasChange(tareas.filter(t => t.id !== id));
+      setDeleteConfirm(null);
+    } else {
+      setDeleteConfirm(id);
+      setTimeout(() => setDeleteConfirm(null), 3000);
+    }
+  }
+
+  function handleSaveTask(data: Partial<Tarea> & { columna: ColumnaKanban }) {
+    const now = new Date().toISOString();
+    if (data.id) {
+      // Edit
+      onTareasChange(tareas.map(t =>
+        t.id === data.id ? { ...t, ...data, fechaActualizacion: now } : t
+      ));
+    } else {
+      // Create
+      const newTarea: Tarea = {
+        id: nanoid(10),
+        titulo: data.titulo || '',
+        descripcion: data.descripcion || '',
+        responsable: data.responsable || '',
+        columna: data.columna,
+        orden: tareasOrdenadas[data.columna].length,
+        fechaCreacion: now,
+        fechaActualizacion: now,
+      };
+      onTareasChange([...tareas, newTarea]);
+    }
+  }
+
+  return (
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {(Object.keys(COLUMNAS_CONFIG) as ColumnaKanban[]).map(col => (
+            <KanbanColumn
+              key={col}
+              columna={col}
+              tareas={tareasOrdenadas[col]}
+              onAddTask={handleAddTask}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTask}
+            />
+          ))}
+        </div>
+        <DragOverlay>
+          {activeTarea ? (
+            <div className="opacity-80">
+              <KanbanCard tarea={activeTarea} onEdit={() => {}} onDelete={() => {}} />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      <TaskModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveTask}
+        tarea={editingTarea}
+        columna={activeColumn}
+        responsablesSugeridos={responsablesSugeridos}
+      />
+    </>
+  );
+}
