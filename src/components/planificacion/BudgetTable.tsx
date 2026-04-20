@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CategoriaPresupuesto, ESTADO_PAGO_CONFIG } from '@/types/planificacion';
 import { nanoid } from 'nanoid';
 import BudgetCategoryModal from './BudgetCategoryModal';
@@ -17,6 +18,7 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategoria, setEditingCategoria] = useState<CategoriaPresupuesto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [excluidas, setExcluidas] = useState<Set<string>>(new Set());
 
   const hasCubierto = categorias.some(c => c.esCubierto);
 
@@ -30,10 +32,20 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
   }, [categorias, asistentesConfirmados]);
 
   const totales = useMemo(() => {
-    const estimado = categoriasConCalculo.reduce((sum, c) => sum + c.costeEstimado, 0);
-    const pagado = categoriasConCalculo.reduce((sum, c) => sum + c.cantidadPagada, 0);
+    const incluidas = categoriasConCalculo.filter(c => !excluidas.has(c.id));
+    const estimado = incluidas.reduce((sum, c) => sum + c.costeEstimado, 0);
+    const pagado = incluidas.reduce((sum, c) => sum + c.cantidadPagada, 0);
     return { estimado, pagado, pendiente: estimado - pagado };
-  }, [categoriasConCalculo]);
+  }, [categoriasConCalculo, excluidas]);
+
+  function toggleIncluida(id: string) {
+    setExcluidas(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const progreso = totales.estimado > 0 ? (totales.pagado / totales.estimado) * 100 : 0;
 
@@ -116,6 +128,7 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-white/50 text-left">
+                  <th className="pb-3 font-medium w-8"></th>
                   <th className="pb-3 font-medium">Categoría</th>
                   <th className="pb-3 font-medium text-right">Estimado</th>
                   <th className="pb-3 font-medium text-right">Pagado</th>
@@ -128,8 +141,15 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
               <tbody>
                 {categoriasConCalculo.map(cat => {
                   const estadoConfig = ESTADO_PAGO_CONFIG[cat.estadoPago];
+                  const incluida = !excluidas.has(cat.id);
                   return (
-                    <tr key={cat.id} className="border-b border-white/5 hover:bg-white/5">
+                    <tr key={cat.id} className={`border-b border-white/5 hover:bg-white/5 ${!incluida ? 'opacity-40' : ''}`}>
+                      <td className="py-3 pr-2">
+                        <Checkbox
+                          checked={incluida}
+                          onCheckedChange={() => toggleIncluida(cat.id)}
+                        />
+                      </td>
                       <td className="py-3 text-white">
                         {cat.nombre}
                         {cat.esCubierto && (
@@ -179,7 +199,15 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
               </tbody>
               <tfoot>
                 <tr className="border-t border-white/20 font-semibold">
-                  <td className="pt-3 text-white">TOTAL</td>
+                  <td className="pt-3"></td>
+                  <td className="pt-3 text-white">
+                    TOTAL
+                    {excluidas.size > 0 && (
+                      <span className="ml-2 text-xs text-white/50 font-normal">
+                        ({categoriasConCalculo.length - excluidas.size} de {categoriasConCalculo.length})
+                      </span>
+                    )}
+                  </td>
                   <td className="pt-3 text-white text-right font-mono">{formatEuro(totales.estimado)}</td>
                   <td className="pt-3 text-white text-right font-mono">{formatEuro(totales.pagado)}</td>
                   <td className="pt-3 text-red-300 text-right font-mono">{formatEuro(totales.pendiente)}</td>
