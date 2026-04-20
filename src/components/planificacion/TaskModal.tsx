@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tarea, ColumnaKanban, TipoResponsable } from '@/types/planificacion';
-import novioImg from '@/assets/novio.jpg';
-import noviaImg from '@/assets/novia.jpg';
+
+const novioImg = '/novio.jpg';
+const noviaImg = '/novia.jpg';
 
 interface TaskModalProps {
   open: boolean;

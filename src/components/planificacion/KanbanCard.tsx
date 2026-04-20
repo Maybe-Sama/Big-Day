@@ -11,9 +11,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import novioImg from '@/assets/novio.jpg';
-import noviaImg from '@/assets/novia.jpg';
 import { Input } from '@/components/ui/input';
+
+const novioImg = '/novio.jpg';
+const noviaImg = '/novia.jpg';
 
 interface KanbanCardProps {
   tarea: Tarea;
