@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { nanoid } from 'nanoid';
-import { Tarea, ColumnaKanban, COLUMNAS_CONFIG } from '@/types/planificacion';
+import { Tarea, ColumnaKanban, COLUMNAS_CONFIG, TipoResponsable } from '@/types/planificacion';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
 import TaskModal from './TaskModal';
@@ -141,6 +141,15 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
     }
   }
 
+  function handleAssign(id: string, tipo: TipoResponsable | null, nombre: string) {
+    const now = new Date().toISOString();
+    onTareasChange(tareas.map(t =>
+      t.id === id
+        ? { ...t, responsableTipo: tipo || undefined, responsable: nombre, fechaActualizacion: now }
+        : t
+    ));
+  }
+
   function handleSaveTask(data: Partial<Tarea> & { columna: ColumnaKanban }) {
     const now = new Date().toISOString();
     if (data.id) {
@@ -182,13 +191,14 @@ export default function KanbanBoard({ tareas, onTareasChange }: KanbanBoardProps
               onAddTask={handleAddTask}
               onEditTask={handleEditTask}
               onDeleteTask={handleDeleteTask}
+              onAssign={handleAssign}
             />
           ))}
         </div>
         <DragOverlay>
           {activeTarea ? (
             <div className="opacity-80">
-              <KanbanCard tarea={activeTarea} onEdit={() => {}} onDelete={() => {}} />
+              <KanbanCard tarea={activeTarea} onEdit={() => {}} onDelete={() => {}} onAssign={() => {}} />
             </div>
           ) : null}
         </DragOverlay>
