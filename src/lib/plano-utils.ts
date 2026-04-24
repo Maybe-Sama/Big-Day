@@ -1,15 +1,23 @@
 import { GrupoInvitados } from '@/types/invitados';
 import { PersonaPlano, AsignacionSilla, LadoInvitado } from '@/types/plano';
 
-/** Flatten GrupoInvitados[] into individual PersonaPlano[] for the seating editor */
-export function flattenGrupos(grupos: GrupoInvitados[], gruposNovio: Set<string> = new Set()): PersonaPlano[] {
+/** Flatten GrupoInvitados[] into individual PersonaPlano[] for the seating editor.
+ *  novioDesdeGrupoId: the first group in order that belongs to novio's side.
+ *  All groups before it are novia, from it onwards are novio. */
+export function flattenGrupos(grupos: GrupoInvitados[], novioDesdeGrupoId?: string): PersonaPlano[] {
   const personas: PersonaPlano[] = [];
 
-  for (const grupo of grupos) {
+  // Find the index where novio's side starts
+  const novioIndex = novioDesdeGrupoId
+    ? grupos.findIndex(g => g.id === novioDesdeGrupoId)
+    : -1;
+
+  for (let gi = 0; gi < grupos.length; gi++) {
+    const grupo = grupos[gi];
     const principalId = `${grupo.id}:principal`;
     const parejaAc = grupo.acompanantes.find(ac => ac.tipo === 'pareja' && ac.asistencia === 'confirmado');
     const parejaId = parejaAc ? `${grupo.id}:${parejaAc.id}` : undefined;
-    const lado: LadoInvitado = gruposNovio.has(grupo.id) ? 'novio' : 'novia';
+    const lado: LadoInvitado = (novioIndex >= 0 && gi >= novioIndex) ? 'novio' : 'novia';
 
     // Only include confirmed guests
     if (grupo.invitadoPrincipal.asistencia !== 'confirmado') continue;

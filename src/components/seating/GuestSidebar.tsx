@@ -2,14 +2,15 @@ import { useState, useMemo } from 'react';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { DraggableGuest } from './DraggableGuest';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 
 export function GuestSidebar() {
-  const { unassigned, personas, asignaciones } = useSeatingEditor();
+  const { unassigned, personas, asignaciones, grupos, novioDesdeGrupoId, setNovioDesdeGrupo } = useSeatingEditor();
   const [search, setSearch] = useState('');
 
   const assignedCount = asignaciones.length;
-  const totalCount = personas.length;
 
   // Group linked couples for display
   const displayItems = useMemo(() => {
@@ -19,7 +20,6 @@ export function GuestSidebar() {
         )
       : unassigned;
 
-    // Build display list: couples shown as single items
     const seen = new Set<string>();
     const items: Array<{ personas: typeof filtered }> = [];
 
@@ -40,6 +40,10 @@ export function GuestSidebar() {
 
     return items;
   }, [unassigned, search]);
+
+  // Count by side
+  const noviaCount = personas.filter(p => p.lado === 'novia').length;
+  const novioCount = personas.filter(p => p.lado === 'novio').length;
 
   return (
     <div className="w-72 border-r bg-card flex flex-col shrink-0">
@@ -62,10 +66,37 @@ export function GuestSidebar() {
           <div className="text-lg font-bold text-green-600">{assignedCount}</div>
           <div className="text-[10px] text-muted-foreground">Asignados</div>
         </div>
-        <div className="flex-1 bg-orange-500/10 rounded-lg p-2 text-center">
-          <div className="text-lg font-bold text-orange-600">{unassigned.length}</div>
-          <div className="text-[10px] text-muted-foreground">Sin mesa</div>
+        <div className="flex-1 bg-pink-500/10 rounded-lg p-2 text-center">
+          <div className="text-lg font-bold text-pink-600">{noviaCount}</div>
+          <div className="text-[10px] text-muted-foreground">Novia</div>
         </div>
+        <div className="flex-1 bg-blue-500/10 rounded-lg p-2 text-center">
+          <div className="text-lg font-bold text-blue-600">{novioCount}</div>
+          <div className="text-[10px] text-muted-foreground">Novio</div>
+        </div>
+      </div>
+
+      {/* Novio divider selector */}
+      <div className="p-3 border-b">
+        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          Novio desde
+        </Label>
+        <Select
+          value={novioDesdeGrupoId || 'none'}
+          onValueChange={(v) => setNovioDesdeGrupo(v === 'none' ? undefined : v)}
+        >
+          <SelectTrigger className="h-8 text-xs mt-1">
+            <SelectValue placeholder="Todos son de la novia" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Todos novia (sin corte)</SelectItem>
+            {grupos.map(g => (
+              <SelectItem key={g.id} value={g.id}>
+                {g.invitadoPrincipal.nombre} {g.invitadoPrincipal.apellidos}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Header */}

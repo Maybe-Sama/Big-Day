@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function DraggableGuest({ personas }: Props) {
-  const { toggleParejaLink, toggleGrupoLado } = useSeatingEditor();
+  const { toggleParejaLink } = useSeatingEditor();
   const isCouple = personas.length === 2;
   const primary = personas[0];
   const dragId = personas.map(p => p.personaId).join('+');
@@ -50,16 +50,10 @@ export function DraggableGuest({ personas }: Props) {
       className={`flex items-center gap-2 p-2.5 rounded-lg border bg-card hover:bg-accent/50 cursor-grab active:cursor-grabbing transition-all
         ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
     >
-      {/* Lado toggle dot */}
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleGrupoLado(primary.grupoId);
-        }}
-        className="w-3 h-3 rounded-full shrink-0 hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all border border-white/30"
+      <div
+        className="w-3 h-3 rounded-full shrink-0 border border-white/30"
         style={dotStyle}
-        title={`Lado: ${ladoLabel} (clic para cambiar)`}
+        title={ladoLabel}
       />
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{displayName}</div>
@@ -67,7 +61,6 @@ export function DraggableGuest({ personas }: Props) {
           {subtitle} — {primary.grupoNombre}
         </div>
       </div>
-      {/* Couple link/unlink button */}
       {primary.parejaId && (
         <button
           onPointerDown={(e) => e.stopPropagation()}

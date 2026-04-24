@@ -19,7 +19,7 @@ export interface NotaInvitado {
 export interface PlanoMesas {
   asignaciones: AsignacionSilla[];
   notas: NotaInvitado[];
-  gruposNovio: string[]; // grupoIds that belong to novio's side
+  novioDesdeGrupoId?: string; // first grupoId that belongs to novio's side (all after = novio)
   zoom: number;
   panX: number;
   panY: number;
