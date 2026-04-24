@@ -7,8 +7,11 @@ export function flattenGrupos(grupos: GrupoInvitados[]): PersonaPlano[] {
 
   for (const grupo of grupos) {
     const principalId = `${grupo.id}:principal`;
-    const parejaAc = grupo.acompanantes.find(ac => ac.tipo === 'pareja');
+    const parejaAc = grupo.acompanantes.find(ac => ac.tipo === 'pareja' && ac.asistencia !== 'rechazado');
     const parejaId = parejaAc ? `${grupo.id}:${parejaAc.id}` : undefined;
+
+    // Skip rejected principal
+    if (grupo.invitadoPrincipal.asistencia === 'rechazado') continue;
 
     // Add principal guest
     personas.push({
@@ -27,8 +30,9 @@ export function flattenGrupos(grupos: GrupoInvitados[]): PersonaPlano[] {
       ubicacionBus: grupo.ubicacion_bus,
     });
 
-    // Add companions
+    // Add companions (skip rejected)
     for (const ac of grupo.acompanantes) {
+      if (ac.asistencia === 'rechazado') continue;
       const acId = `${grupo.id}:${ac.id}`;
       personas.push({
         personaId: acId,
