@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useRef, useEff
 import { MesaConfig, ConfiguracionMesas } from '@/types/mesas';
 import { GrupoInvitados } from '@/types/invitados';
 import { AsignacionSilla, PlanoMesas, PersonaPlano, NotaInvitado } from '@/types/plano';
+import { Tarea } from '@/types/planificacion';
 import { apiService } from '@/lib/api-service';
 import { flattenGrupos, getUnassignedPersonas, syncGrupoMesas } from '@/lib/plano-utils';
 import { nanoid } from 'nanoid';
@@ -347,7 +348,7 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
 
   // ── Notes ──
 
-  const addNota = useCallback((personaId: string, texto: string) => {
+  const addNota = useCallback(async (personaId: string, texto: string) => {
     const nota: NotaInvitado = {
       id: nanoid(8),
       personaId,
@@ -356,11 +357,62 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
     };
     setNotas(prev => [...prev, nota]);
     triggerAutosave();
-  }, [triggerAutosave]);
 
-  const deleteNota = useCallback((notaId: string) => {
+    // Also create a Kanban task assigned to novia
+    const persona = personaMap.get(personaId);
+    const personaName = persona ? `${persona.nombre} ${persona.apellidos}` : 'Invitado';
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || '/api';
+      const res = await fetch(`${API_BASE}/planificacion?action=get-tareas`, { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const tareas: Tarea[] = Array.isArray(data.tareas) ? data.tareas : [];
+
+      const newTarea: Tarea = {
+        id: `nota-${nota.id}`,
+        titulo: `[Mesas] ${personaName}`,
+        descripcion: texto,
+        responsables: [{ tipo: 'novia', nombre: 'Novia' }],
+        columna: 'todo',
+        orden: tareas.filter(t => t.columna === 'todo').length,
+        fechaCreacion: nota.fechaCreacion,
+        fechaActualizacion: nota.fechaCreacion,
+      };
+
+      await fetch(`${API_BASE}/planificacion?action=save-tareas`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tareas: [...tareas, newTarea] }),
+      });
+    } catch {
+      // Silent fail — the note is saved locally regardless
+    }
+  }, [triggerAutosave, personaMap]);
+
+  const deleteNota = useCallback(async (notaId: string) => {
     setNotas(prev => prev.filter(n => n.id !== notaId));
     triggerAutosave();
+
+    // Also remove the linked Kanban task
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || '/api';
+      const res = await fetch(`${API_BASE}/planificacion?action=get-tareas`, { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const tareas: Tarea[] = Array.isArray(data.tareas) ? data.tareas : [];
+      const filtered = tareas.filter(t => t.id !== `nota-${notaId}`);
+      if (filtered.length !== tareas.length) {
+        await fetch(`${API_BASE}/planificacion?action=save-tareas`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tareas: filtered }),
+        });
+      }
+    } catch {
+      // Silent fail
+    }
   }, [triggerAutosave]);
 
   const getNotasForPersona = useCallback(
