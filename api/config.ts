@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
 import { validateAdminSession } from '../serverlib/auth.js';
-import { CARRERAS_KEY, CONFIG_BUSES_KEY, CONFIG_MESAS_KEY } from '../serverlib/storage.js';
+import { CARRERAS_KEY, CONFIG_BUSES_KEY, CONFIG_MESAS_KEY, PLANO_KEY } from '../serverlib/storage.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
@@ -27,11 +27,12 @@ function setCors(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
-type Kind = 'mesas' | 'buses' | 'carreras';
+type Kind = 'mesas' | 'buses' | 'carreras' | 'plano';
 
 function getKeyForKind(kind: Kind) {
   if (kind === 'mesas') return CONFIG_MESAS_KEY;
   if (kind === 'buses') return CONFIG_BUSES_KEY;
+  if (kind === 'plano') return PLANO_KEY;
   return CARRERAS_KEY;
 }
 
@@ -53,8 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const kind = String(req.query.kind || '').trim() as Kind;
-  if (kind !== 'mesas' && kind !== 'buses' && kind !== 'carreras') {
-    return res.status(400).json({ error: 'kind inválido. Usa mesas|buses|carreras' });
+  if (kind !== 'mesas' && kind !== 'buses' && kind !== 'carreras' && kind !== 'plano') {
+    return res.status(400).json({ error: 'kind invalido. Usa mesas|buses|carreras|plano' });
   }
 
   const key = getKeyForKind(kind);
@@ -63,6 +64,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'GET') {
       const value = await redis.get(key as any);
       if (kind === 'carreras') return res.status(200).json(value || []);
+
+      if (kind === 'plano') {
+        if (value == null) return res.status(200).json(null);
+        return res.status(200).json(value);
+      }
 
       // Defense-in-depth: normalize/validate to prevent clients crashing on legacy/corrupt KV shapes.
       if (kind === 'buses') {

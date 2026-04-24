@@ -2,6 +2,7 @@ import { GrupoInvitados, InvitadoStats } from '@/types/invitados';
 import { ConfiguracionBuses } from '@/types/bus';
 import { ConfiguracionMesas } from '@/types/mesas';
 import { CarreraFotos } from '@/types/carrera-fotos';
+import { PlanoMesas } from '@/types/plano';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -271,6 +272,24 @@ class ApiService {
     await this.fetchApi('/config?kind=carreras', {
       method: 'POST',
       body: JSON.stringify(carreras),
+    }, true);
+  }
+
+  // ========== PLANO DE MESAS ==========
+
+  async getPlano(): Promise<PlanoMesas | null> {
+    try {
+      return await this.fetchApi<PlanoMesas>('/config?kind=plano');
+    } catch (error: any) {
+      if (error.message.includes('404')) return null;
+      throw error;
+    }
+  }
+
+  async savePlano(plano: PlanoMesas): Promise<void> {
+    await this.fetchApi('/config?kind=plano', {
+      method: 'POST',
+      body: JSON.stringify(plano),
     }, true);
   }
 

@@ -10,6 +10,7 @@ import Fotos from "./pages/Fotos";
 import Mesa from "./pages/Mesa";
 import AdminOculto from "./pages/AdminOculto";
 import AdminPlanificacion from "./pages/AdminPlanificacion";
+import AdminMesas from "./pages/AdminMesas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/mesa" element={<Mesa />} />
           <Route path="/admin/oculto" element={<AdminOculto />} />
           <Route path="/admin/planificacion" element={<AdminPlanificacion />} />
+          <Route path="/admin/mesas" element={<AdminMesas />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
