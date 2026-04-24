@@ -38,23 +38,35 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
       rechazado: { label: 'Rechazado', className: 'bg-red-500/10 text-red-700 border-red-200' },
     }[persona.asistencia];
 
-    // Dark red for people with notes, otherwise lado-based color
-    const seatColor = hasNote
-      ? 'bg-red-900 border-red-950'
-      : persona.tipo === 'hijo'
-        ? 'bg-orange-500/80 border-orange-600'
-        : persona.lado === 'novio'
-          ? 'bg-blue-500/80 border-blue-600'
-          : 'bg-pink-500/80 border-pink-600';
+    // Colors: dark red for notes, half orange+lado for kids, solid lado otherwise
+    const ladoColor = persona.lado === 'novio' ? '#3b82f6' : '#ec4899'; // blue-500 / pink-500
+    const ladoBorder = persona.lado === 'novio' ? '#2563eb' : '#db2777'; // blue-600 / pink-600
+
+    let seatStyle: React.CSSProperties = {};
+    let seatBorderClass = '';
+
+    if (hasNote) {
+      seatStyle = { background: '#7f1d1d' }; // red-900
+      seatBorderClass = 'border-red-950';
+    } else if (persona.tipo === 'hijo') {
+      // Half orange, half lado color
+      seatStyle = {
+        background: `linear-gradient(135deg, #f97316 50%, ${ladoColor} 50%)`,
+        borderColor: `#ea580c`, // orange-600
+      };
+    } else {
+      seatStyle = { background: ladoColor, borderColor: ladoBorder };
+    }
 
     return (
       <div ref={setNodeRef} style={style} className="relative group">
         <Popover>
           <PopoverTrigger asChild>
             <button
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold cursor-pointer transition-all
-                ${seatColor} text-white border-2
-                ${isOver ? 'ring-2 ring-yellow-400 scale-110' : 'hover:scale-110 hover:shadow-md'}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-bold cursor-pointer transition-all
+                text-white border-2 ${seatBorderClass}
+                ${isOver ? 'ring-2 ring-yellow-400 scale-110' : 'hover:scale-110 hover:shadow-lg'}`}
+              style={seatStyle}
             >
               {initials}
             </button>
@@ -162,7 +174,7 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className={`w-7 h-7 rounded-full border-2 border-dashed transition-all
+        className={`w-8 h-8 rounded-full border-2 border-dashed transition-all
           ${isOver
             ? 'border-primary bg-primary/20 scale-110'
             : 'border-muted-foreground/30 hover:border-muted-foreground/50'

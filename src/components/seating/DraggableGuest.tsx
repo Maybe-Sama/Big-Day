@@ -22,12 +22,11 @@ export function DraggableGuest({ personas }: Props) {
     },
   });
 
-  // Color based on lado: pink = novia, blue = novio, orange = kids
-  const dotColor = primary.tipo === 'hijo'
-    ? 'bg-orange-400'
-    : primary.lado === 'novio'
-    ? 'bg-blue-400'
-    : 'bg-pink-400';
+  const isChild = primary.tipo === 'hijo';
+  const ladoBg = primary.lado === 'novio' ? '#3b82f6' : '#ec4899';
+  const dotStyle: React.CSSProperties = isChild
+    ? { background: `linear-gradient(135deg, #f97316 50%, ${ladoBg} 50%)` }
+    : { background: ladoBg };
 
   const ladoLabel = primary.lado === 'novio' ? 'Novio' : 'Novia';
 
@@ -58,7 +57,8 @@ export function DraggableGuest({ personas }: Props) {
           e.stopPropagation();
           toggleGrupoLado(primary.grupoId);
         }}
-        className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColor} hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all`}
+        className="w-3 h-3 rounded-full shrink-0 hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all border border-white/30"
+        style={dotStyle}
         title={`Lado: ${ladoLabel} (clic para cambiar)`}
       />
       <div className="flex-1 min-w-0">
