@@ -1,26 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { MesaConfig, ConfiguracionMesas } from '@/types/mesas';
 import { GrupoInvitados } from '@/types/invitados';
-import { AsignacionSilla, PlanoMesas, PersonaPlano } from '@/types/plano';
+import { AsignacionSilla, PlanoMesas, PersonaPlano, NotaInvitado } from '@/types/plano';
 import { apiService } from '@/lib/api-service';
 import { flattenGrupos, getUnassignedPersonas, syncGrupoMesas } from '@/lib/plano-utils';
 import { nanoid } from 'nanoid';
 import { useToast } from '@/hooks/use-toast';
 
 // ── State shape ──
-
-interface SeatingEditorState {
-  mesas: MesaConfig[];
-  personas: PersonaPlano[];
-  asignaciones: AsignacionSilla[];
-  grupos: GrupoInvitados[];
-  zoom: number;
-  panX: number;
-  panY: number;
-  isLoading: boolean;
-  saveStatus: 'saved' | 'saving' | 'error';
-  selectedMesaId: string | null;
-}
 
 interface HistoryEntry {
   mesas: MesaConfig[];
@@ -29,7 +16,18 @@ interface HistoryEntry {
 
 // ── Context interface ──
 
-interface SeatingEditorContextValue extends SeatingEditorState {
+interface SeatingEditorContextValue {
+  mesas: MesaConfig[];
+  personas: PersonaPlano[];
+  asignaciones: AsignacionSilla[];
+  grupos: GrupoInvitados[];
+  notas: NotaInvitado[];
+  zoom: number;
+  panX: number;
+  panY: number;
+  isLoading: boolean;
+  saveStatus: 'saved' | 'saving' | 'error';
+  selectedMesaId: string | null;
   unassigned: PersonaPlano[];
   // Mesa actions
   addTable: (forma: 'poligonal' | 'rectangular', capacidad: number) => void;
@@ -43,6 +41,11 @@ interface SeatingEditorContextValue extends SeatingEditorState {
   moveSeat: (personaId: string, newMesaId: string, newSillaIndex: number) => void;
   // Couple actions
   toggleParejaLink: (personaId: string) => void;
+  // Notes
+  addNota: (personaId: string, texto: string) => void;
+  deleteNota: (notaId: string) => void;
+  getNotasForPersona: (personaId: string) => NotaInvitado[];
+  hasNotas: (personaId: string) => boolean;
   // Viewport
   setZoom: (zoom: number) => void;
   setPan: (x: number, y: number) => void;
@@ -55,6 +58,7 @@ interface SeatingEditorContextValue extends SeatingEditorState {
   getPersonaById: (id: string) => PersonaPlano | undefined;
   getAssignmentForSeat: (mesaId: string, sillaIndex: number) => AsignacionSilla | undefined;
   getAssignmentForPersona: (personaId: string) => AsignacionSilla | undefined;
+  getPersonasInMesa: (mesaId: string) => PersonaPlano[];
 }
 
 const SeatingEditorContext = createContext<SeatingEditorContextValue | null>(null);
@@ -78,6 +82,7 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
   const [personas, setPersonas] = useState<PersonaPlano[]>([]);
   const [asignaciones, setAsignaciones] = useState<AsignacionSilla[]>([]);
   const [grupos, setGrupos] = useState<GrupoInvitados[]>([]);
+  const [notas, setNotas] = useState<NotaInvitado[]>([]);
   const [zoom, setZoomState] = useState(1);
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
@@ -104,6 +109,16 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
     [personas]
   );
 
+  const notasByPersona = useMemo(() => {
+    const map = new Map<string, NotaInvitado[]>();
+    for (const n of notas) {
+      const list = map.get(n.personaId) || [];
+      list.push(n);
+      map.set(n.personaId, list);
+    }
+    return map;
+  }, [notas]);
+
   // ── Load data ──
 
   useEffect(() => {
@@ -122,7 +137,6 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
       setPersonas(flattenGrupos(gruposData));
 
       const mesasData = configMesas?.mesas || [];
-      // Assign default positions to mesas without x/y
       const mesasWithPositions = mesasData.map((m, i) => ({
         ...m,
         forma: m.forma || 'poligonal' as const,
@@ -133,6 +147,7 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
 
       if (plano) {
         setAsignaciones(plano.asignaciones || []);
+        setNotas(plano.notas || []);
         setZoomState(plano.zoom || 1);
         setPanX(plano.panX || 0);
         setPanY(plano.panY || 0);
@@ -156,14 +171,14 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
     if (!isDirtyRef.current) return;
     setSaveStatus('saving');
     try {
-      // Get current state via refs/callbacks
       const currentMesas = mesasRef.current;
       const currentAsignaciones = asignacionesRef.current;
       const currentGrupos = gruposRef.current;
+      const currentNotas = notasRef.current;
 
-      // Save plano
       const plano: PlanoMesas = {
         asignaciones: currentAsignaciones,
+        notas: currentNotas,
         zoom: zoomRef.current,
         panX: panXRef.current,
         panY: panYRef.current,
@@ -171,7 +186,6 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
       };
       await apiService.savePlano(plano);
 
-      // Save mesas config
       const configMesas: ConfiguracionMesas = {
         id: 'config-mesas',
         mesas: currentMesas,
@@ -179,7 +193,6 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
       };
       await apiService.saveConfiguracionMesas(configMesas);
 
-      // Sync grupo.mesa fields
       const updatedGrupos = syncGrupoMesas(currentGrupos, currentAsignaciones);
       const changedGrupos = updatedGrupos.filter((g, i) => g.mesa !== currentGrupos[i]?.mesa);
       for (const g of changedGrupos) {
@@ -193,10 +206,11 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
     }
   }
 
-  // Refs for latest state (used in async save)
+  // Refs for latest state
   const mesasRef = useRef(mesas);
   const asignacionesRef = useRef(asignaciones);
   const gruposRef = useRef(grupos);
+  const notasRef = useRef(notas);
   const zoomRef = useRef(zoom);
   const panXRef = useRef(panX);
   const panYRef = useRef(panY);
@@ -204,6 +218,7 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
   useEffect(() => { mesasRef.current = mesas; }, [mesas]);
   useEffect(() => { asignacionesRef.current = asignaciones; }, [asignaciones]);
   useEffect(() => { gruposRef.current = grupos; }, [grupos]);
+  useEffect(() => { notasRef.current = notas; }, [notas]);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { panXRef.current = panX; }, [panX]);
   useEffect(() => { panYRef.current = panY; }, [panY]);
@@ -212,10 +227,7 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
 
   function pushHistory() {
     setUndoStack(prev => {
-      const entry: HistoryEntry = {
-        mesas: mesasRef.current,
-        asignaciones: asignacionesRef.current,
-      };
+      const entry: HistoryEntry = { mesas: mesasRef.current, asignaciones: asignacionesRef.current };
       const next = [...prev, entry];
       if (next.length > MAX_HISTORY) next.shift();
       return next;
@@ -228,7 +240,6 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
       if (prev.length === 0) return prev;
       const newStack = [...prev];
       const entry = newStack.pop()!;
-      // Save current to redo
       setRedoStack(r => [...r, { mesas: mesasRef.current, asignaciones: asignacionesRef.current }]);
       setMesas(entry.mesas);
       setAsignaciones(entry.asignaciones);
@@ -242,7 +253,6 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
       if (prev.length === 0) return prev;
       const newStack = [...prev];
       const entry = newStack.pop()!;
-      // Save current to undo
       setUndoStack(u => [...u, { mesas: mesasRef.current, asignaciones: asignacionesRef.current }]);
       setMesas(entry.mesas);
       setAsignaciones(entry.asignaciones);
@@ -270,7 +280,6 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
   const updateTable = useCallback((mesaId: string, updates: Partial<MesaConfig>) => {
     pushHistory();
     setMesas(prev => prev.map(m => m.id === mesaId ? { ...m, ...updates } : m));
-    // If capacity decreased, remove excess seat assignments
     if (updates.capacidad !== undefined) {
       setAsignaciones(prev => prev.filter(a => {
         if (a.mesaId !== mesaId) return true;
@@ -289,7 +298,6 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
   }, [triggerAutosave]);
 
   const moveTable = useCallback((mesaId: string, x: number, y: number) => {
-    // No history for moves (too noisy), just save
     setMesas(prev => prev.map(m => m.id === mesaId ? { ...m, x, y } : m));
     triggerAutosave();
   }, [triggerAutosave]);
@@ -303,9 +311,7 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
   const assignSeat = useCallback((personaId: string, mesaId: string, sillaIndex: number) => {
     pushHistory();
     setAsignaciones(prev => {
-      // Remove any existing assignment for this persona
       const filtered = prev.filter(a => a.personaId !== personaId);
-      // Remove any existing assignment for this seat
       const cleared = filtered.filter(a => !(a.mesaId === mesaId && a.sillaIndex === sillaIndex));
       return [...cleared, { mesaId, sillaIndex, personaId }];
     });
@@ -332,17 +338,40 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
 
   const toggleParejaLink = useCallback((personaId: string) => {
     setPersonas(prev => prev.map(p => {
-      if (p.personaId === personaId) {
-        return { ...p, parejaVinculada: !p.parejaVinculada };
-      }
-      // Also toggle the partner
+      if (p.personaId === personaId) return { ...p, parejaVinculada: !p.parejaVinculada };
       const persona = prev.find(pp => pp.personaId === personaId);
-      if (persona?.parejaId && p.personaId === persona.parejaId) {
-        return { ...p, parejaVinculada: !p.parejaVinculada };
-      }
+      if (persona?.parejaId && p.personaId === persona.parejaId) return { ...p, parejaVinculada: !p.parejaVinculada };
       return p;
     }));
   }, []);
+
+  // ── Notes ──
+
+  const addNota = useCallback((personaId: string, texto: string) => {
+    const nota: NotaInvitado = {
+      id: nanoid(8),
+      personaId,
+      texto,
+      fechaCreacion: new Date().toISOString(),
+    };
+    setNotas(prev => [...prev, nota]);
+    triggerAutosave();
+  }, [triggerAutosave]);
+
+  const deleteNota = useCallback((notaId: string) => {
+    setNotas(prev => prev.filter(n => n.id !== notaId));
+    triggerAutosave();
+  }, [triggerAutosave]);
+
+  const getNotasForPersona = useCallback(
+    (personaId: string) => notasByPersona.get(personaId) || [],
+    [notasByPersona]
+  );
+
+  const hasNotas = useCallback(
+    (personaId: string) => notasByPersona.has(personaId),
+    [notasByPersona]
+  );
 
   // ── Viewport ──
 
@@ -372,53 +401,36 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
     [asignaciones]
   );
 
+  const getPersonasInMesa = useCallback(
+    (mesaId: string) => {
+      const mesaAssignments = asignaciones.filter(a => a.mesaId === mesaId);
+      return mesaAssignments
+        .map(a => personaMap.get(a.personaId))
+        .filter((p): p is PersonaPlano => !!p);
+    },
+    [asignaciones, personaMap]
+  );
+
   // ── Keyboard shortcuts ──
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        redo();
-      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo]);
 
   const value: SeatingEditorContextValue = {
-    mesas,
-    personas,
-    asignaciones,
-    grupos,
-    zoom,
-    panX,
-    panY,
-    isLoading,
-    saveStatus,
-    selectedMesaId,
-    unassigned,
-    addTable,
-    updateTable,
-    deleteTable,
-    moveTable,
-    selectTable,
-    assignSeat,
-    unassignSeat,
-    moveSeat,
-    toggleParejaLink,
-    setZoom,
-    setPan,
-    undo,
-    redo,
-    canUndo: undoStack.length > 0,
-    canRedo: redoStack.length > 0,
-    getPersonaById,
-    getAssignmentForSeat,
-    getAssignmentForPersona,
+    mesas, personas, asignaciones, grupos, notas,
+    zoom, panX, panY, isLoading, saveStatus, selectedMesaId, unassigned,
+    addTable, updateTable, deleteTable, moveTable, selectTable,
+    assignSeat, unassignSeat, moveSeat, toggleParejaLink,
+    addNota, deleteNota, getNotasForPersona, hasNotas,
+    setZoom, setPan, undo, redo,
+    canUndo: undoStack.length > 0, canRedo: redoStack.length > 0,
+    getPersonaById, getAssignmentForSeat, getAssignmentForPersona, getPersonasInMesa,
   };
 
   return (

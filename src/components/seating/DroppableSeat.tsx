@@ -5,7 +5,7 @@ import { getTipoAcompananteLabel } from '@/types/invitados';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, Bus, AlertTriangle, Mail, Users, UserCheck } from 'lucide-react';
+import { X, Bus, AlertTriangle, Mail, Users, StickyNote } from 'lucide-react';
 
 interface Props {
   mesaId: string;
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
-  const { getAssignmentForSeat, getPersonaById, unassignSeat } = useSeatingEditor();
+  const { getAssignmentForSeat, getPersonaById, unassignSeat, hasNotas, getNotasForPersona } = useSeatingEditor();
   const assignment = getAssignmentForSeat(mesaId, sillaIndex);
   const persona = assignment ? getPersonaById(assignment.personaId) : undefined;
 
@@ -25,6 +25,8 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
 
   if (persona && assignment) {
     const initials = getPersonaInitials(persona);
+    const personaNotas = getNotasForPersona(persona.personaId);
+    const hasNote = personaNotas.length > 0;
 
     const tipoLabel = persona.tipo === 'principal'
       ? 'Invitado principal'
@@ -36,13 +38,14 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
       rechazado: { label: 'Rechazado', className: 'bg-red-500/10 text-red-700 border-red-200' },
     }[persona.asistencia];
 
-    // Seat circle color based on type
-    const seatColor =
-      persona.tipo === 'pareja' || persona.tipo === 'principal'
+    // Dark red for people with notes, otherwise type-based color
+    const seatColor = hasNote
+      ? 'bg-red-900 border-red-950'
+      : persona.tipo === 'pareja' || persona.tipo === 'principal'
         ? 'bg-pink-500/80 border-pink-600'
         : persona.tipo === 'hijo'
-        ? 'bg-orange-500/80 border-orange-600'
-        : 'bg-blue-500/80 border-blue-600';
+          ? 'bg-orange-500/80 border-orange-600'
+          : 'bg-blue-500/80 border-blue-600';
 
     return (
       <div ref={setNodeRef} style={style} className="relative group">
@@ -72,14 +75,12 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
 
             {/* Details */}
             <div className="p-3 space-y-2">
-              {/* Group */}
               <div className="flex items-center gap-2 text-xs">
                 <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 <span className="text-muted-foreground">Grupo:</span>
                 <span className="font-medium truncate">{persona.grupoNombre}</span>
               </div>
 
-              {/* Email */}
               {persona.email && (
                 <div className="flex items-center gap-2 text-xs">
                   <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -87,7 +88,6 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
                 </div>
               )}
 
-              {/* Bus */}
               <div className="flex items-center gap-2 text-xs">
                 <Bus className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 <span className="text-muted-foreground">Bus:</span>
@@ -100,14 +100,31 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
                 )}
               </div>
 
-              {/* Allergies */}
               {persona.alergias && (
-                <div className="flex items-start gap-2 text-xs bg-red-500/5 border border-red-200 rounded-md p-2 mt-1">
+                <div className="flex items-start gap-2 text-xs bg-red-500/5 border border-red-200 rounded-md p-2">
                   <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold text-red-700">Alergias: </span>
                     <span className="text-red-600">{persona.alergias}</span>
                   </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {personaNotas.length > 0 && (
+                <div className="space-y-1.5 mt-1">
+                  {personaNotas.map(nota => (
+                    <div key={nota.id} className="flex items-start gap-2 text-xs bg-red-900/5 border border-red-800/20 rounded-md p-2">
+                      <StickyNote className="w-3.5 h-3.5 text-red-800 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-red-900">Nota: </span>
+                        <span className="text-red-800">{nota.texto}</span>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(nota.fechaCreacion).toLocaleDateString('es-ES')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

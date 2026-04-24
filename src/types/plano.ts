@@ -8,8 +8,16 @@ export interface AsignacionSilla {
   personaId: string; // "grupoId:principal" or "grupoId:acompananteId"
 }
 
+export interface NotaInvitado {
+  id: string;
+  personaId: string;
+  texto: string;
+  fechaCreacion: string;
+}
+
 export interface PlanoMesas {
   asignaciones: AsignacionSilla[];
+  notas: NotaInvitado[];
   zoom: number;
   panX: number;
   panY: number;

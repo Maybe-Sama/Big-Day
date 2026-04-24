@@ -3,8 +3,9 @@ import { MesaConfig } from '@/types/mesas';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { DroppableSeat } from './DroppableSeat';
 import { TableEditPopover } from './TableEditPopover';
+import { TableInfoPopover } from './TableInfoPopover';
 import { getSeatPositions, getTableDimensions } from '@/lib/plano-utils';
-import { Settings2 } from 'lucide-react';
+import { Settings2, Users } from 'lucide-react';
 
 interface Props {
   mesa: MesaConfig;
@@ -48,7 +49,7 @@ export function DraggableTable({ mesa }: Props) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      {/* Table shape container — drag on the shape itself */}
+      {/* Table shape — drag handle */}
       <div
         {...attributes}
         {...listeners}
@@ -59,7 +60,6 @@ export function DraggableTable({ mesa }: Props) {
           selectTable(mesa.id);
         }}
       >
-        {/* Name + count + edit button inside the table */}
         <div className="flex flex-col items-center pointer-events-none">
           <span className="text-xs font-semibold text-foreground truncate max-w-[90%] text-center leading-tight">
             {mesa.nombre}
@@ -69,7 +69,7 @@ export function DraggableTable({ mesa }: Props) {
           </span>
         </div>
 
-        {/* Edit button — inside the table, stops drag propagation */}
+        {/* Edit button (gear) — bottom right inside table */}
         <TableEditPopover mesaId={mesa.id}>
           <button
             className="absolute bottom-1 right-1 flex items-center justify-center w-5 h-5 rounded-full bg-card/80 border shadow-sm hover:bg-accent transition-colors pointer-events-auto"
@@ -80,6 +80,18 @@ export function DraggableTable({ mesa }: Props) {
             <Settings2 className="w-2.5 h-2.5 text-muted-foreground" />
           </button>
         </TableEditPopover>
+
+        {/* Info button (people list) — bottom left inside table */}
+        <TableInfoPopover mesaId={mesa.id}>
+          <button
+            className="absolute bottom-1 left-1 flex items-center justify-center w-5 h-5 rounded-full bg-card/80 border shadow-sm hover:bg-accent transition-colors pointer-events-auto"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            title="Ver comensales"
+          >
+            <Users className="w-2.5 h-2.5 text-muted-foreground" />
+          </button>
+        </TableInfoPopover>
       </div>
 
       {/* Seats */}
