@@ -1,6 +1,7 @@
 import { TipoAcompanante } from './invitados';
 
 export type AsistenciaPlano = 'pendiente' | 'confirmado' | 'rechazado';
+export type LadoInvitado = 'novia' | 'novio';
 
 export interface AsignacionSilla {
   mesaId: string;
@@ -18,6 +19,7 @@ export interface NotaInvitado {
 export interface PlanoMesas {
   asignaciones: AsignacionSilla[];
   notas: NotaInvitado[];
+  gruposNovio: string[]; // grupoIds that belong to novio's side
   zoom: number;
   panX: number;
   panY: number;
@@ -31,6 +33,7 @@ export interface PersonaPlano {
   tipo: 'principal' | TipoAcompanante;
   grupoId: string;
   grupoNombre: string;
+  lado: LadoInvitado;
   parejaId?: string;
   parejaVinculada: boolean;
   asistencia: AsistenciaPlano;

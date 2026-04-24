@@ -1,14 +1,15 @@
 import { GrupoInvitados } from '@/types/invitados';
-import { PersonaPlano, AsignacionSilla } from '@/types/plano';
+import { PersonaPlano, AsignacionSilla, LadoInvitado } from '@/types/plano';
 
 /** Flatten GrupoInvitados[] into individual PersonaPlano[] for the seating editor */
-export function flattenGrupos(grupos: GrupoInvitados[]): PersonaPlano[] {
+export function flattenGrupos(grupos: GrupoInvitados[], gruposNovio: Set<string> = new Set()): PersonaPlano[] {
   const personas: PersonaPlano[] = [];
 
   for (const grupo of grupos) {
     const principalId = `${grupo.id}:principal`;
     const parejaAc = grupo.acompanantes.find(ac => ac.tipo === 'pareja' && ac.asistencia === 'confirmado');
     const parejaId = parejaAc ? `${grupo.id}:${parejaAc.id}` : undefined;
+    const lado: LadoInvitado = gruposNovio.has(grupo.id) ? 'novio' : 'novia';
 
     // Only include confirmed guests
     if (grupo.invitadoPrincipal.asistencia !== 'confirmado') continue;
@@ -21,6 +22,7 @@ export function flattenGrupos(grupos: GrupoInvitados[]): PersonaPlano[] {
       tipo: 'principal',
       grupoId: grupo.id,
       grupoNombre: `${grupo.invitadoPrincipal.nombre} ${grupo.invitadoPrincipal.apellidos}`,
+      lado,
       parejaId,
       parejaVinculada: !!parejaId,
       asistencia: grupo.invitadoPrincipal.asistencia,
@@ -41,6 +43,7 @@ export function flattenGrupos(grupos: GrupoInvitados[]): PersonaPlano[] {
         tipo: ac.tipo,
         grupoId: grupo.id,
         grupoNombre: `${grupo.invitadoPrincipal.nombre} ${grupo.invitadoPrincipal.apellidos}`,
+        lado,
         parejaId: ac.tipo === 'pareja' ? principalId : undefined,
         parejaVinculada: ac.tipo === 'pareja',
         asistencia: ac.asistencia,

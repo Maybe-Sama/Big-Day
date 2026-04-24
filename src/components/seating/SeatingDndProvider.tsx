@@ -23,6 +23,8 @@ export function SeatingDndProvider({ children }: { children: React.ReactNode }) 
     assignSeat,
     moveSeat,
     moveTable,
+    moveSelectedTables,
+    selectedMesaIds,
     mesas,
     getPersonaById,
     getAssignmentForPersona,
@@ -59,15 +61,18 @@ export function SeatingDndProvider({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    // Table drag — move position
+    // Table drag — move position (move all selected if part of selection)
     if (activeData.type === 'table' && activeData.mesaId) {
-      const mesa = mesas.find(m => m.id === activeData.mesaId);
-      if (mesa) {
-        moveTable(
-          activeData.mesaId,
-          (mesa.x ?? 0) + delta.x / zoom,
-          (mesa.y ?? 0) + delta.y / zoom
-        );
+      const dx = delta.x / zoom;
+      const dy = delta.y / zoom;
+      if (selectedMesaIds.has(activeData.mesaId) && selectedMesaIds.size > 1) {
+        // Move all selected tables together
+        moveSelectedTables(dx, dy);
+      } else {
+        const mesa = mesas.find(m => m.id === activeData.mesaId);
+        if (mesa) {
+          moveTable(activeData.mesaId, (mesa.x ?? 0) + dx, (mesa.y ?? 0) + dy);
+        }
       }
       setActiveDrag(null);
       return;

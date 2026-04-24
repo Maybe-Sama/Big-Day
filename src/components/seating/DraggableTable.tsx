@@ -12,8 +12,8 @@ interface Props {
 }
 
 export function DraggableTable({ mesa }: Props) {
-  const { selectedMesaId, selectTable, asignaciones } = useSeatingEditor();
-  const isSelected = selectedMesaId === mesa.id;
+  const { selectedMesaIds, selectTable, asignaciones } = useSeatingEditor();
+  const isSelected = selectedMesaIds.has(mesa.id);
   const forma = mesa.forma || 'poligonal';
   const isVertical = forma === 'rectangular' && mesa.rotacion === 90;
 
@@ -57,7 +57,7 @@ export function DraggableTable({ mesa }: Props) {
         style={{ left: padding, top: padding, width, height }}
         onClick={(e) => {
           e.stopPropagation();
-          selectTable(mesa.id);
+          selectTable(mesa.id, e.ctrlKey || e.metaKey);
         }}
       >
         <div className="flex flex-col items-center pointer-events-none">

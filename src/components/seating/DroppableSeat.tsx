@@ -38,14 +38,14 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
       rechazado: { label: 'Rechazado', className: 'bg-red-500/10 text-red-700 border-red-200' },
     }[persona.asistencia];
 
-    // Dark red for people with notes, otherwise type-based color
+    // Dark red for people with notes, otherwise lado-based color
     const seatColor = hasNote
       ? 'bg-red-900 border-red-950'
-      : persona.tipo === 'pareja' || persona.tipo === 'principal'
-        ? 'bg-pink-500/80 border-pink-600'
-        : persona.tipo === 'hijo'
-          ? 'bg-orange-500/80 border-orange-600'
-          : 'bg-blue-500/80 border-blue-600';
+      : persona.tipo === 'hijo'
+        ? 'bg-orange-500/80 border-orange-600'
+        : persona.lado === 'novio'
+          ? 'bg-blue-500/80 border-blue-600'
+          : 'bg-pink-500/80 border-pink-600';
 
     return (
       <div ref={setNodeRef} style={style} className="relative group">

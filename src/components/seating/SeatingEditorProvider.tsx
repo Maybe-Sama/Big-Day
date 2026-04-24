@@ -28,14 +28,19 @@ interface SeatingEditorContextValue {
   panY: number;
   isLoading: boolean;
   saveStatus: 'saved' | 'saving' | 'error';
-  selectedMesaId: string | null;
+  selectedMesaIds: Set<string>;
+  gruposNovioSet: Set<string>;
   unassigned: PersonaPlano[];
   // Mesa actions
   addTable: (forma: 'poligonal' | 'rectangular', capacidad: number) => void;
   updateTable: (mesaId: string, updates: Partial<MesaConfig>) => void;
   deleteTable: (mesaId: string) => void;
   moveTable: (mesaId: string, x: number, y: number) => void;
-  selectTable: (mesaId: string | null) => void;
+  moveSelectedTables: (dx: number, dy: number) => void;
+  selectTable: (mesaId: string | null, addToSelection?: boolean) => void;
+  clearSelection: () => void;
+  // Lado
+  toggleGrupoLado: (grupoId: string) => void;
   // Seat actions
   assignSeat: (personaId: string, mesaId: string, sillaIndex: number) => void;
   unassignSeat: (personaId: string) => void;
@@ -89,7 +94,8 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
   const [panY, setPanY] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
-  const [selectedMesaId, setSelectedMesaId] = useState<string | null>(null);
+  const [selectedMesaIds, setSelectedMesaIds] = useState<Set<string>>(new Set());
+  const [gruposNovioSet, setGruposNovioSet] = useState<Set<string>>(new Set());
 
   // History
   const [undoStack, setUndoStack] = useState<HistoryEntry[]>([]);
@@ -135,7 +141,10 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
       ]);
 
       setGrupos(gruposData);
-      setPersonas(flattenGrupos(gruposData));
+
+      const novioSet = new Set<string>(plano?.gruposNovio || []);
+      setGruposNovioSet(novioSet);
+      setPersonas(flattenGrupos(gruposData, novioSet));
 
       const mesasData = configMesas?.mesas || [];
       const mesasWithPositions = mesasData.map((m, i) => ({
@@ -176,10 +185,12 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
       const currentAsignaciones = asignacionesRef.current;
       const currentGrupos = gruposRef.current;
       const currentNotas = notasRef.current;
+      const currentGruposNovio = gruposNovioRef.current;
 
       const plano: PlanoMesas = {
         asignaciones: currentAsignaciones,
         notas: currentNotas,
+        gruposNovio: [...currentGruposNovio],
         zoom: zoomRef.current,
         panX: panXRef.current,
         panY: panYRef.current,
@@ -212,6 +223,7 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
   const asignacionesRef = useRef(asignaciones);
   const gruposRef = useRef(grupos);
   const notasRef = useRef(notas);
+  const gruposNovioRef = useRef(gruposNovioSet);
   const zoomRef = useRef(zoom);
   const panXRef = useRef(panX);
   const panYRef = useRef(panY);
@@ -220,6 +232,7 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
   useEffect(() => { asignacionesRef.current = asignaciones; }, [asignaciones]);
   useEffect(() => { gruposRef.current = grupos; }, [grupos]);
   useEffect(() => { notasRef.current = notas; }, [notas]);
+  useEffect(() => { gruposNovioRef.current = gruposNovioSet; }, [gruposNovioSet]);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { panXRef.current = panX; }, [panX]);
   useEffect(() => { panYRef.current = panY; }, [panY]);
@@ -294,7 +307,11 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
     pushHistory();
     setMesas(prev => prev.filter(m => m.id !== mesaId));
     setAsignaciones(prev => prev.filter(a => a.mesaId !== mesaId));
-    setSelectedMesaId(prev => prev === mesaId ? null : prev);
+    setSelectedMesaIds(prev => {
+      const next = new Set(prev);
+      next.delete(mesaId);
+      return next;
+    });
     triggerAutosave();
   }, [triggerAutosave]);
 
@@ -303,8 +320,33 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
     triggerAutosave();
   }, [triggerAutosave]);
 
-  const selectTable = useCallback((mesaId: string | null) => {
-    setSelectedMesaId(mesaId);
+  const moveSelectedTables = useCallback((dx: number, dy: number) => {
+    setMesas(prev => prev.map(m => {
+      if (!selectedMesaIds.has(m.id)) return m;
+      return { ...m, x: (m.x ?? 0) + dx, y: (m.y ?? 0) + dy };
+    }));
+    triggerAutosave();
+  }, [selectedMesaIds, triggerAutosave]);
+
+  const selectTable = useCallback((mesaId: string | null, addToSelection = false) => {
+    if (mesaId === null) {
+      setSelectedMesaIds(new Set());
+      return;
+    }
+    if (addToSelection) {
+      setSelectedMesaIds(prev => {
+        const next = new Set(prev);
+        if (next.has(mesaId)) next.delete(mesaId);
+        else next.add(mesaId);
+        return next;
+      });
+    } else {
+      setSelectedMesaIds(new Set([mesaId]));
+    }
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedMesaIds(new Set());
   }, []);
 
   // ── Seat actions ──
@@ -345,6 +387,20 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
       return p;
     }));
   }, []);
+
+  // ── Lado (novio/novia) ──
+
+  const toggleGrupoLado = useCallback((grupoId: string) => {
+    setGruposNovioSet(prev => {
+      const next = new Set(prev);
+      if (next.has(grupoId)) next.delete(grupoId);
+      else next.add(grupoId);
+      // Re-flatten personas with new sides
+      setPersonas(flattenGrupos(gruposRef.current, next));
+      return next;
+    });
+    triggerAutosave();
+  }, [triggerAutosave]);
 
   // ── Notes ──
 
@@ -476,8 +532,9 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
 
   const value: SeatingEditorContextValue = {
     mesas, personas, asignaciones, grupos, notas,
-    zoom, panX, panY, isLoading, saveStatus, selectedMesaId, unassigned,
-    addTable, updateTable, deleteTable, moveTable, selectTable,
+    zoom, panX, panY, isLoading, saveStatus, selectedMesaIds, gruposNovioSet, unassigned,
+    addTable, updateTable, deleteTable, moveTable, moveSelectedTables, selectTable, clearSelection,
+    toggleGrupoLado,
     assignSeat, unassignSeat, moveSeat, toggleParejaLink,
     addNota, deleteNota, getNotasForPersona, hasNotas,
     setZoom, setPan, undo, redo,

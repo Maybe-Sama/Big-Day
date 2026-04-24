@@ -3,7 +3,7 @@ import { useSeatingEditor } from './SeatingEditorProvider';
 import { DraggableTable } from './DraggableTable';
 
 export function SeatingCanvas() {
-  const { mesas, zoom, panX, panY, setZoom, setPan, selectTable } = useSeatingEditor();
+  const { mesas, zoom, panX, panY, setZoom, setPan, clearSelection } = useSeatingEditor();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const lastPanRef = useRef({ x: 0, y: 0 });
@@ -32,11 +32,11 @@ export function SeatingCanvas() {
   }, []);
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    // Deselect table when clicking empty canvas
+    // Deselect all tables when clicking empty canvas
     if (e.target === e.currentTarget || e.target === containerRef.current?.firstElementChild) {
-      selectTable(null);
+      clearSelection();
     }
-  }, [selectTable]);
+  }, [clearSelection]);
 
   return (
     <div

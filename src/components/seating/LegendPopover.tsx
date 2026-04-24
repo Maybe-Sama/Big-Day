@@ -14,24 +14,24 @@ export function LegendPopover() {
         <h4 className="font-semibold text-sm mb-3">Leyenda</h4>
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-primary/80 border-2 border-primary flex items-center justify-center text-[7px] text-primary-foreground font-bold">JL</div>
-            <span>Silla ocupada</span>
+            <div className="w-5 h-5 rounded-full bg-pink-500/80 border-2 border-pink-600 flex items-center justify-center text-[7px] text-white font-bold">AB</div>
+            <span>Lado novia</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-blue-500/80 border-2 border-blue-600 flex items-center justify-center text-[7px] text-white font-bold">CD</div>
+            <span>Lado novio</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-orange-500/80 border-2 border-orange-600 flex items-center justify-center text-[7px] text-white font-bold">EF</div>
+            <span>Hijo/a</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-red-900 border-2 border-red-950 flex items-center justify-center text-[7px] text-white font-bold">GH</div>
+            <span>Con nota asociada</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-full border-2 border-dashed border-muted-foreground/30" />
             <span>Silla libre (soltar aqui)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-pink-400" />
-            <span>Pareja (se arrastran juntos)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-400" />
-            <span>Individual</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-orange-400" />
-            <span>Hijo/a</span>
           </div>
 
           <hr className="my-2" />
@@ -40,9 +40,8 @@ export function LegendPopover() {
           <div className="space-y-1">
             <div className="flex justify-between"><span>Arrastrar persona a silla</span><span className="text-muted-foreground">Asignar</span></div>
             <div className="flex justify-between"><span>Arrastrar centro de mesa</span><span className="text-muted-foreground">Mover mesa</span></div>
-            <div className="flex justify-between"><span>Click en mesa</span><span className="text-muted-foreground">Editar</span></div>
-            <div className="flex justify-between"><span>Scroll rueda</span><span className="text-muted-foreground">Zoom</span></div>
-            <div className="flex justify-between"><span>Click + arrastrar fondo</span><span className="text-muted-foreground">Mover vista</span></div>
+            <div className="flex justify-between"><span>Ctrl+Click en mesas</span><span className="text-muted-foreground">Seleccion multiple</span></div>
+            <div className="flex justify-between"><span>Click en punto de color</span><span className="text-muted-foreground">Cambiar lado</span></div>
             <div className="flex justify-between"><span>Ctrl+Z / Ctrl+Y</span><span className="text-muted-foreground">Deshacer / Rehacer</span></div>
           </div>
         </div>
