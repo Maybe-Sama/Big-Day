@@ -1,5 +1,4 @@
 import { useDraggable } from '@dnd-kit/core';
-import { useState } from 'react';
 import { MesaConfig } from '@/types/mesas';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { DroppableSeat } from './DroppableSeat';
@@ -16,7 +15,12 @@ export function DraggableTable({ mesa }: Props) {
   const { selectedMesaId, selectTable, asignaciones } = useSeatingEditor();
   const isSelected = selectedMesaId === mesa.id;
   const forma = mesa.forma || 'poligonal';
-  const { width, height } = getTableDimensions(forma, mesa.capacidad);
+  const isVertical = forma === 'rectangular' && mesa.rotacion === 90;
+
+  // Get base dimensions, then swap if vertical
+  const baseDims = getTableDimensions(forma, mesa.capacidad);
+  const width = isVertical ? baseDims.height : baseDims.width;
+  const height = isVertical ? baseDims.width : baseDims.height;
   const seatPositions = getSeatPositions(forma, mesa.capacidad, width, height);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -70,7 +74,7 @@ export function DraggableTable({ mesa }: Props) {
         />
       </div>
 
-      {/* Edit button - separate from drag, no conflict */}
+      {/* Edit button */}
       <TableEditPopover mesaId={mesa.id}>
         <button
           className="absolute flex items-center justify-center w-6 h-6 rounded-full bg-card border shadow-sm hover:bg-accent transition-colors z-10"

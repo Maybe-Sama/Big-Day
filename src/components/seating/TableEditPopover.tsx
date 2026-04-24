@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Trash2 } from 'lucide-react';
+import { Trash2, RotateCw } from 'lucide-react';
 
 interface Props {
   mesaId: string;
@@ -65,6 +65,31 @@ export function TableEditPopover({ mesaId, children }: Props) {
               </Button>
             </div>
           </div>
+
+          {/* Rotation - only for rectangular */}
+          {mesa.forma === 'rectangular' && (
+            <div>
+              <Label className="text-xs">Orientacion</Label>
+              <div className="flex gap-2 mt-1">
+                <Button
+                  variant={!mesa.rotacion ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                  onClick={() => updateTable(mesaId, { rotacion: 0 })}
+                >
+                  Horizontal
+                </Button>
+                <Button
+                  variant={mesa.rotacion === 90 ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                  onClick={() => updateTable(mesaId, { rotacion: 90 })}
+                >
+                  Vertical
+                </Button>
+              </div>
+            </div>
+          )}
 
           <hr />
 

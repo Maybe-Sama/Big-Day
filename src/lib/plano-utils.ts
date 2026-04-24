@@ -90,26 +90,46 @@ export function getSeatPositions(
       });
     }
   } else {
-    // Rectangular: seats along top and bottom, optionally on ends
-    const seatsPerLongSide = Math.max(2, Math.floor((capacidad - 0) / 2));
+    // Rectangular: seats along the two long sides, optionally on short ends
+    const isVertical = tableHeight > tableWidth;
+    const longSideLen = isVertical ? tableHeight : tableWidth;
+    const shortSideLen = isVertical ? tableWidth : tableHeight;
+    const seatsPerLongSide = Math.max(2, Math.floor(capacidad / 2));
     const remaining = capacidad - seatsPerLongSide * 2;
-    const spacing = tableWidth / (seatsPerLongSide + 1);
+    const spacing = longSideLen / (seatsPerLongSide + 1);
 
-    // Top row
-    for (let i = 0; i < seatsPerLongSide; i++) {
-      seats.push({ x: spacing * (i + 1), y: -gap });
-    }
-    // Bottom row
-    for (let i = 0; i < seatsPerLongSide; i++) {
-      seats.push({ x: spacing * (i + 1), y: tableHeight + gap });
-    }
-    // Left end
-    if (remaining >= 1) {
-      seats.push({ x: -gap, y: tableHeight / 2 });
-    }
-    // Right end
-    if (remaining >= 2) {
-      seats.push({ x: tableWidth + gap, y: tableHeight / 2 });
+    if (isVertical) {
+      // Vertical: seats on left and right sides
+      for (let i = 0; i < seatsPerLongSide; i++) {
+        seats.push({ x: -gap, y: spacing * (i + 1) });
+      }
+      for (let i = 0; i < seatsPerLongSide; i++) {
+        seats.push({ x: tableWidth + gap, y: spacing * (i + 1) });
+      }
+      // Top end
+      if (remaining >= 1) {
+        seats.push({ x: tableWidth / 2, y: -gap });
+      }
+      // Bottom end
+      if (remaining >= 2) {
+        seats.push({ x: tableWidth / 2, y: tableHeight + gap });
+      }
+    } else {
+      // Horizontal: seats on top and bottom
+      for (let i = 0; i < seatsPerLongSide; i++) {
+        seats.push({ x: spacing * (i + 1), y: -gap });
+      }
+      for (let i = 0; i < seatsPerLongSide; i++) {
+        seats.push({ x: spacing * (i + 1), y: tableHeight + gap });
+      }
+      // Left end
+      if (remaining >= 1) {
+        seats.push({ x: -gap, y: tableHeight / 2 });
+      }
+      // Right end
+      if (remaining >= 2) {
+        seats.push({ x: tableWidth + gap, y: tableHeight / 2 });
+      }
     }
   }
 
