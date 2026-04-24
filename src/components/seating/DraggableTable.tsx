@@ -1,10 +1,12 @@
 import { useDraggable } from '@dnd-kit/core';
+import { useState } from 'react';
 import { MesaConfig } from '@/types/mesas';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { DroppableSeat } from './DroppableSeat';
 import { TableShape } from './TableShape';
 import { TableEditPopover } from './TableEditPopover';
 import { getSeatPositions, getTableDimensions } from '@/lib/plano-utils';
+import { Settings2 } from 'lucide-react';
 
 interface Props {
   mesa: MesaConfig;
@@ -24,7 +26,6 @@ export function DraggableTable({ mesa }: Props) {
 
   const occupiedCount = asignaciones.filter(a => a.mesaId === mesa.id).length;
 
-  // Calculate bounding box to include seats
   const padding = 40;
   const containerWidth = width + padding * 2;
   const containerHeight = height + padding * 2;
@@ -42,33 +43,46 @@ export function DraggableTable({ mesa }: Props) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      {/* Table shape - drag handle + click to edit */}
+      {/* Table shape - DRAG handle only */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute cursor-grab active:cursor-grabbing"
+        style={{
+          left: padding,
+          top: padding,
+          width,
+          height,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          selectTable(mesa.id);
+        }}
+      >
+        <TableShape
+          forma={forma}
+          width={width}
+          height={height}
+          nombre={mesa.nombre}
+          occupiedCount={occupiedCount}
+          capacidad={mesa.capacidad}
+          isSelected={isSelected}
+        />
+      </div>
+
+      {/* Edit button - separate from drag, no conflict */}
       <TableEditPopover mesaId={mesa.id}>
-        <div
-          {...attributes}
-          {...listeners}
-          className="absolute cursor-grab active:cursor-grabbing"
+        <button
+          className="absolute flex items-center justify-center w-6 h-6 rounded-full bg-card border shadow-sm hover:bg-accent transition-colors z-10"
           style={{
-            left: padding,
-            top: padding,
-            width,
-            height,
+            left: padding + width - 4,
+            top: padding - 4,
           }}
-          onClick={(e) => {
-            e.stopPropagation();
-            selectTable(mesa.id);
-          }}
+          onClick={(e) => e.stopPropagation()}
+          title="Editar mesa"
         >
-          <TableShape
-            forma={forma}
-            width={width}
-            height={height}
-            nombre={mesa.nombre}
-            occupiedCount={occupiedCount}
-            capacidad={mesa.capacidad}
-            isSelected={isSelected}
-          />
-        </div>
+          <Settings2 className="w-3 h-3 text-muted-foreground" />
+        </button>
       </TableEditPopover>
 
       {/* Seats around the table */}

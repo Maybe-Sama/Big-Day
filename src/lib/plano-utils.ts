@@ -22,6 +22,9 @@ export function flattenGrupos(grupos: GrupoInvitados[]): PersonaPlano[] {
       parejaVinculada: !!parejaId,
       asistencia: grupo.invitadoPrincipal.asistencia,
       alergias: grupo.invitadoPrincipal.alergias,
+      email: grupo.invitadoPrincipal.email,
+      confirmacionBus: grupo.invitadoPrincipal.confirmacion_bus ?? grupo.confirmacion_bus,
+      ubicacionBus: grupo.ubicacion_bus,
     });
 
     // Add companions
@@ -38,6 +41,8 @@ export function flattenGrupos(grupos: GrupoInvitados[]): PersonaPlano[] {
         parejaVinculada: ac.tipo === 'pareja',
         asistencia: ac.asistencia,
         alergias: ac.alergias,
+        confirmacionBus: ac.confirmacion_bus ?? grupo.confirmacion_bus,
+        ubicacionBus: grupo.ubicacion_bus,
       });
     }
   }

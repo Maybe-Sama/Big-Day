@@ -1,31 +1,60 @@
-import { Plus, Undo2, Redo2 } from 'lucide-react';
+import { Plus, Undo2, Redo2, Circle, RectangleHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { LegendPopover } from './LegendPopover';
+
+const CAPACIDADES = [4, 6, 8, 10, 12, 15, 20];
 
 export function CanvasToolbar() {
   const { addTable, undo, redo, canUndo, canRedo } = useSeatingEditor();
 
   return (
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-card/95 backdrop-blur border rounded-xl px-2 py-1.5 shadow-md">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 text-xs gap-1.5"
-        onClick={() => addTable('poligonal', 8)}
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Poligonal
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 text-xs gap-1.5"
-        onClick={() => addTable('rectangular', 10)}
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Rectangular
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5">
+            <Circle className="w-3.5 h-3.5" />
+            <Plus className="w-3 h-3" />
+            Poligonal
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel className="text-xs">Plazas</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {CAPACIDADES.map(cap => (
+            <DropdownMenuItem key={cap} onClick={() => addTable('poligonal', cap)} className="text-sm">
+              {cap} plazas
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5">
+            <RectangleHorizontal className="w-3.5 h-3.5" />
+            <Plus className="w-3 h-3" />
+            Rectangular
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel className="text-xs">Plazas</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {CAPACIDADES.map(cap => (
+            <DropdownMenuItem key={cap} onClick={() => addTable('rectangular', cap)} className="text-sm">
+              {cap} plazas
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="w-px h-5 bg-border mx-1" />
 

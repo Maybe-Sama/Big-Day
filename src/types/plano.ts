@@ -27,4 +27,7 @@ export interface PersonaPlano {
   parejaVinculada: boolean;
   asistencia: AsistenciaPlano;
   alergias?: string;
+  email?: string;
+  confirmacionBus?: boolean;
+  ubicacionBus?: string;
 }

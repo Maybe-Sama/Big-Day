@@ -1,8 +1,11 @@
 import { useDroppable } from '@dnd-kit/core';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { getPersonaInitials } from '@/lib/plano-utils';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { X } from 'lucide-react';
+import { getTipoAcompananteLabel } from '@/types/invitados';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { X, Bus, AlertTriangle, Mail, Users, UserCheck } from 'lucide-react';
 
 interface Props {
   mesaId: string;
@@ -20,44 +23,115 @@ export function DroppableSeat({ mesaId, sillaIndex, style }: Props) {
     data: { type: 'seat', mesaId, sillaIndex },
   });
 
-  const isOccupied = !!persona;
-
-  if (isOccupied && persona) {
+  if (persona && assignment) {
     const initials = getPersonaInitials(persona);
-    const tipoPillColor =
+
+    const tipoLabel = persona.tipo === 'principal'
+      ? 'Invitado principal'
+      : getTipoAcompananteLabel(persona.tipo);
+
+    const asistenciaConfig = {
+      confirmado: { label: 'Confirmado', className: 'bg-green-500/10 text-green-700 border-green-200' },
+      pendiente: { label: 'Pendiente', className: 'bg-yellow-500/10 text-yellow-700 border-yellow-200' },
+      rechazado: { label: 'Rechazado', className: 'bg-red-500/10 text-red-700 border-red-200' },
+    }[persona.asistencia];
+
+    // Seat circle color based on type
+    const seatColor =
       persona.tipo === 'pareja' || persona.tipo === 'principal'
-        ? 'bg-pink-500/20 text-pink-300'
+        ? 'bg-pink-500/80 border-pink-600'
         : persona.tipo === 'hijo'
-        ? 'bg-orange-500/20 text-orange-300'
-        : 'bg-blue-500/20 text-blue-300';
+        ? 'bg-orange-500/80 border-orange-600'
+        : 'bg-blue-500/80 border-blue-600';
 
     return (
       <div ref={setNodeRef} style={style} className="relative group">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
               className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold cursor-pointer transition-all
-                bg-primary/80 text-primary-foreground border-2 border-primary
-                ${isOver ? 'ring-2 ring-yellow-400 scale-110' : 'hover:scale-105'}`}
+                ${seatColor} text-white border-2
+                ${isOver ? 'ring-2 ring-yellow-400 scale-110' : 'hover:scale-110 hover:shadow-md'}`}
             >
               {initials}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-0" side="top" sideOffset={8}>
+            {/* Header */}
+            <div className="p-3 border-b bg-muted/30">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="font-semibold text-sm">{persona.nombre} {persona.apellidos}</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">{tipoLabel}</p>
+                </div>
+                <Badge variant="outline" className={`text-[10px] h-5 shrink-0 ${asistenciaConfig.className}`}>
+                  {asistenciaConfig.label}
+                </Badge>
+              </div>
             </div>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
-            <p className="font-semibold">{persona.nombre} {persona.apellidos}</p>
-            <p className={`text-[10px] ${tipoPillColor} px-1 rounded inline-block mt-0.5`}>
-              {persona.tipo === 'principal' ? 'Invitado principal' : persona.tipo}
-            </p>
-            {persona.alergias && (
-              <p className="text-[10px] text-red-400 mt-0.5">Alergias: {persona.alergias}</p>
-            )}
-          </TooltipContent>
-        </Tooltip>
-        {/* Unassign button on hover */}
+
+            {/* Details */}
+            <div className="p-3 space-y-2">
+              {/* Group */}
+              <div className="flex items-center gap-2 text-xs">
+                <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Grupo:</span>
+                <span className="font-medium truncate">{persona.grupoNombre}</span>
+              </div>
+
+              {/* Email */}
+              {persona.email && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">{persona.email}</span>
+                </div>
+              )}
+
+              {/* Bus */}
+              <div className="flex items-center gap-2 text-xs">
+                <Bus className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Bus:</span>
+                {persona.confirmacionBus ? (
+                  <span className="font-medium text-green-700">
+                    {persona.ubicacionBus || 'Confirmado'}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">No</span>
+                )}
+              </div>
+
+              {/* Allergies */}
+              {persona.alergias && (
+                <div className="flex items-start gap-2 text-xs bg-red-500/5 border border-red-200 rounded-md p-2 mt-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-red-700">Alergias: </span>
+                    <span className="text-red-600">{persona.alergias}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="p-2 border-t bg-muted/20">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => unassignSeat(assignment.personaId)}
+              >
+                <X className="w-3 h-3 mr-1.5" />
+                Quitar de esta silla
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Quick unassign on hover */}
         <button
           onClick={(e) => {
             e.stopPropagation();
-            unassignSeat(assignment!.personaId);
+            unassignSeat(assignment.personaId);
           }}
           className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
         >
