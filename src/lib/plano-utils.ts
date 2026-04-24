@@ -84,10 +84,20 @@ export function getSeatPositions(
   forma: 'poligonal' | 'rectangular',
   capacidad: number,
   tableWidth: number,
-  tableHeight: number
+  tableHeight: number,
+  esNupcial = false
 ): { x: number; y: number }[] {
   const seats: { x: number; y: number }[] = [];
   const gap = 20; // distance from table edge to seat center
+
+  // Nupcial: all seats on one side only (top row for horizontal)
+  if (esNupcial) {
+    const spacing = tableWidth / (capacidad + 1);
+    for (let i = 0; i < capacidad; i++) {
+      seats.push({ x: spacing * (i + 1), y: -gap });
+    }
+    return seats;
+  }
 
   if (forma === 'poligonal') {
     const cx = tableWidth / 2;

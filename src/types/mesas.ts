@@ -6,6 +6,7 @@ export interface MesaConfig {
   capitanId?: string; // Formato: "grupoId:principal" o "grupoId:acompananteId" para identificar al miembro específico
   token?: string; // Token único para acceder a la página de la mesa mediante QR
   forma?: 'poligonal' | 'rectangular';
+  esNupcial?: boolean;
   x?: number;
   y?: number;
   rotacion?: number;

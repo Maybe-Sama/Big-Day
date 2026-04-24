@@ -20,7 +20,7 @@ export function DraggableTable({ mesa }: Props) {
   const baseDims = getTableDimensions(forma, mesa.capacidad);
   const width = isVertical ? baseDims.height : baseDims.width;
   const height = isVertical ? baseDims.width : baseDims.height;
-  const seatPositions = getSeatPositions(forma, mesa.capacidad, width, height);
+  const seatPositions = getSeatPositions(forma, mesa.capacidad, width, height, mesa.esNupcial);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `table-${mesa.id}`,

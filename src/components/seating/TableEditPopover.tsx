@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Trash2, RotateCw } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Props {
   mesaId: string;
@@ -64,6 +65,22 @@ export function TableEditPopover({ mesaId, children }: Props) {
                 Rectangular
               </Button>
             </div>
+          </div>
+
+          {/* Mesa nupcial */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`nupcial-${mesaId}`}
+              checked={!!mesa.esNupcial}
+              onCheckedChange={(checked) => updateTable(mesaId, {
+                esNupcial: !!checked,
+                forma: checked ? 'rectangular' : mesa.forma,
+                capacidad: checked ? 6 : mesa.capacidad,
+              })}
+            />
+            <Label htmlFor={`nupcial-${mesaId}`} className="text-xs cursor-pointer">
+              Mesa nupcial (6 plazas, un solo lado)
+            </Label>
           </div>
 
           {/* Rotation - only for rectangular */}

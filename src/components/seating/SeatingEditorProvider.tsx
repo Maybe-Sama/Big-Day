@@ -32,7 +32,7 @@ interface SeatingEditorContextValue {
   novioDesdeGrupoId: string | undefined;
   unassigned: PersonaPlano[];
   // Mesa actions
-  addTable: (forma: 'poligonal' | 'rectangular', capacidad: number) => void;
+  addTable: (forma: 'poligonal' | 'rectangular', capacidad: number, extra?: Partial<MesaConfig>) => void;
   updateTable: (mesaId: string, updates: Partial<MesaConfig>) => void;
   deleteTable: (mesaId: string) => void;
   moveTable: (mesaId: string, x: number, y: number) => void;
@@ -276,15 +276,16 @@ export function SeatingEditorProvider({ children }: { children: React.ReactNode 
 
   // ── Mesa actions ──
 
-  const addTable = useCallback((forma: 'poligonal' | 'rectangular', capacidad: number) => {
+  const addTable = useCallback((forma: 'poligonal' | 'rectangular', capacidad: number, extra?: Partial<MesaConfig>) => {
     pushHistory();
     const newMesa: MesaConfig = {
       id: nanoid(8),
-      nombre: `Mesa ${mesasRef.current.length + 1}`,
+      nombre: extra?.nombre || `Mesa ${mesasRef.current.length + 1}`,
       capacidad,
       forma,
       x: 200 + Math.random() * 200,
       y: 200 + Math.random() * 200,
+      ...extra,
     };
     setMesas(prev => [...prev, newMesa]);
     triggerAutosave();

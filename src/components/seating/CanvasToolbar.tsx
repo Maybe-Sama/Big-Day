@@ -1,4 +1,4 @@
-import { Plus, Undo2, Redo2, Circle, RectangleHorizontal } from 'lucide-react';
+import { Plus, Undo2, Redo2, Circle, RectangleHorizontal, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -55,6 +55,16 @@ export function CanvasToolbar() {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 text-xs gap-1.5"
+        onClick={() => addTable('rectangular', 6, { esNupcial: true, nombre: 'Mesa Nupcial' })}
+      >
+        <Crown className="w-3.5 h-3.5" />
+        Nupcial
+      </Button>
 
       <div className="w-px h-5 bg-border mx-1" />
 
