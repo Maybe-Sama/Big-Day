@@ -3,6 +3,7 @@ import { MesaConfig } from '@/types/mesas';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { DroppableSeat } from './DroppableSeat';
 import { TableShape } from './TableShape';
+import { TableEditPopover } from './TableEditPopover';
 import { getSeatPositions, getTableDimensions } from '@/lib/plano-utils';
 
 interface Props {
@@ -24,14 +25,14 @@ export function DraggableTable({ mesa }: Props) {
   const occupiedCount = asignaciones.filter(a => a.mesaId === mesa.id).length;
 
   // Calculate bounding box to include seats
-  const padding = 40; // space for seats around table
+  const padding = 40;
   const containerWidth = width + padding * 2;
   const containerHeight = height + padding * 2;
 
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: (mesa.x ?? 0) + (transform?.x ?? 0) / 1, // transform is already in canvas coords
-    top: (mesa.y ?? 0) + (transform?.y ?? 0) / 1,
+    left: (mesa.x ?? 0) + (transform?.x ?? 0),
+    top: (mesa.y ?? 0) + (transform?.y ?? 0),
     width: containerWidth,
     height: containerHeight,
     opacity: isDragging ? 0.7 : 1,
@@ -41,32 +42,34 @@ export function DraggableTable({ mesa }: Props) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      {/* Table shape - drag handle */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute cursor-grab active:cursor-grabbing"
-        style={{
-          left: padding,
-          top: padding,
-          width,
-          height,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          selectTable(mesa.id);
-        }}
-      >
-        <TableShape
-          forma={forma}
-          width={width}
-          height={height}
-          nombre={mesa.nombre}
-          occupiedCount={occupiedCount}
-          capacidad={mesa.capacidad}
-          isSelected={isSelected}
-        />
-      </div>
+      {/* Table shape - drag handle + click to edit */}
+      <TableEditPopover mesaId={mesa.id}>
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute cursor-grab active:cursor-grabbing"
+          style={{
+            left: padding,
+            top: padding,
+            width,
+            height,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            selectTable(mesa.id);
+          }}
+        >
+          <TableShape
+            forma={forma}
+            width={width}
+            height={height}
+            nombre={mesa.nombre}
+            occupiedCount={occupiedCount}
+            capacidad={mesa.capacidad}
+            isSelected={isSelected}
+          />
+        </div>
+      </TableEditPopover>
 
       {/* Seats around the table */}
       {seatPositions.map((pos, index) => (
