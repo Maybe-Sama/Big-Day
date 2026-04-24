@@ -2,7 +2,6 @@ import { useDraggable } from '@dnd-kit/core';
 import { MesaConfig } from '@/types/mesas';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { DroppableSeat } from './DroppableSeat';
-import { TableShape } from './TableShape';
 import { TableEditPopover } from './TableEditPopover';
 import { getSeatPositions, getTableDimensions } from '@/lib/plano-utils';
 import { Settings2 } from 'lucide-react';
@@ -17,7 +16,6 @@ export function DraggableTable({ mesa }: Props) {
   const forma = mesa.forma || 'poligonal';
   const isVertical = forma === 'rectangular' && mesa.rotacion === 90;
 
-  // Get base dimensions, then swap if vertical
   const baseDims = getTableDimensions(forma, mesa.capacidad);
   const width = isVertical ? baseDims.height : baseDims.width;
   const height = isVertical ? baseDims.width : baseDims.height;
@@ -34,6 +32,9 @@ export function DraggableTable({ mesa }: Props) {
   const containerWidth = width + padding * 2;
   const containerHeight = height + padding * 2;
 
+  const selectedClass = isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : '';
+  const shapeClass = forma === 'poligonal' ? 'rounded-full' : 'rounded-lg';
+
   const style: React.CSSProperties = {
     position: 'absolute',
     left: (mesa.x ?? 0) + (transform?.x ?? 0),
@@ -47,49 +48,41 @@ export function DraggableTable({ mesa }: Props) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      {/* Table shape - DRAG handle only */}
+      {/* Table shape container — drag on the shape itself */}
       <div
         {...attributes}
         {...listeners}
-        className="absolute cursor-grab active:cursor-grabbing"
-        style={{
-          left: padding,
-          top: padding,
-          width,
-          height,
-        }}
+        className={`absolute flex items-center justify-center bg-accent/30 border-2 border-primary/40 hover:border-primary/70 transition-colors cursor-grab active:cursor-grabbing ${shapeClass} ${selectedClass}`}
+        style={{ left: padding, top: padding, width, height }}
         onClick={(e) => {
           e.stopPropagation();
           selectTable(mesa.id);
         }}
       >
-        <TableShape
-          forma={forma}
-          width={width}
-          height={height}
-          nombre={mesa.nombre}
-          occupiedCount={occupiedCount}
-          capacidad={mesa.capacidad}
-          isSelected={isSelected}
-        />
+        {/* Name + count + edit button inside the table */}
+        <div className="flex flex-col items-center pointer-events-none">
+          <span className="text-xs font-semibold text-foreground truncate max-w-[90%] text-center leading-tight">
+            {mesa.nombre}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {occupiedCount}/{mesa.capacidad}
+          </span>
+        </div>
+
+        {/* Edit button — inside the table, stops drag propagation */}
+        <TableEditPopover mesaId={mesa.id}>
+          <button
+            className="absolute bottom-1 right-1 flex items-center justify-center w-5 h-5 rounded-full bg-card/80 border shadow-sm hover:bg-accent transition-colors pointer-events-auto"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            title="Editar mesa"
+          >
+            <Settings2 className="w-2.5 h-2.5 text-muted-foreground" />
+          </button>
+        </TableEditPopover>
       </div>
 
-      {/* Edit button */}
-      <TableEditPopover mesaId={mesa.id}>
-        <button
-          className="absolute flex items-center justify-center w-6 h-6 rounded-full bg-card border shadow-sm hover:bg-accent transition-colors z-10"
-          style={{
-            left: padding + width - 4,
-            top: padding - 4,
-          }}
-          onClick={(e) => e.stopPropagation()}
-          title="Editar mesa"
-        >
-          <Settings2 className="w-3 h-3 text-muted-foreground" />
-        </button>
-      </TableEditPopover>
-
-      {/* Seats around the table */}
+      {/* Seats */}
       {seatPositions.map((pos, index) => (
         <DroppableSeat
           key={index}
