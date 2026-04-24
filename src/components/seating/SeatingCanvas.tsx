@@ -8,11 +8,7 @@ export function SeatingCanvas() {
   const [isPanning, setIsPanning] = useState(false);
   const lastPanRef = useRef({ x: 0, y: 0 });
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setZoom(zoom + delta);
-  }, [zoom, setZoom]);
+  // Zoom only via buttons — wheel scroll was capturing popover scrolls
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // Only pan on middle click or if clicking empty space
@@ -48,7 +44,6 @@ export function SeatingCanvas() {
       id="seating-canvas-viewport"
       className="absolute inset-0 overflow-hidden"
       style={{ cursor: isPanning ? 'grabbing' : 'default' }}
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
