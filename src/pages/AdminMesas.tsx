@@ -26,34 +26,34 @@ function EditorContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="h-12 border-b flex items-center px-4 gap-3 shrink-0 bg-card">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => navigate('/admin/oculto')}
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <h1 className="text-sm font-semibold">Plano de Mesas</h1>
-      </header>
+    <SeatingDndProvider>
+      <div className="h-screen flex flex-col bg-background">
+        {/* Header */}
+        <header className="h-12 border-b flex items-center px-4 gap-3 shrink-0 bg-card">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => navigate('/admin/oculto')}
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h1 className="text-sm font-semibold">Plano de Mesas</h1>
+        </header>
 
-      {/* Main layout */}
-      <div className="flex-1 flex overflow-hidden">
-        <SeatingDndProvider>
+        {/* Main layout */}
+        <div className="flex-1 flex overflow-hidden min-h-0">
           <GuestSidebar />
-          <div className="flex-1 relative">
+          <div className="flex-1 relative min-h-0">
             <CanvasToolbar />
             <AutosaveIndicator />
             <SeatingCanvas />
             <ZoomControls />
             <ExportMenu />
           </div>
-        </SeatingDndProvider>
+        </div>
       </div>
-    </div>
+    </SeatingDndProvider>
   );
 }
 

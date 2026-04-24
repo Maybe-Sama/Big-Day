@@ -47,7 +47,8 @@ export function SeatingCanvas() {
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-hidden relative"
+      id="seating-canvas-viewport"
+      className="absolute inset-0 overflow-hidden"
       style={{ cursor: isPanning ? 'grabbing' : 'default' }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
