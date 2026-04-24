@@ -6,7 +6,6 @@ import PageHeader from "@/components/common/PageHeader";
 import { AppModal } from "@/components/common";
 import AddInvitadoModal from "@/components/AddInvitadoModal";
 import ConfigBusesModal from "@/components/ConfigBusesModal";
-import ConfigMesasModal from "@/components/ConfigMesasModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,7 +52,6 @@ const AdminOculto = () => {
   const [copiedTokenId, setCopiedTokenId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showConfigBusesModal, setShowConfigBusesModal] = useState(false);
-  const [showConfigMesasModal, setShowConfigMesasModal] = useState(false);
   const [showAlergiasModal, setShowAlergiasModal] = useState(false);
   const [selectedGrupo, setSelectedGrupo] = useState<GrupoInvitados | null>(null);
   const [editingGrupo, setEditingGrupo] = useState<GrupoInvitados | null>(null);
@@ -932,6 +930,10 @@ const AdminOculto = () => {
               className="pb-0"
             />
             <div className="flex gap-2 ml-4">
+              <Button variant="outline" onClick={() => window.location.href = '/admin/mesas'}>
+                <Table className="mr-2 w-4 h-4" />
+                Plano de Mesas
+              </Button>
               <Button variant="outline" onClick={() => window.location.href = '/admin/planificacion'}>
                 Planificación
               </Button>
@@ -1031,16 +1033,16 @@ const AdminOculto = () => {
                 size="sm"
               >
                 <Bus className="mr-2 w-4 h-4" />
-                Configurar Buses y Paradas
+                Buses
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowConfigMesasModal(true)}
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = '/admin/mesas'}
                 className="w-full sm:flex-1 text-sm h-9 sm:h-10"
                 size="sm"
               >
                 <Table className="mr-2 w-4 h-4" />
-                Configurar Mesas
+                Plano de Mesas
               </Button>
               <Button 
                 variant="outline" 
@@ -1972,17 +1974,6 @@ const AdminOculto = () => {
         onClose={() => setShowConfigBusesModal(false)}
       />
 
-      <ConfigMesasModal
-        isOpen={showConfigMesasModal}
-        onClose={async () => {
-          setShowConfigMesasModal(false);
-          // Recargar configuración de mesas si estamos editando un grupo
-          if (selectedGrupo) {
-            const mesasConfig = await dbService.getConfiguracionMesas();
-            setConfigMesas(mesasConfig);
-          }
-        }}
-      />
 
       <AppModal
         isOpen={showAlergiasModal}
@@ -2396,13 +2387,11 @@ const AdminOculto = () => {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setShowConfigMesasModal(true);
-                          }}
+                          onClick={() => window.location.href = '/admin/mesas'}
                           className="text-xs h-8"
                         >
                           <Table className="w-3 h-3 mr-1.5" />
-                          Configurar Mesas
+                          Ir al Plano de Mesas
                         </Button>
                       </div>
                     ) : (
