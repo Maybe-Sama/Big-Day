@@ -670,11 +670,53 @@ const AdminOculto = () => {
 
   const updateEditingGrupo = (field: keyof GrupoInvitados, value: any) => {
     if (!editingGrupo) return;
+
+    // If group asistencia is rejected, reject everything
+    if (field === 'asistencia' && value === 'rechazado') {
+      setEditingGrupo({
+        ...editingGrupo,
+        asistencia: 'rechazado',
+        confirmacion_bus: false,
+        invitadoPrincipal: {
+          ...editingGrupo.invitadoPrincipal,
+          asistencia: 'rechazado',
+          confirmacion_bus: false,
+        },
+        acompanantes: editingGrupo.acompanantes.map(ac => ({
+          ...ac,
+          asistencia: 'rechazado' as const,
+          confirmacion_bus: false,
+        })),
+      });
+      return;
+    }
+
     setEditingGrupo({ ...editingGrupo, [field]: value });
   };
 
   const updateInvitadoPrincipal = (field: keyof GrupoInvitados['invitadoPrincipal'], value: string | boolean | 'pendiente' | 'confirmado' | 'rechazado') => {
     if (!editingGrupo) return;
+
+    // If principal is rejected, reject everything
+    if (field === 'asistencia' && value === 'rechazado') {
+      setEditingGrupo({
+        ...editingGrupo,
+        asistencia: 'rechazado',
+        confirmacion_bus: false,
+        invitadoPrincipal: {
+          ...editingGrupo.invitadoPrincipal,
+          asistencia: 'rechazado',
+          confirmacion_bus: false,
+        },
+        acompanantes: editingGrupo.acompanantes.map(ac => ({
+          ...ac,
+          asistencia: 'rechazado' as const,
+          confirmacion_bus: false,
+        })),
+      });
+      return;
+    }
+
     setEditingGrupo({
       ...editingGrupo,
       invitadoPrincipal: {
