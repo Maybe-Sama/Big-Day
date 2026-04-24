@@ -4,15 +4,16 @@ import { DraggableGuest } from './DraggableGuest';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search } from 'lucide-react';
+import { Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function GuestSidebar() {
   const { unassigned, personas, asignaciones, grupos, novioDesdeGrupoId, setNovioDesdeGrupo } = useSeatingEditor();
   const [search, setSearch] = useState('');
+  const [collapsed, setCollapsed] = useState(false);
 
   const assignedCount = asignaciones.length;
 
-  // Group linked couples for display
   const displayItems = useMemo(() => {
     const filtered = search
       ? unassigned.filter(p =>
@@ -41,12 +42,45 @@ export function GuestSidebar() {
     return items;
   }, [unassigned, search]);
 
-  // Count by side
   const noviaCount = personas.filter(p => p.lado === 'novia').length;
   const novioCount = personas.filter(p => p.lado === 'novio').length;
 
+  if (collapsed) {
+    return (
+      <div className="w-10 border-r bg-card flex flex-col items-center py-2 shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => setCollapsed(false)}
+          title="Abrir panel"
+        >
+          <PanelLeftOpen className="w-4 h-4" />
+        </Button>
+        <div className="mt-3 flex flex-col items-center gap-1">
+          <span className="text-[10px] font-bold text-orange-600">{unassigned.length}</span>
+          <span className="text-[8px] text-muted-foreground -rotate-90 whitespace-nowrap mt-2">Sin mesa</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-72 border-r bg-card flex flex-col shrink-0">
+      {/* Header with collapse button */}
+      <div className="p-2 border-b flex items-center justify-between">
+        <span className="text-xs font-semibold pl-1">Invitados</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setCollapsed(true)}
+          title="Cerrar panel"
+        >
+          <PanelLeftClose className="w-4 h-4" />
+        </Button>
+      </div>
+
       {/* Search */}
       <div className="p-3 border-b">
         <div className="relative">
