@@ -9,11 +9,9 @@ export function SeatingCanvas() {
   const lastPanRef = useRef({ x: 0, y: 0 });
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setZoom(zoom + delta);
-    }
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoom(zoom + delta);
   }, [zoom, setZoom]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
