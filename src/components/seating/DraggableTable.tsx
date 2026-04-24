@@ -61,7 +61,7 @@ export function DraggableTable({ mesa }: Props) {
         }}
       >
         <div className="flex flex-col items-center pointer-events-none">
-          <span className="text-xs font-semibold text-foreground truncate max-w-[90%] text-center leading-tight">
+          <span className="text-xs font-semibold text-foreground text-center leading-tight px-1">
             {mesa.nombre}
           </span>
           <span className="text-[10px] text-muted-foreground">
