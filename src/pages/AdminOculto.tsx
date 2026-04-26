@@ -964,23 +964,41 @@ const AdminOculto = () => {
     <PageLayout>
       <div className="pt-12 sm:pt-14 md:pt-16 pb-8 sm:pb-12 md:pb-16 px-3 sm:px-4">
         <div className="container mx-auto max-w-7xl">
-          <div className="flex justify-between items-center pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-3 sm:pt-10 md:pt-12 pb-4 sm:pb-6">
             <PageHeader
               title="Panel de los Novios"
               description="Gestiona tus invitados y confirmaciones"
               variant="simple"
               className="pb-0"
             />
-            <div className="flex gap-2 ml-4">
-              <Button variant="outline" onClick={() => window.location.href = '/admin/mesas'}>
-                <Table className="mr-2 w-4 h-4" />
-                Plano de Mesas
+            <div className="flex flex-wrap gap-2 sm:ml-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 sm:flex-initial sm:size-default"
+                onClick={() => window.location.href = '/admin/mesas'}
+              >
+                <Table className="sm:mr-2 w-4 h-4" />
+                <span className="hidden sm:inline">Plano de Mesas</span>
+                <span className="ml-2 sm:hidden">Mesas</span>
               </Button>
-              <Button variant="outline" onClick={() => window.location.href = '/admin/planificacion'}>
-                Planificación
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 sm:flex-initial sm:size-default"
+                onClick={() => window.location.href = '/admin/planificacion'}
+              >
+                <span className="sm:hidden">Plan</span>
+                <span className="hidden sm:inline">Planificación</span>
               </Button>
-              <Button variant="outline" onClick={handleLogout}>
-                Cerrar Sesión
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 sm:flex-initial sm:size-default"
+                onClick={handleLogout}
+              >
+                <span className="sm:hidden">Salir</span>
+                <span className="hidden sm:inline">Cerrar Sesión</span>
               </Button>
             </div>
           </div>
@@ -1067,27 +1085,27 @@ const AdminOculto = () => {
                 {showStats ? "Ocultar" : "Ver"} estadísticas
               </Button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button 
-                variant="outline" 
+            <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2">
+              <Button
+                variant="outline"
                 onClick={() => setShowConfigBusesModal(true)}
-                className="w-full sm:flex-1 text-sm h-9 sm:h-10"
+                className="w-full sm:flex-1 text-sm h-9 sm:h-10 px-2 sm:px-3"
                 size="sm"
               >
-                <Bus className="mr-2 w-4 h-4" />
-                Buses
+                <Bus className="mr-1.5 sm:mr-2 w-4 h-4 shrink-0" />
+                <span className="truncate">Buses</span>
               </Button>
               <Button
                 variant="outline"
                 onClick={() => window.location.href = '/admin/mesas'}
-                className="w-full sm:flex-1 text-sm h-9 sm:h-10"
+                className="w-full sm:flex-1 text-sm h-9 sm:h-10 px-2 sm:px-3"
                 size="sm"
               >
-                <Table className="mr-2 w-4 h-4" />
-                Plano de Mesas
+                <Table className="mr-1.5 sm:mr-2 w-4 h-4 shrink-0" />
+                <span className="truncate"><span className="hidden sm:inline">Plano de </span>Mesas</span>
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={async () => {
                   setShowCarreras(!showCarreras);
                   if (!showCarreras) {
@@ -1095,20 +1113,26 @@ const AdminOculto = () => {
                     setCarreras(carrerasData);
                   }
                 }}
-                className="w-full sm:flex-1 text-sm h-9 sm:h-10"
+                className="w-full sm:flex-1 text-sm h-9 sm:h-10 px-2 sm:px-3"
                 size="sm"
               >
-                <Trophy className="mr-2 w-4 h-4" />
-                {showCarreras ? "Ocultar" : "Ver"} Carreras de Fotos
+                <Trophy className="mr-1.5 sm:mr-2 w-4 h-4 shrink-0" />
+                <span className="truncate">
+                  <span className="sm:hidden">Carreras</span>
+                  <span className="hidden sm:inline">{showCarreras ? "Ocultar" : "Ver"} Carreras de Fotos</span>
+                </span>
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowAlergiasModal(true)}
-                className="w-full sm:flex-1 text-sm h-9 sm:h-10"
+                className="w-full sm:flex-1 text-sm h-9 sm:h-10 px-2 sm:px-3"
                 size="sm"
               >
-                <ClipboardList className="mr-2 w-4 h-4" />
-                Ver alergias
+                <ClipboardList className="mr-1.5 sm:mr-2 w-4 h-4 shrink-0" />
+                <span className="truncate">
+                  <span className="sm:hidden">Alergias</span>
+                  <span className="hidden sm:inline">Ver alergias</span>
+                </span>
               </Button>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
