@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragStartEvent,
@@ -37,8 +38,11 @@ export function SeatingDndProvider({ children }: { children: React.ReactNode }) 
     mesaId?: string;
   } | null>(null);
 
+  // Mouse: drag starts on 5px move (PC behavior unchanged)
+  // Touch: long-press 220ms then drag, so taps and pan don't accidentally drag
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } })
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {

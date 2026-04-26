@@ -13,9 +13,12 @@ export function AutosaveIndicator() {
   const Icon = config.icon;
 
   return (
-    <div className={`absolute top-3 right-3 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${config.className}`}>
+    <div
+      className={`absolute top-3 right-3 z-20 flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium border ${config.className}`}
+      title={config.text}
+    >
       <Icon className={`w-3.5 h-3.5 ${saveStatus === 'saving' ? 'animate-spin' : ''}`} />
-      {config.text}
+      <span className="hidden sm:inline">{config.text}</span>
     </div>
   );
 }

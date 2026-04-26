@@ -45,9 +45,14 @@ export function ExportMenu() {
     <div className="absolute bottom-4 left-4 z-20">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 bg-card/95 backdrop-blur shadow-md">
-            <Download className="w-3.5 h-3.5" />
-            Exportar
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 sm:h-8 px-2 sm:px-3 text-xs gap-1.5 bg-card/95 backdrop-blur shadow-md"
+            title="Exportar"
+          >
+            <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden sm:inline">Exportar</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>

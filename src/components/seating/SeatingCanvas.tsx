@@ -10,27 +10,29 @@ export function SeatingCanvas() {
 
   // Zoom only via buttons — wheel scroll was capturing popover scrolls
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
     // Middle click always pans
     if (e.button === 1) {
       e.preventDefault();
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       setIsPanning(true);
       lastPanRef.current = { x: e.clientX, y: e.clientY };
       return;
     }
-    // Left click pans when NOT on a table or interactive element
-    if (e.button === 0) {
+    // Left click / touch pans when NOT on a table or interactive element
+    if (e.button === 0 || e.pointerType === 'touch') {
       const target = e.target as HTMLElement;
       const onTable = target.closest('[data-table-id]');
       const onInteractive = target.closest('button, input, [role="button"], [data-no-pan]');
       if (!onTable && !onInteractive) {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
         setIsPanning(true);
         lastPanRef.current = { x: e.clientX, y: e.clientY };
       }
     }
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!isPanning) return;
     const dx = (e.clientX - lastPanRef.current.x) / zoom;
     const dy = (e.clientY - lastPanRef.current.y) / zoom;
@@ -38,7 +40,10 @@ export function SeatingCanvas() {
     setPan(panX + dx, panY + dy);
   }, [isPanning, zoom, panX, panY, setPan]);
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    }
     setIsPanning(false);
   }, []);
 
@@ -55,11 +60,11 @@ export function SeatingCanvas() {
       ref={containerRef}
       id="seating-canvas-viewport"
       className="absolute inset-0 overflow-hidden"
-      style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      style={{ cursor: isPanning ? 'grabbing' : 'grab', touchAction: 'none' }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onClick={handleCanvasClick}
     >
       {/* Grid background */}

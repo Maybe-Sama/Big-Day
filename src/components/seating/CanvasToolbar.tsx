@@ -20,10 +20,10 @@ export function CanvasToolbar() {
     <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-card/95 backdrop-blur border rounded-xl px-2 py-1.5 shadow-md">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5">
+          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 px-2 sm:px-3">
             <Circle className="w-3.5 h-3.5" />
             <Plus className="w-3 h-3" />
-            Poligonal
+            <span className="hidden sm:inline">Poligonal</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -39,10 +39,10 @@ export function CanvasToolbar() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5">
+          <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 px-2 sm:px-3">
             <RectangleHorizontal className="w-3.5 h-3.5" />
             <Plus className="w-3 h-3" />
-            Rectangular
+            <span className="hidden sm:inline">Rectangular</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
@@ -59,11 +59,11 @@ export function CanvasToolbar() {
       <Button
         variant="ghost"
         size="sm"
-        className="h-8 text-xs gap-1.5"
+        className="h-8 text-xs gap-1.5 px-2 sm:px-3"
         onClick={() => addTable('rectangular', 6, { esNupcial: true, nombre: 'Mesa Nupcial' })}
       >
         <Crown className="w-3.5 h-3.5" />
-        Nupcial
+        <span className="hidden sm:inline">Nupcial</span>
       </Button>
 
       <div className="w-px h-5 bg-border mx-1" />
