@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function DraggableTable({ mesa }: Props) {
-  const { selectedMesaIds, selectTable, asignaciones } = useSeatingEditor();
+  const { selectedMesaIds, selectTable, asignaciones, zoom } = useSeatingEditor();
   const isSelected = selectedMesaIds.has(mesa.id);
   const forma = mesa.forma || 'poligonal';
   const isVertical = forma === 'rectangular' && mesa.rotacion === 90;
@@ -36,10 +36,12 @@ export function DraggableTable({ mesa }: Props) {
   const selectedClass = isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : '';
   const shapeClass = forma === 'poligonal' ? 'rounded-full' : 'rounded-lg';
 
+  // dnd-kit reports transform in screen pixels, but the canvas is scaled by `zoom`.
+  // Divide by zoom so the visual movement matches the cursor 1:1.
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: (mesa.x ?? 0) + (transform?.x ?? 0),
-    top: (mesa.y ?? 0) + (transform?.y ?? 0),
+    left: (mesa.x ?? 0) + (transform?.x ?? 0) / zoom,
+    top: (mesa.y ?? 0) + (transform?.y ?? 0) / zoom,
     width: containerWidth,
     height: containerHeight,
     opacity: isDragging ? 0.7 : 1,
@@ -48,7 +50,7 @@ export function DraggableTable({ mesa }: Props) {
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} data-table-id={mesa.id} style={style}>
       {/* Table shape — drag handle */}
       <div
         {...attributes}

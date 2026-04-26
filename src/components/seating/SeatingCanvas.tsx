@@ -11,11 +11,22 @@ export function SeatingCanvas() {
   // Zoom only via buttons — wheel scroll was capturing popover scrolls
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only pan on middle click or if clicking empty space
-    if (e.button === 1 || (e.button === 0 && e.target === containerRef.current?.firstElementChild)) {
+    // Middle click always pans
+    if (e.button === 1) {
       e.preventDefault();
       setIsPanning(true);
       lastPanRef.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
+    // Left click pans when NOT on a table or interactive element
+    if (e.button === 0) {
+      const target = e.target as HTMLElement;
+      const onTable = target.closest('[data-table-id]');
+      const onInteractive = target.closest('button, input, [role="button"], [data-no-pan]');
+      if (!onTable && !onInteractive) {
+        setIsPanning(true);
+        lastPanRef.current = { x: e.clientX, y: e.clientY };
+      }
     }
   }, []);
 
@@ -32,8 +43,9 @@ export function SeatingCanvas() {
   }, []);
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    // Deselect all tables when clicking empty canvas
-    if (e.target === e.currentTarget || e.target === containerRef.current?.firstElementChild) {
+    // Deselect when clicking empty canvas (not on a table)
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-table-id]')) {
       clearSelection();
     }
   }, [clearSelection]);
@@ -43,7 +55,7 @@ export function SeatingCanvas() {
       ref={containerRef}
       id="seating-canvas-viewport"
       className="absolute inset-0 overflow-hidden"
-      style={{ cursor: isPanning ? 'grabbing' : 'default' }}
+      style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
