@@ -5,7 +5,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Users, AlertTriangle, Bus, StickyNote, X, Check, Pencil } from 'lucide-react';
+import { Users, AlertTriangle, Bus, StickyNote, X, Check, Pencil, Crown } from 'lucide-react';
+import { clearMesaCaptainIfPerson, toggleMesaCaptainId } from '@/lib/mesas-utils';
 
 interface Props {
   mesaId: string;
@@ -13,7 +14,7 @@ interface Props {
 }
 
 export function TableInfoPopover({ mesaId, children }: Props) {
-  const { mesas, getPersonasInMesa, asignaciones, hasNotas, getNotasForPersona, updateTable, unassignSeat } = useSeatingEditor();
+  const { mesas, getPersonasInMesa, asignaciones, getNotasForPersona, updateTable, unassignSeat } = useSeatingEditor();
   const mesa = mesas.find(m => m.id === mesaId);
   const personas = getPersonasInMesa(mesaId);
   const occupiedCount = asignaciones.filter(a => a.mesaId === mesaId).length;
@@ -53,12 +54,13 @@ export function TableInfoPopover({ mesaId, children }: Props) {
                   autoFocus
                   onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
                 />
-                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={saveName}>
+                <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={saveName}>
                   <Check className="w-3.5 h-3.5 text-green-600" />
                 </Button>
               </div>
             ) : (
               <button
+                type="button"
                 className="flex items-center gap-1.5 hover:text-primary transition-colors group"
                 onClick={startEditName}
               >
@@ -86,6 +88,7 @@ export function TableInfoPopover({ mesaId, children }: Props) {
                   : getTipoAcompananteLabel(p.tipo);
                 const personaNotas = getNotasForPersona(p.personaId);
                 const hasNote = personaNotas.length > 0;
+                const isCaptain = mesa.capitanId === p.personaId;
 
                 const dotColor = hasNote
                   ? 'bg-red-800'
@@ -98,7 +101,13 @@ export function TableInfoPopover({ mesaId, children }: Props) {
                 return (
                   <div
                     key={p.personaId}
-                    className={`flex items-center gap-2 p-2 rounded-lg group ${hasNote ? 'bg-red-900/5 border border-red-200/50' : 'hover:bg-muted/50'}`}
+                    className={`flex items-center gap-2 p-2 rounded-lg group ${
+                      isCaptain
+                        ? 'bg-yellow-50 border border-yellow-200'
+                        : hasNote
+                        ? 'bg-red-900/5 border border-red-200/50'
+                        : 'hover:bg-muted/50'
+                    }`}
                   >
                     <div className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
 
@@ -106,6 +115,12 @@ export function TableInfoPopover({ mesaId, children }: Props) {
                       <div className="text-sm font-medium truncate">{p.nombre} {p.apellidos}</div>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                         <span>{tipoLabel}</span>
+                        {isCaptain && (
+                          <span className="flex items-center gap-0.5 text-yellow-700 font-medium">
+                            <Crown className="w-2.5 h-2.5" />
+                            Capitan/a
+                          </span>
+                        )}
                         {p.alergias && (
                           <span className="flex items-center gap-0.5 text-red-600">
                             <AlertTriangle className="w-2.5 h-2.5" />
@@ -127,9 +142,34 @@ export function TableInfoPopover({ mesaId, children }: Props) {
                       )}
                     </div>
 
+                    {/* Toggle table captain */}
+                    <button
+                      type="button"
+                      onClick={() => updateTable(mesaId, {
+                        capitanId: toggleMesaCaptainId(mesa.capitanId, p.personaId),
+                      })}
+                      className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                        isCaptain
+                          ? 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200'
+                          : 'text-muted-foreground/40 hover:text-yellow-700 hover:bg-yellow-100 opacity-0 group-hover:opacity-100'
+                      }`}
+                      title={isCaptain ? 'Quitar capitan/a de mesa' : 'Hacer capitan/a de mesa'}
+                      aria-label={isCaptain ? 'Quitar capitan/a de mesa' : 'Hacer capitan/a de mesa'}
+                    >
+                      <Crown className="w-3.5 h-3.5" />
+                    </button>
+
                     {/* Remove from table */}
                     <button
-                      onClick={() => unassignSeat(p.personaId)}
+                      type="button"
+                      onClick={() => {
+                        unassignSeat(p.personaId);
+                        if (isCaptain) {
+                          updateTable(mesaId, {
+                            capitanId: clearMesaCaptainIfPerson(mesa.capitanId, p.personaId),
+                          });
+                        }
+                      }}
                       className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-destructive/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
                       title="Quitar de la mesa"
                     >
