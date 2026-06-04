@@ -31,8 +31,10 @@ import { GrupoInvitados, InvitadoStats, Acompanante, TIPOS_ACOMPANANTE, getTipoA
 import { ConfiguracionBuses } from "@/types/bus";
 import { contarPasajerosBus } from "@/lib/bus-utils";
 import { ConfiguracionMesas } from "@/types/mesas";
+import { PlanoMesas } from "@/types/plano";
 import { CarreraFotos, TODAS_LAS_MISIONES } from "@/types/carrera-fotos";
 import { getListaInvitadosHtml } from "@/lib/lista-invitados-pdf";
+import { getListaAlergiasPdfHtml } from "@/lib/lista-alergias-pdf";
 
 const AdminOculto = () => {
   const { toast } = useToast();
@@ -58,6 +60,7 @@ const AdminOculto = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [configBuses, setConfigBuses] = useState<ConfiguracionBuses | null>(null);
   const [configMesas, setConfigMesas] = useState<ConfiguracionMesas | null>(null);
+  const [planoMesas, setPlanoMesas] = useState<PlanoMesas | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [asistenciaFilter, setAsistenciaFilter] = useState<'all' | 'pendiente' | 'confirmado' | 'rechazado'>('all');
   const [carreras, setCarreras] = useState<CarreraFotos[]>([]);
@@ -133,6 +136,17 @@ const AdminOculto = () => {
       }
     };
     loadMesasConfig();
+
+    // Cargar plano de mesas (asignaciones de sillas)
+    const loadPlano = async () => {
+      try {
+        const plano = await dbService.getPlano();
+        setPlanoMesas(plano);
+      } catch (error) {
+        console.error('Error cargando plano de mesas:', error);
+      }
+    };
+    loadPlano();
 
     // Cargar carreras de fotos
     const loadCarreras = async () => {
@@ -867,28 +881,41 @@ const AdminOculto = () => {
 
   /** Invitados individuales (no grupos) que tienen alergias especificadas */
   const invitadosConAlergias = useMemo(() => {
-    const list: { nombreCompleto: string; alergias: string; tipo: string }[] = [];
+    // Build a map: personaId -> mesaNombre
+    const personaMesaMap = new Map<string, string>();
+    if (planoMesas?.asignaciones && configMesas?.mesas) {
+      for (const asig of planoMesas.asignaciones) {
+        const mesa = configMesas.mesas.find(m => m.id === asig.mesaId);
+        if (mesa) personaMesaMap.set(asig.personaId, mesa.nombre);
+      }
+    }
+
+    const list: { nombreCompleto: string; alergias: string; tipo: string; mesa: string | null }[] = [];
     grupos.forEach(grupo => {
       const principal = grupo.invitadoPrincipal;
       if (principal.alergias?.trim()) {
+        const personaId = `${grupo.id}:principal`;
         list.push({
           nombreCompleto: `${principal.nombre} ${principal.apellidos}`.trim(),
           alergias: principal.alergias.trim(),
           tipo: "Invitado principal",
+          mesa: personaMesaMap.get(personaId) ?? null,
         });
       }
       (grupo.acompanantes ?? []).forEach(ac => {
         if (ac.alergias?.trim()) {
+          const personaId = `${grupo.id}:${ac.id}`;
           list.push({
             nombreCompleto: `${ac.nombre} ${ac.apellidos}`.trim(),
             alergias: ac.alergias.trim(),
             tipo: getTipoAcompananteLabel(ac.tipo),
+            mesa: personaMesaMap.get(personaId) ?? null,
           });
         }
       });
     });
     return list;
-  }, [grupos]);
+  }, [grupos, planoMesas, configMesas]);
 
   /** Números globales por persona (invitados individuales) para confirmados, pendientes y rechazados */
   const statsPorPersona = useMemo(() => {
@@ -2048,9 +2075,25 @@ const AdminOculto = () => {
         description="Invitados individuales que han indicado alergias o especificaciones alimentarias."
         maxWidth="2xl"
         footer={
-          <Button variant="outline" onClick={() => setShowAlergiasModal(false)}>
-            Cerrar
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            {invitadosConAlergias.length > 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  const html = getListaAlergiasPdfHtml(invitadosConAlergias);
+                  const w = window.open('', '_blank');
+                  if (w) { w.document.write(html); w.document.close(); }
+                }}
+              >
+                <Download className="mr-1.5 w-4 h-4" />
+                Descargar PDF
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setShowAlergiasModal(false)}>
+              Cerrar
+            </Button>
+          </div>
         }
       >
         <div className="max-h-[60vh] overflow-y-auto">
@@ -2060,7 +2103,16 @@ const AdminOculto = () => {
             <ul className="space-y-3">
               {invitadosConAlergias.map((inv, i) => (
                 <li key={i} className="flex flex-col gap-1 p-3 rounded-lg bg-muted/50 border border-border">
-                  <div className="font-medium text-sm">{inv.nombreCompleto}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-medium text-sm">{inv.nombreCompleto}</div>
+                    {inv.mesa ? (
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        <Table className="mr-1 w-3 h-3" />{inv.mesa}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground shrink-0">Sin mesa</span>
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground">{inv.tipo}</div>
                   <div className="text-sm mt-1">{inv.alergias}</div>
                 </li>
