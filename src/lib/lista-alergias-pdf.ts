@@ -2,52 +2,34 @@
  * Genera el HTML de la lista de alergias para imprimir/guardar como PDF.
  */
 
-export interface InvitadoAlergia {
-  nombreCompleto: string;
-  alergias: string;
-  tipo: string;
-  mesa: string | null;
+export interface MesaAlergias {
+  mesaNombre: string;
+  invitados: { nombreCompleto: string; alergias: string }[];
 }
 
-export function getListaAlergiasPdfHtml(invitados: InvitadoAlergia[]): string {
-  // Group by mesa
-  const conMesa = new Map<string, InvitadoAlergia[]>();
-  const sinMesa: InvitadoAlergia[] = [];
+function escHtml(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
-  for (const inv of invitados) {
-    if (inv.mesa) {
-      if (!conMesa.has(inv.mesa)) conMesa.set(inv.mesa, []);
-      conMesa.get(inv.mesa)!.push(inv);
-    } else {
-      sinMesa.push(inv);
-    }
-  }
+export function getListaAlergiasPdfHtml(mesasConAlergias: MesaAlergias[]): string {
+  const totalInvitados = mesasConAlergias.reduce((acc, m) => acc + m.invitados.length, 0);
 
-  const mesasOrdenadas = [...conMesa.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es', { numeric: true }));
+  const mesasHtml = mesasConAlergias.map(mesa => {
+    const rows = mesa.invitados.map(inv =>
+      `<tr>
+        <td class="name">${escHtml(inv.nombreCompleto)}</td>
+        <td class="alergias">${escHtml(inv.alergias)}</td>
+      </tr>`
+    ).join('');
 
-  function escHtml(s: string) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function renderRow(inv: InvitadoAlergia) {
-    return `<tr>
-      <td class="name">${escHtml(inv.nombreCompleto)}</td>
-      <td class="tipo">${escHtml(inv.tipo)}</td>
-      <td class="mesa">${inv.mesa ? escHtml(inv.mesa) : '<span class="sin-mesa">Sin mesa</span>'}</td>
-      <td class="alergias">${escHtml(inv.alergias)}</td>
-    </tr>`;
-  }
-
-  let tableRows = '';
-
-  for (const [mesa, invs] of mesasOrdenadas) {
-    tableRows += `<tr class="mesa-header"><td colspan="4">${escHtml(mesa)}</td></tr>`;
-    invs.forEach(inv => { tableRows += renderRow(inv); });
-  }
-  if (sinMesa.length > 0) {
-    tableRows += `<tr class="mesa-header"><td colspan="4">Sin mesa asignada</td></tr>`;
-    sinMesa.forEach(inv => { tableRows += renderRow(inv); });
-  }
+    return `<div class="mesa-section">
+      <h2 class="mesa-title">${escHtml(mesa.mesaNombre)}</h2>
+      <table>
+        <thead><tr><th>Nombre</th><th>Alergias / Intolerancias</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -71,6 +53,7 @@ export function getListaAlergiasPdfHtml(invitados: InvitadoAlergia[]): string {
     @media print {
       body { background: white !important; }
       .no-print { display: none !important; }
+      .mesa-section { page-break-inside: avoid; }
     }
     body {
       font-family: 'Source Sans 3', sans-serif;
@@ -102,28 +85,28 @@ export function getListaAlergiasPdfHtml(invitados: InvitadoAlergia[]): string {
     .subtitle { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.4rem; font-weight: 300; }
     .stats { font-size: 0.85rem; color: var(--ink-soft); margin-top: 0.75rem; }
     .stats strong { color: var(--warning); }
+    .mesa-section { margin-bottom: 2rem; }
+    .mesa-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem; font-weight: 600; color: var(--accent);
+      margin-bottom: 0.5rem; letter-spacing: 0.04em;
+      padding-bottom: 0.3rem; border-bottom: 2px solid var(--accent-light);
+    }
     table {
-      width: 100%; border-collapse: collapse; margin-top: 1rem;
+      width: 100%; border-collapse: collapse;
       background: white; border-radius: 8px; overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     thead th {
-      background: var(--accent); color: white;
-      padding: 0.6rem 0.75rem; text-align: left;
-      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em;
+      background: rgba(139,115,85,0.08); color: var(--ink-soft);
+      padding: 0.5rem 0.75rem; text-align: left;
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em;
     }
     tbody td {
       padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; font-size: 0.88rem;
     }
     .name { font-weight: 500; }
-    .tipo { color: var(--ink-soft); font-size: 0.82rem; }
-    .mesa { font-size: 0.82rem; }
-    .sin-mesa { color: var(--ink-soft); font-style: italic; }
     .alergias { color: var(--warning); font-weight: 500; }
-    tr.mesa-header td {
-      background: rgba(139,115,85,0.08); font-weight: 600; color: var(--accent);
-      font-size: 0.9rem; padding: 0.6rem 0.75rem; border-bottom: 2px solid var(--accent-light);
-    }
     footer {
       margin-top: 2rem; padding-top: 1rem;
       border-top: 1px solid rgba(139,115,85,0.2);
@@ -135,22 +118,10 @@ export function getListaAlergiasPdfHtml(invitados: InvitadoAlergia[]): string {
   <div class="print-hint no-print">💡 <kbd>Ctrl</kbd>+<kbd>P</kbd> para guardar como PDF</div>
   <header>
     <h1>Lista de Alergias</h1>
-    <p class="subtitle">Invitados con alergias o especificaciones alimentarias</p>
-    <p class="stats"><strong>${invitados.length}</strong> invitado${invitados.length !== 1 ? 's' : ''} con alergias</p>
+    <p class="subtitle">Alergias e intolerancias alimentarias por mesa</p>
+    <p class="stats"><strong>${totalInvitados}</strong> invitado${totalInvitados !== 1 ? 's' : ''} con alergias en <strong>${mesasConAlergias.length}</strong> mesa${mesasConAlergias.length !== 1 ? 's' : ''}</p>
   </header>
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Tipo</th>
-        <th>Mesa</th>
-        <th>Alergias / Intolerancias</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${tableRows}
-    </tbody>
-  </table>
+  ${mesasHtml}
   <footer>Generado para la boda · Lista de alergias e intolerancias alimentarias</footer>
 </body>
 </html>`;

@@ -31,7 +31,6 @@ import { GrupoInvitados, InvitadoStats, Acompanante, TIPOS_ACOMPANANTE, getTipoA
 import { ConfiguracionBuses } from "@/types/bus";
 import { contarPasajerosBus } from "@/lib/bus-utils";
 import { ConfiguracionMesas } from "@/types/mesas";
-import { PlanoMesas } from "@/types/plano";
 import { CarreraFotos, TODAS_LAS_MISIONES } from "@/types/carrera-fotos";
 import { getListaInvitadosHtml } from "@/lib/lista-invitados-pdf";
 import { getListaAlergiasPdfHtml } from "@/lib/lista-alergias-pdf";
@@ -60,7 +59,6 @@ const AdminOculto = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [configBuses, setConfigBuses] = useState<ConfiguracionBuses | null>(null);
   const [configMesas, setConfigMesas] = useState<ConfiguracionMesas | null>(null);
-  const [planoMesas, setPlanoMesas] = useState<PlanoMesas | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [asistenciaFilter, setAsistenciaFilter] = useState<'all' | 'pendiente' | 'confirmado' | 'rechazado'>('all');
   const [carreras, setCarreras] = useState<CarreraFotos[]>([]);
@@ -136,17 +134,6 @@ const AdminOculto = () => {
       }
     };
     loadMesasConfig();
-
-    // Cargar plano de mesas (asignaciones de sillas)
-    const loadPlano = async () => {
-      try {
-        const plano = await dbService.getPlano();
-        setPlanoMesas(plano);
-      } catch (error) {
-        console.error('Error cargando plano de mesas:', error);
-      }
-    };
-    loadPlano();
 
     // Cargar carreras de fotos
     const loadCarreras = async () => {
@@ -879,43 +866,47 @@ const AdminOculto = () => {
     return buses.map(bus => ({ bus, count: contarPasajerosBus(grupos, bus) }));
   }, [grupos, configBuses]);
 
-  /** Invitados individuales (no grupos) que tienen alergias especificadas */
-  const invitadosConAlergias = useMemo(() => {
-    // Build a map: personaId -> mesaNombre
-    const personaMesaMap = new Map<string, string>();
-    if (planoMesas?.asignaciones && configMesas?.mesas) {
-      for (const asig of planoMesas.asignaciones) {
-        const mesa = configMesas.mesas.find(m => m.id === asig.mesaId);
-        if (mesa) personaMesaMap.set(asig.personaId, mesa.nombre);
-      }
-    }
+  /** Alergias agrupadas por mesa */
+  const alergiasPorMesa = useMemo(() => {
+    const mesaMap = new Map<string, { mesaNombre: string; invitados: { nombreCompleto: string; alergias: string }[] }>();
 
-    const list: { nombreCompleto: string; alergias: string; tipo: string; mesa: string | null }[] = [];
+    const getMesaNombre = (mesaId?: string) => {
+      if (!mesaId || !configMesas?.mesas) return null;
+      return configMesas.mesas.find(m => m.id === mesaId)?.nombre ?? null;
+    };
+
+    const addEntry = (mesaNombre: string | null, nombreCompleto: string, alergias: string) => {
+      const key = mesaNombre ?? '__sin_mesa__';
+      if (!mesaMap.has(key)) mesaMap.set(key, { mesaNombre: mesaNombre ?? 'Sin mesa asignada', invitados: [] });
+      mesaMap.get(key)!.invitados.push({ nombreCompleto, alergias });
+    };
+
     grupos.forEach(grupo => {
+      const mesaNombre = getMesaNombre(grupo.mesa);
       const principal = grupo.invitadoPrincipal;
       if (principal.alergias?.trim()) {
-        const personaId = `${grupo.id}:principal`;
-        list.push({
-          nombreCompleto: `${principal.nombre} ${principal.apellidos}`.trim(),
-          alergias: principal.alergias.trim(),
-          tipo: "Invitado principal",
-          mesa: personaMesaMap.get(personaId) ?? null,
-        });
+        addEntry(mesaNombre, `${principal.nombre} ${principal.apellidos}`.trim(), principal.alergias.trim());
       }
       (grupo.acompanantes ?? []).forEach(ac => {
         if (ac.alergias?.trim()) {
-          const personaId = `${grupo.id}:${ac.id}`;
-          list.push({
-            nombreCompleto: `${ac.nombre} ${ac.apellidos}`.trim(),
-            alergias: ac.alergias.trim(),
-            tipo: getTipoAcompananteLabel(ac.tipo),
-            mesa: personaMesaMap.get(personaId) ?? null,
-          });
+          addEntry(mesaNombre, `${ac.nombre} ${ac.apellidos}`.trim(), ac.alergias.trim());
         }
       });
     });
-    return list;
-  }, [grupos, planoMesas, configMesas]);
+
+    // Sort: named mesas first (natural sort), then "sin mesa" at end
+    return [...mesaMap.entries()]
+      .sort((a, b) => {
+        if (a[0] === '__sin_mesa__') return 1;
+        if (b[0] === '__sin_mesa__') return -1;
+        return a[0].localeCompare(b[0], 'es', { numeric: true });
+      })
+      .map(([, v]) => v);
+  }, [grupos, configMesas]);
+
+  const totalInvitadosConAlergias = useMemo(() =>
+    alergiasPorMesa.reduce((acc, m) => acc + m.invitados.length, 0),
+  [alergiasPorMesa]);
 
   /** Números globales por persona (invitados individuales) para confirmados, pendientes y rechazados */
   const statsPorPersona = useMemo(() => {
@@ -2072,16 +2063,16 @@ const AdminOculto = () => {
         isOpen={showAlergiasModal}
         onClose={() => setShowAlergiasModal(false)}
         title="Invitados con alergias"
-        description="Invitados individuales que han indicado alergias o especificaciones alimentarias."
+        description="Alergias e intolerancias alimentarias agrupadas por mesa."
         maxWidth="2xl"
         footer={
           <div className="flex gap-2 w-full sm:w-auto">
-            {invitadosConAlergias.length > 0 && (
+            {totalInvitadosConAlergias > 0 && (
               <Button
                 variant="default"
                 size="sm"
                 onClick={() => {
-                  const html = getListaAlergiasPdfHtml(invitadosConAlergias);
+                  const html = getListaAlergiasPdfHtml(alergiasPorMesa);
                   const w = window.open('', '_blank');
                   if (w) { w.document.write(html); w.document.close(); }
                 }}
@@ -2097,27 +2088,27 @@ const AdminOculto = () => {
         }
       >
         <div className="max-h-[60vh] overflow-y-auto">
-          {invitadosConAlergias.length === 0 ? (
+          {totalInvitadosConAlergias === 0 ? (
             <p className="text-sm text-muted-foreground py-4">Ningún invitado ha indicado alergias todavía.</p>
           ) : (
-            <ul className="space-y-3">
-              {invitadosConAlergias.map((inv, i) => (
-                <li key={i} className="flex flex-col gap-1 p-3 rounded-lg bg-muted/50 border border-border">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-medium text-sm">{inv.nombreCompleto}</div>
-                    {inv.mesa ? (
-                      <Badge variant="outline" className="text-xs shrink-0">
-                        <Table className="mr-1 w-3 h-3" />{inv.mesa}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground shrink-0">Sin mesa</span>
-                    )}
+            <div className="space-y-4">
+              {alergiasPorMesa.map((mesaGroup, mi) => (
+                <div key={mi}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Table className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-semibold text-sm">{mesaGroup.mesaNombre}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">{inv.tipo}</div>
-                  <div className="text-sm mt-1">{inv.alergias}</div>
-                </li>
+                  <ul className="space-y-2 pl-6">
+                    {mesaGroup.invitados.map((inv, i) => (
+                      <li key={i} className="p-2.5 rounded-lg bg-muted/50 border border-border">
+                        <div className="font-medium text-sm">{inv.nombreCompleto}</div>
+                        <div className="text-sm text-muted-foreground mt-0.5">{inv.alergias}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </AppModal>
