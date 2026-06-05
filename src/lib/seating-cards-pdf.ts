@@ -132,7 +132,7 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     .card-numero {
       position: absolute;
       top: 1.2rem;
-      right: 17%;
+      right: 20%;
       font-family: 'Pinyon Script', cursive;
       font-size: 8rem;
       line-height: 0.85;
@@ -140,13 +140,13 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     }
 
     .card-numero.two-digit {
-      right: 10%;
+      right: 13%;
     }
 
     /* Bloque fijo: Mesa + rayita */
     .card-template {
       text-align: center;
-      padding-top: 3rem;
+      padding-top: 6rem;
       flex-shrink: 0;
     }
 
@@ -155,7 +155,7 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       font-size: 6.3rem;
       line-height: 1;
       color: #b0a080;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.15rem;
     }
 
     .card-divider {
