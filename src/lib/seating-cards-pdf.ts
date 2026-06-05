@@ -131,7 +131,7 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     .card-numero {
       position: absolute;
       top: 1.2rem;
-      right: 30%;
+      right: 22%;
       font-family: 'Pinyon Script', cursive;
       font-size: 8rem;
       line-height: 0.85;
