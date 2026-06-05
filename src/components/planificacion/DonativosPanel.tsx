@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Donativo } from '@/types/planificacion';
 import { GrupoInvitados } from '@/types/invitados';
 import { nanoid } from 'nanoid';
@@ -149,12 +148,12 @@ export default function DonativosPanel({ donativos, onDonativosChange, grupos }:
             variant="outline"
             size="sm"
             onClick={() => setShowSinDonar(!showSinDonar)}
-            className={`border-white/10 text-xs ${showSinDonar ? 'bg-amber-500/20 text-amber-300' : 'text-white/70'}`}
+            className={`border-white/10 text-xs ${showSinDonar ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'text-white/70'}`}
           >
             <Users className="w-3.5 h-3.5 mr-1.5" />
             Sin registrar ({gruposSinDonar.length})
           </Button>
-          <Button onClick={handleAdd} size="sm">
+          <Button onClick={handleAdd} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
             <Plus className="w-4 h-4 mr-1.5" /> Nuevo donativo
           </Button>
         </div>
@@ -184,7 +183,7 @@ export default function DonativosPanel({ donativos, onDonativosChange, grupos }:
             {donativos.length === 0 ? 'No hay donativos registrados' : 'Sin resultados'}
           </p>
           {donativos.length === 0 && (
-            <Button onClick={handleAdd} size="sm">
+            <Button onClick={handleAdd} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
               <Plus className="w-4 h-4 mr-2" /> Registrar primer donativo
             </Button>
           )}
@@ -431,30 +430,36 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                 className="pl-9 bg-white/5 border-white/10 text-white"
               />
             </div>
-            <div className="mt-2 max-h-40 overflow-y-auto border border-white/10 rounded-lg bg-white/5">
+            <div className="mt-2 max-h-48 overflow-y-auto border border-white/10 rounded-lg bg-white/5 divide-y divide-white/5">
               {seleccionTipo === 'grupo' ? (
                 gruposFiltrados.length === 0 ? (
                   <p className="text-center text-white/30 text-sm py-3">Sin resultados</p>
                 ) : (
                   gruposFiltrados.map(g => {
                     const nombre = `${g.invitadoPrincipal.nombre} ${g.invitadoPrincipal.apellidos}`.trim();
-                    const total = 1 + g.acompanantes.length;
+                    const miembros = g.acompanantes.map(a => a.nombre).filter(Boolean);
                     const selected = grupoId === g.id;
                     return (
                       <button
                         key={g.id}
                         onClick={() => setGrupoId(g.id)}
-                        className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-white/5 transition-colors ${
-                          selected ? 'bg-blue-500/15 text-blue-300' : 'text-white/70'
+                        className={`w-full text-left px-3 py-2.5 transition-colors ${
+                          selected ? 'bg-blue-500/15' : 'hover:bg-white/5'
                         }`}
                       >
-                        <span>{nombre}</span>
-                        <span className="text-xs text-white/30">
-                          {total} persona{total !== 1 ? 's' : ''}
-                          {g.asistencia === 'confirmado' && (
-                            <Badge variant="outline" className="ml-2 text-[10px] py-0 bg-green-500/10 text-green-400 border-green-500/30">OK</Badge>
-                          )}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            selected ? 'bg-blue-400' : 'bg-white/20'
+                          }`} />
+                          <span className={`text-sm font-medium ${selected ? 'text-blue-300' : 'text-white/80'}`}>
+                            {nombre}
+                          </span>
+                        </div>
+                        {miembros.length > 0 && (
+                          <p className="text-xs text-white/30 ml-4 mt-0.5">
+                            con {miembros.join(', ')}
+                          </p>
+                        )}
                       </button>
                     );
                   })
@@ -469,11 +474,18 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                       <button
                         key={p.personaId}
                         onClick={() => setPersonaId(p.personaId)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors ${
-                          selected ? 'bg-purple-500/15 text-purple-300' : 'text-white/70'
+                        className={`w-full text-left px-3 py-2.5 transition-colors ${
+                          selected ? 'bg-purple-500/15' : 'hover:bg-white/5'
                         }`}
                       >
-                        {p.label}
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            selected ? 'bg-purple-400' : 'bg-white/20'
+                          }`} />
+                          <span className={`text-sm ${selected ? 'text-purple-300 font-medium' : 'text-white/70'}`}>
+                            {p.label}
+                          </span>
+                        </div>
                       </button>
                     );
                   })
@@ -512,10 +524,10 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
         </div>
 
         <div className="flex gap-3 mt-6">
-          <Button variant="outline" onClick={onClose} className="flex-1 border-white/10 text-white/70">
+          <Button variant="outline" onClick={onClose} className="flex-1 border-white/10 text-white/70 hover:text-white">
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={!isValid} className="flex-1">
+          <Button onClick={handleSubmit} disabled={!isValid} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
             {donativo ? 'Guardar' : 'Registrar'}
           </Button>
         </div>

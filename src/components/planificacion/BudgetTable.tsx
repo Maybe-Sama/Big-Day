@@ -234,7 +234,7 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
           </div>
 
           <div className="mt-4">
-            <Button onClick={handleAdd} variant="outline" size="sm" className="border-white/10 text-black">
+            <Button onClick={handleAdd} variant="outline" size="sm" className="border-white/10 text-white/70 hover:text-white">
               <Plus className="w-4 h-4 mr-2" /> Añadir categoría
             </Button>
           </div>
