@@ -131,7 +131,7 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     .card-numero {
       position: absolute;
       top: 1.2rem;
-      right: 2rem;
+      right: 50%;
       font-family: 'Pinyon Script', cursive;
       font-size: 8rem;
       line-height: 0.85;
@@ -150,7 +150,7 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       font-size: 6.3rem;
       line-height: 1;
       color: #b0a080;
-      margin-bottom: 0.2rem;
+      margin-bottom: 1.5rem;
     }
 
     .card-divider {
