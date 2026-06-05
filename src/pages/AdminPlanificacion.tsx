@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, LayoutDashboard, CheckSquare, Euro, Loader2 } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, CheckSquare, Euro, Gift, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Tarea, CategoriaPresupuesto } from '@/types/planificacion';
+import { Tarea, CategoriaPresupuesto, Donativo } from '@/types/planificacion';
+import { GrupoInvitados } from '@/types/invitados';
 import PlanDashboard from '@/components/planificacion/PlanDashboard';
 import KanbanBoard from '@/components/planificacion/KanbanBoard';
 import BudgetTable from '@/components/planificacion/BudgetTable';
+import DonativosPanel from '@/components/planificacion/DonativosPanel';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-type Tab = 'dashboard' | 'tareas' | 'presupuesto';
+type Tab = 'dashboard' | 'tareas' | 'presupuesto' | 'donativos';
 
 export default function AdminPlanificacion() {
   const navigate = useNavigate();
@@ -19,6 +21,8 @@ export default function AdminPlanificacion() {
   const [tab, setTab] = useState<Tab>('dashboard');
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [categorias, setCategorias] = useState<CategoriaPresupuesto[]>([]);
+  const [donativos, setDonativos] = useState<Donativo[]>([]);
+  const [grupos, setGrupos] = useState<GrupoInvitados[]>([]);
   const [asistentesConfirmados, setAsistentesConfirmados] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
@@ -31,10 +35,11 @@ export default function AdminPlanificacion() {
   async function checkSessionAndLoad() {
     try {
       // Verify session by fetching tareas (will 401 if not authenticated)
-      const [tareasRes, presupuestoRes, invitadosRes] = await Promise.all([
+      const [tareasRes, presupuestoRes, invitadosRes, donativosRes] = await Promise.all([
         fetch(`${API_BASE}/planificacion?action=get-tareas`, { credentials: 'include' }),
         fetch(`${API_BASE}/planificacion?action=get-presupuesto`, { credentials: 'include' }),
         fetch(`${API_BASE}/invitados`, { credentials: 'include' }),
+        fetch(`${API_BASE}/planificacion?action=get-donativos`, { credentials: 'include' }),
       ]);
 
       if (tareasRes.status === 401 || presupuestoRes.status === 401) {
@@ -51,12 +56,18 @@ export default function AdminPlanificacion() {
       setTareas(Array.isArray(tareasData.tareas) ? tareasData.tareas : []);
       setCategorias(Array.isArray(presupuestoData.categorias) ? presupuestoData.categorias : []);
 
+      if (donativosRes.ok) {
+        const donativosData = await donativosRes.json();
+        setDonativos(Array.isArray(donativosData.donativos) ? donativosData.donativos : []);
+      }
+
       // Calculate confirmed attendees (same logic as AdminOculto statsPorPersona)
       if (invitadosRes.ok) {
-        const grupos = await invitadosRes.json();
-        if (Array.isArray(grupos)) {
+        const gruposData = await invitadosRes.json();
+        if (Array.isArray(gruposData)) {
+          setGrupos(gruposData);
           let total = 0;
-          grupos.forEach((grupo: any) => {
+          gruposData.forEach((grupo: any) => {
             if (grupo.invitadoPrincipal?.asistencia === 'confirmado') total++;
             (grupo.acompanantes || []).forEach((ac: any) => {
               if (ac.asistencia === 'confirmado') total++;
@@ -100,6 +111,31 @@ export default function AdminPlanificacion() {
       toast({ title: 'Error', description: 'No se pudieron guardar las tareas', variant: 'destructive' });
     }
   }, [tareas, toast, navigate]);
+
+  // Save donativos to API
+  const saveDonativos = useCallback(async (newDonativos: Donativo[]) => {
+    const prev = donativos;
+    setDonativos(newDonativos);
+    try {
+      const res = await fetch(`${API_BASE}/planificacion?action=save-donativos`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ donativos: newDonativos }),
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast({ title: 'Sesion expirada', description: 'Redirigiendo al login...', variant: 'destructive' });
+          setTimeout(() => navigate('/admin/oculto'), 1500);
+          return;
+        }
+        throw new Error('Error al guardar');
+      }
+    } catch {
+      setDonativos(prev);
+      toast({ title: 'Error', description: 'No se pudieron guardar los donativos', variant: 'destructive' });
+    }
+  }, [donativos, toast, navigate]);
 
   // Save categorias to API
   const saveCategorias = useCallback(async (newCategorias: CategoriaPresupuesto[]) => {
@@ -151,6 +187,7 @@ export default function AdminPlanificacion() {
     { id: 'dashboard', label: 'Resumen', icon: LayoutDashboard },
     { id: 'tareas', label: 'Tareas', icon: CheckSquare },
     { id: 'presupuesto', label: 'Presupuesto', icon: Euro },
+    { id: 'donativos', label: 'Donativos', icon: Gift },
   ];
 
   return (
@@ -199,6 +236,7 @@ export default function AdminPlanificacion() {
             tareas={tareas}
             categorias={categorias}
             asistentesConfirmados={asistentesConfirmados}
+            donativos={donativos}
           />
         )}
         {tab === 'tareas' && (
@@ -209,6 +247,14 @@ export default function AdminPlanificacion() {
             categorias={categorias}
             onCategoriasChange={saveCategorias}
             asistentesConfirmados={asistentesConfirmados}
+            totalDonativos={donativos.reduce((sum, d) => sum + d.cantidad, 0)}
+          />
+        )}
+        {tab === 'donativos' && (
+          <DonativosPanel
+            donativos={donativos}
+            onDonativosChange={saveDonativos}
+            grupos={grupos}
           />
         )}
       </div>

@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
-import { CheckSquare, Clock, Euro, TrendingDown } from 'lucide-react';
+import { CheckSquare, Clock, Euro, TrendingDown, Gift } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tarea, CategoriaPresupuesto } from '@/types/planificacion';
+import { Tarea, CategoriaPresupuesto, Donativo } from '@/types/planificacion';
 
 interface PlanDashboardProps {
   tareas: Tarea[];
   categorias: CategoriaPresupuesto[];
   asistentesConfirmados: number;
+  donativos?: Donativo[];
 }
 
-export default function PlanDashboard({ tareas, categorias, asistentesConfirmados }: PlanDashboardProps) {
+export default function PlanDashboard({ tareas, categorias, asistentesConfirmados, donativos = [] }: PlanDashboardProps) {
   const stats = useMemo(() => {
     const tareasPendientes = tareas.filter(t => t.columna === 'todo' || t.columna === 'in_progress').length;
     const tareasHechas = tareas.filter(t => t.columna === 'done').length;
@@ -23,9 +24,10 @@ export default function PlanDashboard({ tareas, categorias, asistentesConfirmado
 
     const estimado = categoriasCalc.reduce((sum, c) => sum + c.costeEstimado, 0);
     const pagado = categoriasCalc.reduce((sum, c) => sum + c.cantidadPagada, 0);
+    const totalDonativos = donativos.reduce((sum, d) => sum + d.cantidad, 0);
 
-    return { tareasPendientes, tareasHechas, estimado, pagado, pendiente: estimado - pagado };
-  }, [tareas, categorias, asistentesConfirmados]);
+    return { tareasPendientes, tareasHechas, estimado, pagado, pendiente: estimado - pagado, totalDonativos };
+  }, [tareas, categorias, asistentesConfirmados, donativos]);
 
   function formatEuro(n: number) {
     return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
@@ -58,14 +60,23 @@ export default function PlanDashboard({ tareas, categorias, asistentesConfirmado
     {
       title: 'Pendiente de pago',
       value: formatEuro(stats.pendiente),
-      subtitle: stats.pendiente > 0 ? 'Por pagar' : 'Todo al día',
+      subtitle: stats.pendiente > 0 ? 'Por pagar' : 'Todo al dia',
       icon: TrendingDown,
       color: stats.pendiente > 0 ? 'text-red-400' : 'text-green-400',
+    },
+    {
+      title: 'Donativos recibidos',
+      value: formatEuro(stats.totalDonativos),
+      subtitle: donativos.length > 0
+        ? `${donativos.length} donativo${donativos.length !== 1 ? 's' : ''}`
+        : 'Sin donativos',
+      icon: Gift,
+      color: stats.totalDonativos > 0 ? 'text-emerald-400' : 'text-white/40',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {cards.map((card, i) => (
         <Card key={i} className="bg-white/5 border-white/10">
           <CardContent className="p-4">

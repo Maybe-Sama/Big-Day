@@ -12,9 +12,10 @@ interface BudgetTableProps {
   categorias: CategoriaPresupuesto[];
   onCategoriasChange: (categorias: CategoriaPresupuesto[]) => void;
   asistentesConfirmados: number;
+  totalDonativos?: number;
 }
 
-export default function BudgetTable({ categorias, onCategoriasChange, asistentesConfirmados }: BudgetTableProps) {
+export default function BudgetTable({ categorias, onCategoriasChange, asistentesConfirmados, totalDonativos = 0 }: BudgetTableProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCategoria, setEditingCategoria] = useState<CategoriaPresupuesto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -113,9 +114,20 @@ export default function BudgetTable({ categorias, onCategoriasChange, asistentes
           <span>Total estimado: {formatEuro(totales.estimado)}</span>
         </div>
         <Progress value={progreso} className="h-3" />
-        <p className="text-xs text-white/40 mt-1 text-right">
-          Pendiente: {formatEuro(totales.pendiente)}
-        </p>
+        <div className="flex justify-between mt-1">
+          <p className="text-xs text-white/40">
+            Pendiente: {formatEuro(totales.pendiente)}
+          </p>
+          {totalDonativos > 0 && (
+            <p className="text-xs text-green-400/70">
+              Donativos recibidos: {formatEuro(totalDonativos)}
+              {' '}&middot;{' '}
+              Balance: <span className={totalDonativos - totales.estimado >= 0 ? 'text-green-400' : 'text-amber-400'}>
+                {formatEuro(totalDonativos - totales.estimado)}
+              </span>
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Table */}

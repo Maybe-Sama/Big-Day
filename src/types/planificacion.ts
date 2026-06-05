@@ -54,3 +54,13 @@ export const ESTADO_PAGO_CONFIG: Record<EstadoPago, { label: string; color: stri
   senal_pagada: { label: 'Señal pagada', color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40' },
   pagado_completo: { label: 'Pagado', color: 'bg-green-500/20 text-green-300 border-green-500/40' },
 };
+
+export interface Donativo {
+  id: string;
+  grupoId: string;
+  personaId?: string; // "grupoId:principal" o "grupoId:acompananteId" — si es individual
+  nombreDisplay: string;
+  cantidad: number;
+  nota: string;
+  fecha: string;
+}

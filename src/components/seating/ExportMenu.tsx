@@ -1,13 +1,16 @@
-import { Download, Image, FileText } from 'lucide-react';
+import { Download, Image, FileText, LayoutList, Armchair } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { generateSeatingListText } from '@/lib/plano-utils';
+import { buildMesaPersonas, getListaMesasPdfHtml } from '@/lib/lista-mesas-pdf';
+import { buildSeatingCards, getSeatingCardsPdfHtml } from '@/lib/seating-cards-pdf';
 
 export function ExportMenu() {
   const { mesas, asignaciones, personas } = useSeatingEditor();
@@ -41,6 +44,26 @@ export function ExportMenu() {
     URL.revokeObjectURL(link.href);
   };
 
+  const handleExportListaPdf = () => {
+    const mesasPersonas = buildMesaPersonas(mesas, asignaciones, personas);
+    const html = getListaMesasPdfHtml(mesasPersonas);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  };
+
+  const handleExportSeatingCards = () => {
+    const cards = buildSeatingCards(mesas, asignaciones, personas);
+    const html = getSeatingCardsPdfHtml(cards);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  };
+
   return (
     <div className="absolute bottom-4 left-4 z-20">
       <DropdownMenu>
@@ -62,7 +85,16 @@ export function ExportMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleExportList}>
             <FileText className="w-4 h-4 mr-2" />
-            Descargar listado
+            Descargar listado (TXT)
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleExportListaPdf}>
+            <LayoutList className="w-4 h-4 mr-2" />
+            Lista de mesas (PDF)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleExportSeatingCards}>
+            <Armchair className="w-4 h-4 mr-2" />
+            Seating A5 (PDF)
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

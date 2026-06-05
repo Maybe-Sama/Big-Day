@@ -9,6 +9,7 @@ const redis = new Redis({
 
 const TAREAS_KEY = 'planificacion:tareas';
 const PRESUPUESTO_KEY = 'planificacion:presupuesto';
+const DONATIVOS_KEY = 'planificacion:donativos';
 
 function setCors(req: VercelRequest, res: VercelResponse) {
   const origin = req.headers.origin;
@@ -65,6 +66,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'save-presupuesto': {
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         await redis.set(PRESUPUESTO_KEY, JSON.stringify(body.categorias || []));
+        return res.status(200).json({ ok: true });
+      }
+
+      case 'get-donativos': {
+        const donativos = await redis.get(DONATIVOS_KEY);
+        return res.status(200).json({ donativos: donativos || [] });
+      }
+
+      case 'save-donativos': {
+        const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        await redis.set(DONATIVOS_KEY, JSON.stringify(body.donativos || []));
         return res.status(200).json({ ok: true });
       }
 
