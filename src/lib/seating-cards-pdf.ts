@@ -56,8 +56,9 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       .map(n => `<div class="guest-name">${escHtml(n.toUpperCase())}</div>`)
       .join('');
 
+    const digitClass = card.numero.length >= 2 ? ' two-digit' : '';
     return `<div class="card">
-      <div class="card-numero">${escHtml(card.numero)}</div>
+      <div class="card-numero${digitClass}">${escHtml(card.numero)}</div>
       <div class="card-template">
         <div class="mesa-label">Mesa</div>
         <div class="card-divider"></div>
@@ -136,6 +137,10 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       font-size: 8rem;
       line-height: 0.85;
       color: #b0a080;
+    }
+
+    .card-numero.two-digit {
+      right: 10%;
     }
 
     /* Bloque fijo: Mesa + rayita */
