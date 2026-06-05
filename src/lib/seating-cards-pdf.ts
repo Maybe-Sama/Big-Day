@@ -9,6 +9,7 @@ import type { MesaConfig } from '@/types/mesas';
 
 export interface SeatingCard {
   numero: string;
+  label: string;
   nombres: string[];
 }
 
@@ -43,7 +44,8 @@ export function buildSeatingCards(
         .filter(Boolean) as string[];
 
       return {
-        numero: extractNumero(mesa.nombre),
+        numero: mesa.esNupcial ? '1' : extractNumero(mesa.nombre),
+        label: mesa.esNupcial ? 'Nupcial' : 'Mesa',
         nombres,
       };
     })
@@ -60,7 +62,7 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     return `<div class="card">
       <div class="card-numero${digitClass}">${escHtml(card.numero)}</div>
       <div class="card-template">
-        <div class="mesa-label">Mesa</div>
+        <div class="mesa-label">${escHtml(card.label)}</div>
         <div class="card-divider"></div>
       </div>
       <div class="card-guests" data-count="${card.nombres.length}">
