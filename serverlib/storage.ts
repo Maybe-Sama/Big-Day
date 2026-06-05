@@ -10,6 +10,7 @@ export const CONFIG_BUSES_KEY = 'invitados:config:buses';
 export const CONFIG_MESAS_KEY = 'invitados:config:mesas';
 export const CARRERAS_KEY = 'invitados:carreras';
 export const PLANO_KEY = 'invitados:plano';
+export const SEATING_ORDEN_KEY = 'invitados:seating-orden';
 
 export const MIGRATION_VERSION_KEY = 'invitados:migration:version';
 export const MIGRATION_COMPLETED_AT_KEY = 'invitados:migration:completedAt';

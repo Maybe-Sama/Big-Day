@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
 import { validateAdminSession } from '../serverlib/auth.js';
-import { CARRERAS_KEY, CONFIG_BUSES_KEY, CONFIG_MESAS_KEY, PLANO_KEY } from '../serverlib/storage.js';
+import { CARRERAS_KEY, CONFIG_BUSES_KEY, CONFIG_MESAS_KEY, PLANO_KEY, SEATING_ORDEN_KEY } from '../serverlib/storage.js';
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
@@ -27,12 +27,13 @@ function setCors(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
-type Kind = 'mesas' | 'buses' | 'carreras' | 'plano';
+type Kind = 'mesas' | 'buses' | 'carreras' | 'plano' | 'seating-orden';
 
 function getKeyForKind(kind: Kind) {
   if (kind === 'mesas') return CONFIG_MESAS_KEY;
   if (kind === 'buses') return CONFIG_BUSES_KEY;
   if (kind === 'plano') return PLANO_KEY;
+  if (kind === 'seating-orden') return SEATING_ORDEN_KEY;
   return CARRERAS_KEY;
 }
 
@@ -54,8 +55,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const kind = String(req.query.kind || '').trim() as Kind;
-  if (kind !== 'mesas' && kind !== 'buses' && kind !== 'carreras' && kind !== 'plano') {
-    return res.status(400).json({ error: 'kind invalido. Usa mesas|buses|carreras|plano' });
+  if (kind !== 'mesas' && kind !== 'buses' && kind !== 'carreras' && kind !== 'plano' && kind !== 'seating-orden') {
+    return res.status(400).json({ error: 'kind invalido. Usa mesas|buses|carreras|plano|seating-orden' });
   }
 
   const key = getKeyForKind(kind);
