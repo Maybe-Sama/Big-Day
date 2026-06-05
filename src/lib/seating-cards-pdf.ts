@@ -57,13 +57,12 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       .join('');
 
     return `<div class="card">
-      <div class="card-numero">${escHtml(card.numero)}</div>
-      <div class="card-fixed">
+      <div class="card-header">
+        <div class="mesa-numero">${escHtml(card.numero)}</div>
         <div class="mesa-label">Mesa</div>
-        <div class="card-divider"></div>
-        <div class="card-guests">
-          ${nombresHtml}
-        </div>
+      </div>
+      <div class="card-guests">
+        ${nombresHtml}
       </div>
     </div>`;
   }).join('');
@@ -118,7 +117,9 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       page-break-after: always;
       break-after: page;
       position: relative;
-      overflow: hidden;
+      padding: 2.5rem 3rem;
+      display: flex;
+      flex-direction: column;
     }
 
     .card:last-child {
@@ -126,53 +127,40 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       break-after: auto;
     }
 
-    .card-numero {
-      position: absolute;
-      top: 1.2rem;
-      right: 2rem;
-      font-family: 'Pinyon Script', cursive;
-      font-size: 10rem;
-      line-height: 1;
-      color: #c9a84c;
+    .card-header {
+      text-align: right;
+      margin-bottom: 2.5rem;
     }
 
-    .card-fixed {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      width: 100%;
-      padding: 0 1.5rem;
+    .mesa-numero {
+      font-family: 'Pinyon Script', cursive;
+      font-size: 8rem;
+      line-height: 0.85;
+      color: #b0a080;
     }
 
     .mesa-label {
       font-family: 'Pinyon Script', cursive;
-      font-size: 6.4rem;
-      line-height: 1.1;
-      color: #c9a84c;
-    }
-
-    .card-divider {
-      width: 4rem;
-      height: 1px;
-      background: #c9a84c;
-      margin: 1.5rem auto 2rem;
+      font-size: 5.5rem;
+      line-height: 1;
+      color: #b0a080;
+      margin-top: -0.5rem;
     }
 
     .card-guests {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
+      align-items: flex-start;
+      gap: 0.25rem;
+      padding-left: 0.5rem;
     }
 
     .guest-name {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 2rem;
+      font-size: 1.15rem;
       font-weight: 600;
-      letter-spacing: 0.12em;
-      color: #4a4a4a;
+      letter-spacing: 0.08em;
+      color: #5a5a5a;
     }
   </style>
 </head>
