@@ -53,6 +53,30 @@ export function buildSeatingCards(
 }
 
 export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
+  // Primera pagina: indice de mesas
+  const indexRows = cards.map(card => {
+    const mesaName = card.label === 'Nupcial' ? 'Nupcial' : `Mesa ${card.numero}`;
+    return `<div class="index-row">
+      <span class="index-mesa">${escHtml(mesaName)}</span>
+      <span class="index-dots"></span>
+      <span class="index-count">${card.nombres.length} persona${card.nombres.length !== 1 ? 's' : ''}</span>
+    </div>`;
+  }).join('');
+
+  const totalPersonas = cards.reduce((sum, c) => sum + c.nombres.length, 0);
+
+  const indexPage = `<div class="card index-page">
+    <div class="index-inner">
+      <h1 class="index-title">Seating</h1>
+      <div class="index-divider"></div>
+      <div class="index-list">
+        ${indexRows}
+      </div>
+      <div class="index-divider"></div>
+      <div class="index-total">Total: ${totalPersonas} personas</div>
+    </div>
+  </div>`;
+
   const cardsHtml = cards.map(card => {
     const nombresHtml = card.nombres
       .map(n => `<div class="guest-name">${escHtml(n.toUpperCase())}</div>`)
@@ -87,6 +111,11 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       body { background: white !important; }
       .no-print { display: none !important; }
       .card { page-break-inside: avoid; break-inside: avoid; }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
     }
 
     @page {
@@ -199,10 +228,79 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     .card-guests[data-count="18"] .guest-name,
     .card-guests[data-count="19"] .guest-name,
     .card-guests[data-count="20"] .guest-name { font-size: 1.25rem; }
+
+    /* ── Pagina indice ── */
+    .index-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .index-inner {
+      text-align: center;
+      width: 100%;
+      padding: 2.5rem 3rem;
+    }
+
+    .index-title {
+      font-family: 'Pinyon Script', cursive;
+      font-size: 5rem;
+      color: #b0a080;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+    }
+
+    .index-divider {
+      width: 5rem;
+      height: 1px;
+      background: #b0a080;
+      margin: 1.5rem auto;
+    }
+
+    .index-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding: 0.5rem 0;
+    }
+
+    .index-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      color: #5a5a5a;
+    }
+
+    .index-mesa {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .index-dots {
+      flex: 1;
+      border-bottom: 1px dotted #c0b090;
+      margin-bottom: 0.25rem;
+    }
+
+    .index-count {
+      white-space: nowrap;
+      color: #b0a080;
+      font-weight: 500;
+    }
+
+    .index-total {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #b0a080;
+    }
   </style>
 </head>
 <body>
   <div class="print-hint no-print">Pulsa <kbd>Ctrl</kbd>+<kbd>P</kbd> para guardar como PDF &mdash; Configura papel <strong>A5</strong> y margenes a <strong>0</strong></div>
+  ${indexPage}
   ${cardsHtml}
 </body>
 </html>`;
