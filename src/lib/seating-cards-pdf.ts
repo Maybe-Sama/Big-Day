@@ -147,16 +147,17 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
 
     .mesa-label {
       font-family: 'Pinyon Script', cursive;
-      font-size: 5.5rem;
+      font-size: 6.3rem;
       line-height: 1;
       color: #b0a080;
+      margin-bottom: 0.2rem;
     }
 
     .card-divider {
       width: 4rem;
       height: 1px;
       background: #b0a080;
-      margin: 1rem auto 0;
+      margin: 0 auto;
     }
 
     /* Nombres: rellenan el espacio restante, se ajustan */
@@ -173,7 +174,7 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
 
     .guest-name {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 2rem;
+      font-size: 2.3rem;
       font-weight: 600;
       letter-spacing: 0.08em;
       color: #5a5a5a;
@@ -182,15 +183,15 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
 
     /* Reducir tamaño si hay muchos nombres */
     .card-guests[data-count="11"] .guest-name,
-    .card-guests[data-count="12"] .guest-name { font-size: 1.7rem; }
+    .card-guests[data-count="12"] .guest-name { font-size: 1.95rem; }
     .card-guests[data-count="13"] .guest-name,
-    .card-guests[data-count="14"] .guest-name { font-size: 1.5rem; }
+    .card-guests[data-count="14"] .guest-name { font-size: 1.7rem; }
     .card-guests[data-count="15"] .guest-name,
-    .card-guests[data-count="16"] .guest-name { font-size: 1.3rem; }
+    .card-guests[data-count="16"] .guest-name { font-size: 1.5rem; }
     .card-guests[data-count="17"] .guest-name,
     .card-guests[data-count="18"] .guest-name,
     .card-guests[data-count="19"] .guest-name,
-    .card-guests[data-count="20"] .guest-name { font-size: 1.1rem; }
+    .card-guests[data-count="20"] .guest-name { font-size: 1.25rem; }
   </style>
 </head>
 <body>
