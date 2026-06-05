@@ -57,9 +57,9 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       .join('');
 
     return `<div class="card">
+      <div class="card-numero">${escHtml(card.numero)}</div>
       <div class="card-inner">
         <div class="card-header">
-          <div class="mesa-numero">${escHtml(card.numero)}</div>
           <div class="mesa-label">Mesa</div>
         </div>
         <div class="card-divider"></div>
@@ -122,11 +122,22 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       justify-content: center;
       page-break-after: always;
       break-after: page;
+      position: relative;
     }
 
     .card:last-child {
       page-break-after: auto;
       break-after: auto;
+    }
+
+    .card-numero {
+      position: absolute;
+      top: 1.5rem;
+      right: 2rem;
+      font-family: 'Pinyon Script', cursive;
+      font-size: 10rem;
+      line-height: 1;
+      color: #b09a7a;
     }
 
     .card-inner {
@@ -136,41 +147,33 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     }
 
     .card-header {
-      margin-bottom: 1.5rem;
-    }
-
-    .mesa-numero {
-      font-family: 'Pinyon Script', cursive;
-      font-size: 5rem;
-      line-height: 1;
-      color: #b09a7a;
-      margin-bottom: -0.2rem;
+      margin-bottom: 2rem;
     }
 
     .mesa-label {
       font-family: 'Pinyon Script', cursive;
-      font-size: 3.2rem;
+      font-size: 6.4rem;
       line-height: 1.1;
       color: #b09a7a;
     }
 
     .card-divider {
-      width: 3rem;
+      width: 4rem;
       height: 1px;
       background: #c4a77d;
-      margin: 1.2rem auto 1.5rem;
+      margin: 1.5rem auto 2rem;
     }
 
     .card-guests {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.5rem;
     }
 
     .guest-name {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1rem;
+      font-size: 2rem;
       font-weight: 600;
       letter-spacing: 0.12em;
       color: #4a4a4a;
