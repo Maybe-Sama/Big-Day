@@ -57,11 +57,12 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       .join('');
 
     return `<div class="card">
-      <div class="card-header">
-        <div class="mesa-numero">${escHtml(card.numero)}</div>
+      <div class="card-numero">${escHtml(card.numero)}</div>
+      <div class="card-template">
         <div class="mesa-label">Mesa</div>
+        <div class="card-divider"></div>
       </div>
-      <div class="card-guests">
+      <div class="card-guests" data-count="${card.nombres.length}">
         ${nombresHtml}
       </div>
     </div>`;
@@ -117,6 +118,8 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       page-break-after: always;
       break-after: page;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
     .card:last-child {
@@ -124,18 +127,22 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       break-after: auto;
     }
 
-    .card-header {
+    /* Numero arriba derecha */
+    .card-numero {
       position: absolute;
-      top: 1.5rem;
-      right: 2.5rem;
-      text-align: right;
-    }
-
-    .mesa-numero {
+      top: 1.2rem;
+      right: 2rem;
       font-family: 'Pinyon Script', cursive;
       font-size: 8rem;
       line-height: 0.85;
       color: #b0a080;
+    }
+
+    /* Bloque fijo: Mesa + rayita */
+    .card-template {
+      text-align: center;
+      padding-top: 3rem;
+      flex-shrink: 0;
     }
 
     .mesa-label {
@@ -143,20 +150,25 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       font-size: 5.5rem;
       line-height: 1;
       color: #b0a080;
-      margin-top: -0.5rem;
     }
 
+    .card-divider {
+      width: 4rem;
+      height: 1px;
+      background: #b0a080;
+      margin: 1rem auto 0;
+    }
+
+    /* Nombres: rellenan el espacio restante, se ajustan */
     .card-guests {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 0.3rem;
-      width: 100%;
-      padding: 0 2rem;
+      padding: 1rem 2rem 2rem;
+      overflow: hidden;
     }
 
     .guest-name {
@@ -165,7 +177,20 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       font-weight: 600;
       letter-spacing: 0.08em;
       color: #5a5a5a;
+      white-space: nowrap;
     }
+
+    /* Reducir tamaño si hay muchos nombres */
+    .card-guests[data-count="11"] .guest-name,
+    .card-guests[data-count="12"] .guest-name { font-size: 1.7rem; }
+    .card-guests[data-count="13"] .guest-name,
+    .card-guests[data-count="14"] .guest-name { font-size: 1.5rem; }
+    .card-guests[data-count="15"] .guest-name,
+    .card-guests[data-count="16"] .guest-name { font-size: 1.3rem; }
+    .card-guests[data-count="17"] .guest-name,
+    .card-guests[data-count="18"] .guest-name,
+    .card-guests[data-count="19"] .guest-name,
+    .card-guests[data-count="20"] .guest-name { font-size: 1.1rem; }
   </style>
 </head>
 <body>
