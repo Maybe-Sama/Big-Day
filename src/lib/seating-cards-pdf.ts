@@ -117,9 +117,6 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       page-break-after: always;
       break-after: page;
       position: relative;
-      padding: 2.5rem 3rem;
-      display: flex;
-      flex-direction: column;
     }
 
     .card:last-child {
@@ -128,8 +125,10 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     }
 
     .card-header {
+      position: absolute;
+      top: 1.5rem;
+      right: 2.5rem;
       text-align: right;
-      margin-bottom: 2.5rem;
     }
 
     .mesa-numero {
@@ -148,16 +147,21 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
     }
 
     .card-guests {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
-      gap: 0.25rem;
-      padding-left: 0.5rem;
+      align-items: center;
+      gap: 0.3rem;
+      width: 100%;
+      padding: 0 2rem;
     }
 
     .guest-name {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.15rem;
+      font-size: 2rem;
       font-weight: 600;
       letter-spacing: 0.08em;
       color: #5a5a5a;
