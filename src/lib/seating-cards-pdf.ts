@@ -30,7 +30,7 @@ export function buildSeatingCards(
 ): SeatingCard[] {
   const personaMap = new Map(personas.map(p => [p.personaId, p]));
 
-  return mesas
+  const cards = mesas
     .map(mesa => {
       const mesaAsignaciones = asignaciones
         .filter(a => a.mesaId === mesa.id)
@@ -50,6 +50,15 @@ export function buildSeatingCards(
       };
     })
     .filter(c => c.nombres.length > 0);
+
+  // Ordenar mesas por numero
+  cards.sort((a, b) => {
+    const na = parseInt(a.numero) || 0;
+    const nb = parseInt(b.numero) || 0;
+    return na - nb;
+  });
+
+  return cards;
 }
 
 export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {

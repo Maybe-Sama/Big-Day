@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Download, Image, FileText, LayoutList, Armchair } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,10 +11,13 @@ import {
 import { useSeatingEditor } from './SeatingEditorProvider';
 import { generateSeatingListText } from '@/lib/plano-utils';
 import { buildMesaPersonas, getListaMesasPdfHtml } from '@/lib/lista-mesas-pdf';
-import { buildSeatingCards, getSeatingCardsPdfHtml } from '@/lib/seating-cards-pdf';
+import { buildSeatingCards } from '@/lib/seating-cards-pdf';
+import type { SeatingCard } from '@/lib/seating-cards-pdf';
+import SeatingPreviewModal from './SeatingPreviewModal';
 
 export function ExportMenu() {
   const { mesas, asignaciones, personas } = useSeatingEditor();
+  const [previewCards, setPreviewCards] = useState<SeatingCard[] | null>(null);
 
   const handleExportImage = async () => {
     try {
@@ -56,15 +60,17 @@ export function ExportMenu() {
 
   const handleExportSeatingCards = () => {
     const cards = buildSeatingCards(mesas, asignaciones, personas);
-    const html = getSeatingCardsPdfHtml(cards);
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-    }
+    setPreviewCards(cards);
   };
 
   return (
+    <>
+    {previewCards && (
+      <SeatingPreviewModal
+        cards={previewCards}
+        onClose={() => setPreviewCards(null)}
+      />
+    )}
     <div className="absolute bottom-4 left-4 z-20">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -99,5 +105,6 @@ export function ExportMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+    </>
   );
 }
