@@ -148,7 +148,7 @@ export default function DonativosPanel({ donativos, onDonativosChange, grupos }:
             variant="outline"
             size="sm"
             onClick={() => setShowSinDonar(!showSinDonar)}
-            className={`border-white/10 text-xs ${showSinDonar ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'text-white/70'}`}
+            className={`border-white/10 text-xs ${showSinDonar ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'text-black'}`}
           >
             <Users className="w-3.5 h-3.5 mr-1.5" />
             Sin registrar ({gruposSinDonar.length})
@@ -524,7 +524,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
         </div>
 
         <div className="flex gap-3 mt-6">
-          <Button variant="outline" onClick={onClose} className="flex-1 border-white/10 text-white/70 hover:text-white">
+          <Button variant="outline" onClick={onClose} className="flex-1 border-white/10 text-black">
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={!isValid} className="flex-1 bg-green-600 hover:bg-green-700 text-white">

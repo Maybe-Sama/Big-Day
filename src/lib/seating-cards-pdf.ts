@@ -58,10 +58,8 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
 
     return `<div class="card">
       <div class="card-numero">${escHtml(card.numero)}</div>
-      <div class="card-inner">
-        <div class="card-header">
-          <div class="mesa-label">Mesa</div>
-        </div>
+      <div class="card-fixed">
+        <div class="mesa-label">Mesa</div>
         <div class="card-divider"></div>
         <div class="card-guests">
           ${nombresHtml}
@@ -115,14 +113,12 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
 
     .card {
       width: 148mm;
-      min-height: 210mm;
+      height: 210mm;
       background: #faf8f5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       page-break-after: always;
       break-after: page;
       position: relative;
+      overflow: hidden;
     }
 
     .card:last-child {
@@ -132,35 +128,35 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
 
     .card-numero {
       position: absolute;
-      top: 1.5rem;
+      top: 1.2rem;
       right: 2rem;
       font-family: 'Pinyon Script', cursive;
       font-size: 10rem;
       line-height: 1;
-      color: #b09a7a;
+      color: #c9a84c;
     }
 
-    .card-inner {
+    .card-fixed {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       text-align: center;
-      padding: 2rem 1.5rem;
       width: 100%;
-    }
-
-    .card-header {
-      margin-bottom: 2rem;
+      padding: 0 1.5rem;
     }
 
     .mesa-label {
       font-family: 'Pinyon Script', cursive;
       font-size: 6.4rem;
       line-height: 1.1;
-      color: #b09a7a;
+      color: #c9a84c;
     }
 
     .card-divider {
       width: 4rem;
       height: 1px;
-      background: #c4a77d;
+      background: #c9a84c;
       margin: 1.5rem auto 2rem;
     }
 
