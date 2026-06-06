@@ -339,18 +339,31 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
   }, [grupos]);
 
   const gruposFiltrados = useMemo(() => {
-    if (!busqueda.trim()) return grupos;
-    const q = busqueda.toLowerCase();
-    return grupos.filter(g => {
-      const nombre = `${g.invitadoPrincipal.nombre} ${g.invitadoPrincipal.apellidos}`.toLowerCase();
-      return nombre.includes(q);
+    let filtered = [...grupos];
+    if (busqueda.trim()) {
+      const q = busqueda.toLowerCase();
+      filtered = filtered.filter(g => {
+        const nombre = `${g.invitadoPrincipal.nombre} ${g.invitadoPrincipal.apellidos}`.toLowerCase();
+        const acompNombres = g.acompanantes.map(a => `${a.nombre} ${a.apellidos}`.toLowerCase()).join(' ');
+        return nombre.includes(q) || acompNombres.includes(q);
+      });
+    }
+    filtered.sort((a, b) => {
+      const na = `${a.invitadoPrincipal.nombre} ${a.invitadoPrincipal.apellidos}`.trim().toLowerCase();
+      const nb = `${b.invitadoPrincipal.nombre} ${b.invitadoPrincipal.apellidos}`.trim().toLowerCase();
+      return na.localeCompare(nb);
     });
+    return filtered;
   }, [grupos, busqueda]);
 
   const personasFiltradas = useMemo(() => {
-    if (!busqueda.trim()) return personasList;
-    const q = busqueda.toLowerCase();
-    return personasList.filter(p => p.nombre.toLowerCase().includes(q));
+    let filtered = [...personasList];
+    if (busqueda.trim()) {
+      const q = busqueda.toLowerCase();
+      filtered = filtered.filter(p => p.nombre.toLowerCase().includes(q));
+    }
+    filtered.sort((a, b) => a.nombre.toLowerCase().localeCompare(b.nombre.toLowerCase()));
+    return filtered;
   }, [personasList, busqueda]);
 
   function getNombreDisplay(): string {
@@ -475,7 +488,9 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
           ) : (
           <div>
             <Label className="text-white/70">
-              {seleccionTipo === 'grupo' ? 'Seleccionar grupo' : 'Seleccionar persona'}
+              {seleccionTipo === 'grupo'
+                ? `Seleccionar grupo (${gruposFiltrados.length})`
+                : `Seleccionar persona (${personasFiltradas.length})`}
             </Label>
             <div className="relative mt-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
@@ -486,7 +501,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                 className="pl-9 bg-white/5 border-white/10 text-white"
               />
             </div>
-            <div className="mt-2 max-h-48 overflow-y-auto border border-white/10 rounded-lg bg-white/5 divide-y divide-white/5">
+            <div className="mt-2 max-h-64 overflow-y-auto border border-white/10 rounded-lg bg-white/5 divide-y divide-white/5">
               {seleccionTipo === 'grupo' ? (
                 gruposFiltrados.length === 0 ? (
                   <p className="text-center text-white/30 text-sm py-3">Sin resultados</p>
