@@ -65,6 +65,11 @@ export default function AdminPlanificacion() {
       if (invitadosRes.ok) {
         const gruposData = await invitadosRes.json();
         if (Array.isArray(gruposData)) {
+          console.log(`[Planificación] Total grupos cargados: ${gruposData.length}`);
+          gruposData.forEach((g: any, i: number) => {
+            const nombre = `${g.invitadoPrincipal?.nombre || ''} ${g.invitadoPrincipal?.apellidos || ''}`.trim();
+            console.log(`  ${i + 1}. ${nombre || '(sin nombre)'} — asistencia: ${g.asistencia} — acompañantes: ${g.acompanantes?.length || 0}`);
+          });
           setGrupos(gruposData);
           let total = 0;
           gruposData.forEach((grupo: any) => {
