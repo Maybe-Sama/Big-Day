@@ -34,8 +34,7 @@ export function buildSeatingCards(
   const cards = mesas
     .map(mesa => {
       const mesaAsignaciones = asignaciones
-        .filter(a => a.mesaId === mesa.id)
-        .sort((a, b) => a.sillaIndex - b.sillaIndex);
+        .filter(a => a.mesaId === mesa.id);
 
       const nombres = mesaAsignaciones
         .map(a => {
@@ -43,6 +42,9 @@ export function buildSeatingCards(
           return p ? p.nombre.trim() : null;
         })
         .filter(Boolean) as string[];
+
+      // Orden alfabético por defecto (independiente de la posición visual en la mesa)
+      nombres.sort((a, b) => a.localeCompare(b, 'es'));
 
       return {
         numero: mesa.esNupcial ? '' : extractNumero(mesa.nombre),
