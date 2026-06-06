@@ -211,7 +211,7 @@ export default function DonativosPanel({ donativos, onDonativosChange, grupos }:
                 <tr key={d.id} className="border-b border-white/5 hover:bg-white/5">
                   <td className="py-3 text-white">
                     <div className="flex items-center gap-2">
-                      {d.personaId
+                      {d.personaId && !d.personaId.includes(',')
                         ? <User className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
                         : <Users className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
                       }
@@ -294,7 +294,9 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
     donativo?.personaId ? 'persona' : 'grupo'
   );
   const [grupoId, setGrupoId] = useState(donativo?.grupoId || '');
-  const [personaId, setPersonaId] = useState(donativo?.personaId || '');
+  const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>(
+    donativo?.personaId ? donativo.personaId.split(',') : []
+  );
   const [cantidad, setCantidad] = useState(donativo?.cantidad.toString() || '');
   const [nota, setNota] = useState(donativo?.nota || '');
   const [busqueda, setBusqueda] = useState('');
@@ -346,8 +348,10 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
       const total = 1 + g.acompanantes.length;
       return total > 1 ? `${nombre} (+${total - 1})` : nombre;
     } else {
-      const p = personasList.find(p => p.personaId === personaId);
-      return p?.nombre || '';
+      const nombres = selectedPersonaIds
+        .map(id => personasList.find(p => p.personaId === id)?.nombre)
+        .filter(Boolean) as string[];
+      return nombres.join(' y ');
     }
   }
 
@@ -356,7 +360,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
     if (cantidadNum <= 0) return;
 
     const selectedGrupoId = seleccionTipo === 'persona'
-      ? personasList.find(p => p.personaId === personaId)?.grupoId || ''
+      ? personasList.find(p => p.personaId === selectedPersonaIds[0])?.grupoId || ''
       : grupoId;
 
     if (!selectedGrupoId) return;
@@ -364,7 +368,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
     onSave({
       ...(donativo ? { id: donativo.id } : {}),
       grupoId: selectedGrupoId,
-      personaId: seleccionTipo === 'persona' ? personaId : undefined,
+      personaId: seleccionTipo === 'persona' ? selectedPersonaIds.join(',') : undefined,
       nombreDisplay: getNombreDisplay(),
       cantidad: cantidadNum,
       nota: nota.trim().slice(0, 500),
@@ -373,7 +377,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
     onClose();
   }
 
-  const isValid = (seleccionTipo === 'grupo' ? !!grupoId : !!personaId) && (parseFloat(cantidad) || 0) > 0;
+  const isValid = (seleccionTipo === 'grupo' ? !!grupoId : selectedPersonaIds.length > 0) && (parseFloat(cantidad) || 0) > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -394,7 +398,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
             <Label className="text-white/70 mb-2 block">Asignar a</Label>
             <div className="flex gap-2">
               <button
-                onClick={() => { setSeleccionTipo('grupo'); setPersonaId(''); }}
+                onClick={() => { setSeleccionTipo('grupo'); setSelectedPersonaIds([]); }}
                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
                   seleccionTipo === 'grupo'
                     ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
@@ -469,19 +473,25 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                   <p className="text-center text-white/30 text-sm py-3">Sin resultados</p>
                 ) : (
                   personasFiltradas.map(p => {
-                    const selected = personaId === p.personaId;
+                    const selected = selectedPersonaIds.includes(p.personaId);
                     return (
                       <button
                         key={p.personaId}
-                        onClick={() => setPersonaId(p.personaId)}
+                        onClick={() => setSelectedPersonaIds(prev =>
+                          prev.includes(p.personaId)
+                            ? prev.filter(id => id !== p.personaId)
+                            : [...prev, p.personaId]
+                        )}
                         className={`w-full text-left px-3 py-2.5 transition-colors ${
                           selected ? 'bg-purple-500/15' : 'hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                            selected ? 'bg-purple-400' : 'bg-white/20'
-                          }`} />
+                          <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                            selected ? 'border-purple-400 bg-purple-500/30' : 'border-white/20'
+                          }`}>
+                            {selected && <span className="text-purple-300 text-xs">✓</span>}
+                          </div>
                           <span className={`text-sm ${selected ? 'text-purple-300 font-medium' : 'text-white/70'}`}>
                             {p.label}
                           </span>

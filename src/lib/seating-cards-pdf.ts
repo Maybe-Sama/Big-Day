@@ -11,6 +11,7 @@ export interface SeatingCard {
   numero: string;
   label: string;
   nombres: string[];
+  esNupcial: boolean;
 }
 
 function escHtml(s: string) {
@@ -44,15 +45,18 @@ export function buildSeatingCards(
         .filter(Boolean) as string[];
 
       return {
-        numero: mesa.esNupcial ? '1' : extractNumero(mesa.nombre),
+        numero: mesa.esNupcial ? '' : extractNumero(mesa.nombre),
         label: mesa.esNupcial ? 'Nupcial' : 'Mesa',
         nombres,
+        esNupcial: mesa.esNupcial || false,
       };
     })
     .filter(c => c.nombres.length > 0);
 
-  // Ordenar mesas por numero
+  // Ordenar mesas: nupcial primero, luego por numero
   cards.sort((a, b) => {
+    if (a.esNupcial && !b.esNupcial) return -1;
+    if (!a.esNupcial && b.esNupcial) return 1;
     const na = parseInt(a.numero) || 0;
     const nb = parseInt(b.numero) || 0;
     return na - nb;
@@ -92,8 +96,9 @@ export function getSeatingCardsPdfHtml(cards: SeatingCard[]): string {
       .join('');
 
     const digitClass = card.numero.length >= 2 ? ' two-digit' : '';
+    const numeroHtml = card.esNupcial ? '' : `<div class="card-numero${digitClass}">${escHtml(card.numero)}</div>`;
     return `<div class="card">
-      <div class="card-numero${digitClass}">${escHtml(card.numero)}</div>
+      ${numeroHtml}
       <div class="card-template">
         <div class="mesa-label">${escHtml(card.label)}</div>
         <div class="card-divider"></div>
