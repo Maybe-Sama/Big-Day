@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Edit, Trash2, Gift, Search, Users, User, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Gift, Search, Users, User, UserX, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -280,7 +280,7 @@ interface DonativoModalProps {
   onClose: () => void;
 }
 
-type SeleccionTipo = 'grupo' | 'persona';
+type SeleccionTipo = 'grupo' | 'persona' | 'no_asistente';
 
 interface OpcionPersona {
   personaId: string;
@@ -291,11 +291,15 @@ interface OpcionPersona {
 
 function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps) {
   const [seleccionTipo, setSeleccionTipo] = useState<SeleccionTipo>(
-    donativo?.personaId ? 'persona' : 'grupo'
+    donativo?.grupoId === '__externo__' ? 'no_asistente'
+      : donativo?.personaId ? 'persona' : 'grupo'
   );
   const [grupoId, setGrupoId] = useState(donativo?.grupoId || '');
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>(
     donativo?.personaId ? donativo.personaId.split(',') : []
+  );
+  const [nombreExterno, setNombreExterno] = useState(
+    donativo?.grupoId === '__externo__' ? donativo.nombreDisplay : ''
   );
   const [cantidad, setCantidad] = useState(donativo?.cantidad.toString() || '');
   const [nota, setNota] = useState(donativo?.nota || '');
@@ -341,7 +345,9 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
   }, [personasList, busqueda]);
 
   function getNombreDisplay(): string {
-    if (seleccionTipo === 'grupo') {
+    if (seleccionTipo === 'no_asistente') {
+      return nombreExterno.trim();
+    } else if (seleccionTipo === 'grupo') {
       const g = grupos.find(g => g.id === grupoId);
       if (!g) return '';
       const nombre = `${g.invitadoPrincipal.nombre} ${g.invitadoPrincipal.apellidos}`.trim();
@@ -359,16 +365,26 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
     const cantidadNum = parseFloat(cantidad) || 0;
     if (cantidadNum <= 0) return;
 
-    const selectedGrupoId = seleccionTipo === 'persona'
-      ? personasList.find(p => p.personaId === selectedPersonaIds[0])?.grupoId || ''
-      : grupoId;
+    let selectedGrupoId: string;
+    let selectedPersonaId: string | undefined;
+
+    if (seleccionTipo === 'no_asistente') {
+      selectedGrupoId = '__externo__';
+      selectedPersonaId = undefined;
+    } else if (seleccionTipo === 'persona') {
+      selectedGrupoId = personasList.find(p => p.personaId === selectedPersonaIds[0])?.grupoId || '';
+      selectedPersonaId = selectedPersonaIds.join(',');
+    } else {
+      selectedGrupoId = grupoId;
+      selectedPersonaId = undefined;
+    }
 
     if (!selectedGrupoId) return;
 
     onSave({
       ...(donativo ? { id: donativo.id } : {}),
       grupoId: selectedGrupoId,
-      personaId: seleccionTipo === 'persona' ? selectedPersonaIds.join(',') : undefined,
+      personaId: selectedPersonaId,
       nombreDisplay: getNombreDisplay(),
       cantidad: cantidadNum,
       nota: nota.trim().slice(0, 500),
@@ -377,7 +393,12 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
     onClose();
   }
 
-  const isValid = (seleccionTipo === 'grupo' ? !!grupoId : selectedPersonaIds.length > 0) && (parseFloat(cantidad) || 0) > 0;
+  const isValid = (() => {
+    if ((parseFloat(cantidad) || 0) <= 0) return false;
+    if (seleccionTipo === 'grupo') return !!grupoId;
+    if (seleccionTipo === 'persona') return selectedPersonaIds.length > 0;
+    return nombreExterno.trim().length > 0;
+  })();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -398,7 +419,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
             <Label className="text-white/70 mb-2 block">Asignar a</Label>
             <div className="flex gap-2">
               <button
-                onClick={() => { setSeleccionTipo('grupo'); setSelectedPersonaIds([]); }}
+                onClick={() => { setSeleccionTipo('grupo'); setSelectedPersonaIds([]); setNombreExterno(''); }}
                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
                   seleccionTipo === 'grupo'
                     ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
@@ -408,7 +429,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                 <Users className="w-4 h-4" /> Grupo
               </button>
               <button
-                onClick={() => { setSeleccionTipo('persona'); setGrupoId(''); }}
+                onClick={() => { setSeleccionTipo('persona'); setGrupoId(''); setNombreExterno(''); }}
                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
                   seleccionTipo === 'persona'
                     ? 'border-purple-500/50 bg-purple-500/10 text-purple-300'
@@ -417,10 +438,32 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
               >
                 <User className="w-4 h-4" /> Persona
               </button>
+              <button
+                onClick={() => { setSeleccionTipo('no_asistente'); setGrupoId(''); setSelectedPersonaIds([]); }}
+                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                  seleccionTipo === 'no_asistente'
+                    ? 'border-orange-500/50 bg-orange-500/10 text-orange-300'
+                    : 'border-white/10 text-white/50 hover:border-white/20'
+                }`}
+              >
+                <UserX className="w-4 h-4" /> No asistente
+              </button>
             </div>
           </div>
 
-          {/* Busqueda */}
+          {/* Seleccion / Busqueda */}
+          {seleccionTipo === 'no_asistente' ? (
+            <div>
+              <Label className="text-white/70">Nombre de la persona *</Label>
+              <Input
+                value={nombreExterno}
+                onChange={e => setNombreExterno(e.target.value)}
+                placeholder="Ej: María García"
+                className="mt-1 bg-white/5 border-white/10 text-white"
+                autoFocus
+              />
+            </div>
+          ) : (
           <div>
             <Label className="text-white/70">
               {seleccionTipo === 'grupo' ? 'Seleccionar grupo' : 'Seleccionar persona'}
@@ -503,6 +546,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
               )}
             </div>
           </div>
+          )}
 
           {/* Cantidad */}
           <div>
