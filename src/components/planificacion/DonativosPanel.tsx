@@ -287,6 +287,7 @@ interface OpcionPersona {
   grupoId: string;
   nombre: string;
   label: string; // display in list
+  asistencia: 'pendiente' | 'confirmado' | 'rechazado';
 }
 
 function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps) {
@@ -305,25 +306,33 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
   const [nota, setNota] = useState(donativo?.nota || '');
   const [busqueda, setBusqueda] = useState('');
 
-  // Build flat person list
+  // Build flat person list — include ALL guests regardless of attendance status
   const personasList = useMemo((): OpcionPersona[] => {
     const list: OpcionPersona[] = [];
     for (const g of grupos) {
       // Principal
-      list.push({
-        personaId: `${g.id}:principal`,
-        grupoId: g.id,
-        nombre: `${g.invitadoPrincipal.nombre} ${g.invitadoPrincipal.apellidos}`.trim(),
-        label: `${g.invitadoPrincipal.nombre} ${g.invitadoPrincipal.apellidos}`.trim(),
-      });
+      const nombrePrincipal = `${g.invitadoPrincipal.nombre} ${g.invitadoPrincipal.apellidos}`.trim();
+      if (nombrePrincipal) {
+        list.push({
+          personaId: `${g.id}:principal`,
+          grupoId: g.id,
+          nombre: nombrePrincipal,
+          label: nombrePrincipal,
+          asistencia: g.invitadoPrincipal.asistencia || g.asistencia || 'pendiente',
+        });
+      }
       // Acompanantes
       for (const ac of g.acompanantes) {
-        list.push({
-          personaId: `${g.id}:${ac.id}`,
-          grupoId: g.id,
-          nombre: `${ac.nombre} ${ac.apellidos}`.trim(),
-          label: `${ac.nombre} ${ac.apellidos}`.trim() + ` (de ${g.invitadoPrincipal.nombre})`,
-        });
+        const nombreAc = `${ac.nombre} ${ac.apellidos}`.trim();
+        if (nombreAc) {
+          list.push({
+            personaId: `${g.id}:${ac.id}`,
+            grupoId: g.id,
+            nombre: nombreAc,
+            label: nombreAc + ` (de ${g.invitadoPrincipal.nombre})`,
+            asistencia: ac.asistencia || g.asistencia || 'pendiente',
+          });
+        }
       }
     }
     return list;
@@ -486,6 +495,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                     const nombre = `${g.invitadoPrincipal.nombre} ${g.invitadoPrincipal.apellidos}`.trim();
                     const miembros = g.acompanantes.map(a => a.nombre).filter(Boolean);
                     const selected = grupoId === g.id;
+                    const asistTag = g.asistencia === 'rechazado' ? 'rechazado' : g.asistencia === 'pendiente' ? 'pendiente' : '';
                     return (
                       <button
                         key={g.id}
@@ -501,6 +511,11 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                           <span className={`text-sm font-medium ${selected ? 'text-blue-300' : 'text-white/80'}`}>
                             {nombre}
                           </span>
+                          {asistTag && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                              asistTag === 'rechazado' ? 'bg-red-500/15 text-red-400' : 'bg-yellow-500/15 text-yellow-400'
+                            }`}>{asistTag}</span>
+                          )}
                         </div>
                         {miembros.length > 0 && (
                           <p className="text-xs text-white/30 ml-4 mt-0.5">
@@ -517,6 +532,7 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                 ) : (
                   personasFiltradas.map(p => {
                     const selected = selectedPersonaIds.includes(p.personaId);
+                    const asistTag = p.asistencia === 'rechazado' ? 'rechazado' : p.asistencia === 'pendiente' ? 'pendiente' : '';
                     return (
                       <button
                         key={p.personaId}
@@ -538,6 +554,11 @@ function DonativoModal({ donativo, grupos, onSave, onClose }: DonativoModalProps
                           <span className={`text-sm ${selected ? 'text-purple-300 font-medium' : 'text-white/70'}`}>
                             {p.label}
                           </span>
+                          {asistTag && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                              asistTag === 'rechazado' ? 'bg-red-500/15 text-red-400' : 'bg-yellow-500/15 text-yellow-400'
+                            }`}>{asistTag}</span>
+                          )}
                         </div>
                       </button>
                     );
