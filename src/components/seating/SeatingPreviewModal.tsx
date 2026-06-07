@@ -38,21 +38,29 @@ function applyOrden(cards: SeatingCard[], orden: OrdenGuardado): SeatingCard[] {
     const savedOrder = orden[key];
     if (!savedOrder || savedOrder.length === 0) return card;
 
-    const remaining = new Set(card.nombres);
+    // Conteo de ocurrencias disponibles (soporta nombres duplicados)
+    const remainingCounts = new Map<string, number>();
+    for (const nombre of card.nombres) {
+      remainingCounts.set(nombre, (remainingCounts.get(nombre) || 0) + 1);
+    }
+
     const ordered: string[] = [];
 
     // Primero los que estan en el orden guardado y siguen existiendo
     for (const nombre of savedOrder) {
-      if (remaining.has(nombre)) {
+      const count = remainingCounts.get(nombre) || 0;
+      if (count > 0) {
         ordered.push(nombre);
-        remaining.delete(nombre);
+        remainingCounts.set(nombre, count - 1);
       }
     }
 
     // Luego los nuevos que no estaban en el orden guardado
     for (const nombre of card.nombres) {
-      if (remaining.has(nombre)) {
+      const count = remainingCounts.get(nombre) || 0;
+      if (count > 0) {
         ordered.push(nombre);
+        remainingCounts.set(nombre, count - 1);
       }
     }
 
