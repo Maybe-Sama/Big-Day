@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Bus, Trash2, Users, ChevronDown, ChevronUp, User, Baby, Heart } from 'lucide-react';
+import { Plus, Bus, Trash2, Users, ChevronDown, ChevronUp, User, Baby, Heart, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { ConfiguracionBuses, BusConfig } from '@/types/bus';
 import { GrupoInvitados } from '@/types/invitados';
 import { contarPasajerosBus, grupoUsaEsteBus } from '@/lib/bus-utils';
 import { dbService } from '@/lib/database';
+import { getListaBusesPdfHtml, type BusPasajeros } from '@/lib/lista-buses-pdf';
 
 interface ConfigBusesModalProps {
   isOpen: boolean;
@@ -166,6 +167,22 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
     setExpandedBusId(prev => prev === busId ? null : busId);
   };
 
+  const handleGeneratePdf = () => {
+    const data: BusPasajeros[] = buses.map((bus, i) => ({
+      busNombre: `Bus #${bus.numero}${bus.nombre ? ` — ${bus.nombre}` : ''}`,
+      pasajeros: pasajerosPorBus[i].pasajeros.map(p => ({
+        nombre: p.nombre,
+        grupoNombre: p.grupoNombre,
+      })),
+    }));
+    const html = getListaBusesPdfHtml(data);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  };
+
   return (
     <AppModal
       isOpen={isOpen}
@@ -175,6 +192,15 @@ const ConfigBusesModal = ({ isOpen, onClose }: ConfigBusesModalProps) => {
       maxWidth="4xl"
       footer={
         <>
+          <Button
+            variant="outline"
+            onClick={handleGeneratePdf}
+            className="w-full sm:w-auto text-sm gap-1.5"
+            disabled={loading || buses.length === 0}
+          >
+            <FileDown className="w-4 h-4" />
+            Generar PDF
+          </Button>
           <Button variant="outline" onClick={onClose} className="w-full sm:w-auto text-sm" disabled={saving}>
             Cancelar
           </Button>
