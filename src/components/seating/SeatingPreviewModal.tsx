@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, GripVertical, FileDown, Save, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, GripVertical, FileDown, Save, Loader2, Pencil, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SeatingCard, getSeatingCardsPdfHtml } from '@/lib/seating-cards-pdf';
 import {
@@ -74,9 +74,10 @@ interface SortableNameProps {
   id: string;
   nombre: string;
   index: number;
+  onRename: (newName: string) => void;
 }
 
-function SortableName({ id, nombre, index }: SortableNameProps) {
+function SortableName({ id, nombre, index, onRename }: SortableNameProps) {
   const {
     attributes,
     listeners,
@@ -86,6 +87,24 @@ function SortableName({ id, nombre, index }: SortableNameProps) {
     isDragging,
     isSorting,
   } = useSortable({ id });
+
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(nombre);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function startEdit() {
+    setEditValue(nombre);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  }
+
+  function confirmEdit() {
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== nombre) {
+      onRename(trimmed);
+    }
+    setEditing(false);
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -109,7 +128,39 @@ function SortableName({ id, nombre, index }: SortableNameProps) {
         <GripVertical className="w-3.5 h-3.5" />
       </button>
       <span className="text-xs text-white/20 w-4 text-right select-none">{index + 1}</span>
-      <span className="text-sm text-white/80 flex-1 select-none">{nombre}</span>
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={editValue}
+          onChange={e => setEditValue(e.target.value)}
+          onBlur={confirmEdit}
+          onKeyDown={e => {
+            if (e.key === 'Enter') confirmEdit();
+            if (e.key === 'Escape') setEditing(false);
+          }}
+          className="flex-1 text-sm bg-white/10 text-white border border-amber-400/40 rounded px-1.5 py-0.5 outline-none focus:border-amber-400/70"
+          autoFocus
+        />
+      ) : (
+        <span className="text-sm text-white/80 flex-1 select-none">{nombre}</span>
+      )}
+      {editing ? (
+        <button
+          onClick={confirmEdit}
+          className="p-0.5 text-amber-400 hover:text-amber-300"
+          title="Confirmar"
+        >
+          <Check className="w-3.5 h-3.5" />
+        </button>
+      ) : (
+        <button
+          onClick={startEdit}
+          className="p-0.5 text-white/20 hover:text-white/60 opacity-0 group-hover/item:opacity-100 transition-opacity"
+          title="Editar nombre"
+        >
+          <Pencil className="w-3 h-3" />
+        </button>
+      )}
     </div>
   );
 }
@@ -200,6 +251,16 @@ export default function SeatingPreviewModal({ cards: initialCards, onClose }: Se
     setDirty(true);
   }
 
+  function handleRename(cardIdx: number, nameIdx: number, newName: string) {
+    setCards(prev => prev.map((card, ci) => {
+      if (ci !== cardIdx) return card;
+      const nombres = [...card.nombres];
+      nombres[nameIdx] = newName;
+      return { ...card, nombres };
+    }));
+    setDirty(true);
+  }
+
   function handleGenerate() {
     const html = getSeatingCardsPdfHtml(cards);
     const win = window.open('', '_blank');
@@ -256,6 +317,7 @@ export default function SeatingPreviewModal({ cards: initialCards, onClose }: Se
                             id={`${cardIdx}-${nameIdx}`}
                             nombre={nombre}
                             index={nameIdx}
+                            onRename={(newName) => handleRename(cardIdx, nameIdx, newName)}
                           />
                         ))}
                       </div>
