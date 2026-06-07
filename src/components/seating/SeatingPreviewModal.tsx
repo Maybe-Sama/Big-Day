@@ -1,7 +1,25 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronUp, ChevronDown, FileDown, Save, Loader2 } from 'lucide-react';
+import { X, GripVertical, FileDown, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SeatingCard, getSeatingCardsPdfHtml } from '@/lib/seating-cards-pdf';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -50,11 +68,74 @@ function buildOrden(cards: SeatingCard[]): OrdenGuardado {
   return orden;
 }
 
+// --- Sortable name item ---
+
+interface SortableNameProps {
+  id: string;
+  nombre: string;
+  index: number;
+}
+
+function SortableName({ id, nombre, index }: SortableNameProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isSorting,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: isSorting ? transition : undefined,
+    opacity: isDragging ? 0.3 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 bg-white/5 rounded px-2 py-1.5 group/item ${
+        isDragging ? 'z-10 shadow-lg ring-1 ring-amber-400/40' : ''
+      }`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="text-white/25 hover:text-white/60 cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+      <span className="text-xs text-white/20 w-4 text-right select-none">{index + 1}</span>
+      <span className="text-sm text-white/80 flex-1 select-none">{nombre}</span>
+    </div>
+  );
+}
+
+// --- Drag overlay (the ghost that follows the cursor) ---
+
+function DragOverlayItem({ nombre }: { nombre: string }) {
+  return (
+    <div className="flex items-center gap-2 bg-[#1a1a2e] border border-amber-400/50 rounded px-2 py-1.5 shadow-xl">
+      <GripVertical className="w-3.5 h-3.5 text-amber-400/60" />
+      <span className="text-sm text-white/90 select-none">{nombre}</span>
+    </div>
+  );
+}
+
 export default function SeatingPreviewModal({ cards: initialCards, onClose }: SeatingPreviewModalProps) {
   const [cards, setCards] = useState<SeatingCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [activeNombre, setActiveNombre] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
 
   // Cargar orden guardado al abrir
   useEffect(() => {
@@ -90,16 +171,32 @@ export default function SeatingPreviewModal({ cards: initialCards, onClose }: Se
     setSaving(false);
   }
 
-  function moveNombre(cardIdx: number, nameIdx: number, dir: -1 | 1) {
-    const newCards = cards.map((c, ci) => {
-      if (ci !== cardIdx) return c;
-      const nombres = [...c.nombres];
-      const targetIdx = nameIdx + dir;
-      if (targetIdx < 0 || targetIdx >= nombres.length) return c;
-      [nombres[nameIdx], nombres[targetIdx]] = [nombres[targetIdx], nombres[nameIdx]];
-      return { ...c, nombres };
-    });
-    setCards(newCards);
+  function handleDragStart(event: DragStartEvent) {
+    const id = event.active.id as string;
+    // id format: "cardIdx-nameIdx"
+    const [ciStr, niStr] = id.split('-');
+    const ci = parseInt(ciStr);
+    const ni = parseInt(niStr);
+    if (!isNaN(ci) && !isNaN(ni) && cards[ci]) {
+      setActiveNombre(cards[ci].nombres[ni] ?? null);
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveNombre(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const [activeCard, activeIdx] = (active.id as string).split('-').map(Number);
+    const [overCard, overIdx] = (over.id as string).split('-').map(Number);
+
+    // Only allow reordering within the same card/mesa
+    if (activeCard !== overCard) return;
+
+    setCards(prev => prev.map((card, ci) => {
+      if (ci !== activeCard) return card;
+      return { ...card, nombres: arrayMove(card.nombres, activeIdx, overIdx) };
+    }));
     setDirty(true);
   }
 
@@ -133,47 +230,44 @@ export default function SeatingPreviewModal({ cards: initialCards, onClose }: Se
         ) : (
           <div className="overflow-y-auto flex-1 p-4 space-y-4">
             <p className="text-sm text-white/40">
-              Usa las flechas para reordenar. El orden se guarda y se mantiene aunque cambien los invitados.
+              Arrastra para reordenar. El orden se guarda y se mantiene aunque cambien los invitados.
             </p>
 
-            {cards.map((card, cardIdx) => {
-              const mesaName = card.label === 'Nupcial' ? 'Nupcial' : `Mesa ${card.numero}`;
-              return (
-                <div key={cardIdx} className="bg-white/5 border border-white/10 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-semibold text-amber-300">{mesaName}</span>
-                    <span className="text-xs text-white/30">{card.nombres.length} personas</span>
-                  </div>
-                  <div className="space-y-0.5">
-                    {card.nombres.map((nombre, nameIdx) => (
-                      <div
-                        key={nameIdx}
-                        className="flex items-center gap-2 bg-white/5 rounded px-2 py-1.5 group"
-                      >
-                        <span className="text-xs text-white/20 w-4 text-right">{nameIdx + 1}</span>
-                        <span className="text-sm text-white/80 flex-1">{nombre}</span>
-                        <div className="flex gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => moveNombre(cardIdx, nameIdx, -1)}
-                            disabled={nameIdx === 0}
-                            className="p-0.5 text-white/40 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
-                          >
-                            <ChevronUp className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => moveNombre(cardIdx, nameIdx, 1)}
-                            disabled={nameIdx === card.nombres.length - 1}
-                            className="p-0.5 text-white/40 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"
-                          >
-                            <ChevronDown className="w-4 h-4" />
-                          </button>
-                        </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              {cards.map((card, cardIdx) => {
+                const mesaName = card.label === 'Nupcial' ? 'Nupcial' : `Mesa ${card.numero}`;
+                const itemIds = card.nombres.map((_, ni) => `${cardIdx}-${ni}`);
+                return (
+                  <div key={cardIdx} className="bg-white/5 border border-white/10 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-semibold text-amber-300">{mesaName}</span>
+                      <span className="text-xs text-white/30">{card.nombres.length} personas</span>
+                    </div>
+                    <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-0.5">
+                        {card.nombres.map((nombre, nameIdx) => (
+                          <SortableName
+                            key={`${cardIdx}-${nameIdx}`}
+                            id={`${cardIdx}-${nameIdx}`}
+                            nombre={nombre}
+                            index={nameIdx}
+                          />
+                        ))}
                       </div>
-                    ))}
+                    </SortableContext>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+
+              <DragOverlay dropAnimation={{ duration: 200, easing: 'ease' }}>
+                {activeNombre ? <DragOverlayItem nombre={activeNombre} /> : null}
+              </DragOverlay>
+            </DndContext>
           </div>
         )}
 
